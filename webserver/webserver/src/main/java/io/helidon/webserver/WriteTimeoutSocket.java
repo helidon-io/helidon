@@ -26,18 +26,23 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 import java.util.function.LongSupplier;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.common.socket.SocketWriterException;
+import io.helidon.common.socket.TlsNioSocket;
 
 /**
  * Enforces a deadline for each complete transport write.
  */
 final class WriteTimeoutSocket implements HelidonSocket {
+    private static final Consumer<Runnable> CONTROL_WRITE = Runnable::run;
+
     private final HelidonSocket delegate;
+    private final Consumer<BufferData> bufferWrite;
     private final long timeoutNanos;
     private final ScheduledExecutorService scheduler;
     private final Runnable timeoutAction;
@@ -59,30 +64,19 @@ final class WriteTimeoutSocket implements HelidonSocket {
                        Runnable timeoutAction,
                        LongSupplier nanoTime) {
         this.delegate = delegate;
+        this.bufferWrite = delegate::write;
         this.timeoutNanos = timeout.toNanos();
         this.scheduler = scheduler;
         this.timeoutAction = timeoutAction;
         this.nanoTime = nanoTime;
+        if (delegate instanceof TlsNioSocket tlsSocket) {
+            tlsSocket.controlWriteGuard(this::writeControl);
+        }
     }
 
     @Override
     public void write(BufferData buffer) {
-        Write write = beginWrite();
-        RuntimeException failure = null;
-        boolean expired;
-        try {
-            delegate.write(buffer);
-        } catch (RuntimeException e) {
-            failure = e;
-        } finally {
-            expired = completeWrite(write);
-        }
-        if (expired) {
-            throw timeoutException(failure);
-        }
-        if (failure != null) {
-            throw failure;
-        }
+        timedWrite(buffer, bufferWrite, false);
     }
 
     @Override
@@ -169,6 +163,29 @@ final class WriteTimeoutSocket implements HelidonSocket {
         return delegate.protocol();
     }
 
+    private void writeControl(Runnable send) {
+        timedWrite(send, CONTROL_WRITE, true);
+    }
+
+    private <T> void timedWrite(T value, Consumer<T> action, boolean control) {
+        Write write = beginWrite(control);
+        RuntimeException failure = null;
+        boolean expired;
+        try {
+            action.accept(value);
+        } catch (RuntimeException e) {
+            failure = e;
+        } finally {
+            expired = completeWrite(write);
+        }
+        if (expired) {
+            throw timeoutException(failure);
+        }
+        if (failure != null) {
+            throw failure;
+        }
+    }
+
     private SocketWriterException timeoutException(RuntimeException failure) {
         var exception = new SocketTimeoutException("Socket write exceeded " + Duration.ofNanos(timeoutNanos));
         if (failure != null) {
@@ -177,14 +194,14 @@ final class WriteTimeoutSocket implements HelidonSocket {
         return new SocketWriterException(exception);
     }
 
-    private Write beginWrite() {
+    private Write beginWrite(boolean control) {
         long started = nanoTime.getAsLong();
         lock.lock();
         try {
             if (timedOut) {
                 throw timeoutException(null);
             }
-            if (closing) {
+            if (closed || (closing && !control)) {
                 throw new SocketWriterException(new ClosedChannelException());
             }
             if (timeoutFuture == null && fallbackTimer == null) {

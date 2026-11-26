@@ -17,6 +17,9 @@
 package io.helidon.webserver;
 
 import java.net.SocketTimeoutException;
+import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
+import java.nio.channels.spi.SelectorProvider;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,9 +33,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLEngineResult;
+import javax.net.ssl.SSLSession;
+
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.SocketWriterException;
+import io.helidon.common.socket.TlsNioSocket;
 
 import org.junit.jupiter.api.Test;
 
@@ -51,6 +59,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 class WriteTimeoutSocketTest {
     @Test
@@ -301,8 +310,101 @@ class WriteTimeoutSocketTest {
         verify(fixture.abort, never()).run();
     }
 
+    @Test
+    void closeNotifyKeepsOneDeadlineAcrossPartialWrites() throws Exception {
+        var tls = new TlsFixture(true);
+        var fixture = tls.fixture;
+        var aborted = new CountDownLatch(1);
+        doAnswer(_ -> {
+            aborted.countDown();
+            return null;
+        }).when(fixture.abort).run();
+        when(tls.channel.write(any(ByteBuffer.class))).thenAnswer(invocation -> {
+            ByteBuffer buffer = invocation.getArgument(0);
+            if (fixture.clock.addAndGet(4) >= 10) {
+                fixture.tasks.getFirst().run();
+                assertThat("deadline must abort while the final part is still writing",
+                           aborted.await(5, TimeUnit.SECONDS), is(true));
+            }
+            buffer.get();
+            return 1;
+        });
+
+        var failure = assertThrows(SocketWriterException.class, fixture.socket::close);
+
+        assertThat(failure.getCause(), instanceOf(SocketTimeoutException.class));
+        assertThat(fixture.clock.get(), is(12L));
+        verify(fixture.abort).run();
+    }
+
+    @Test
+    void successfulCloseControlWriteCancelsItsTimer() throws Exception {
+        var tls = new TlsFixture(true);
+        var fixture = tls.fixture;
+        when(tls.channel.write(any(ByteBuffer.class))).thenAnswer(invocation -> {
+            fixture.clock.set(9);
+            return drain(invocation.getArgument(0));
+        });
+
+        fixture.socket.close();
+        fixture.clock.set(100);
+        fixture.tasks.getFirst().run();
+
+        verify(fixture.future).cancel(false);
+        verify(fixture.abort, never()).run();
+    }
+
+    @Test
+    void readDrivenControlWriteHasItsOwnDeadline() throws Exception {
+        var tls = new TlsFixture(false);
+        var fixture = tls.fixture;
+        when(tls.channel.read(any(ByteBuffer.class))).thenAnswer(invocation -> {
+            // Time spent waiting for peer input precedes the outbound control buffer.
+            fixture.clock.set(100);
+            assertThat(fixture.tasks.size(), is(0));
+            ByteBuffer buffer = invocation.getArgument(0);
+            buffer.put((byte) 1);
+            return 1;
+        });
+        when(tls.channel.write(any(ByteBuffer.class))).thenAnswer(invocation -> {
+            fixture.clock.set(110);
+            fixture.tasks.getFirst().run();
+            return drain(invocation.getArgument(0));
+        });
+
+        var failure = assertThrows(SocketWriterException.class, fixture.socket::get);
+
+        assertThat(failure.getCause(), instanceOf(SocketTimeoutException.class));
+        verify(fixture.abort, timeout(5000)).run();
+    }
+
+    @Test
+    void earlierApplicationDeadlineExpiresDuringControlWrite() throws Exception {
+        var tls = new TlsFixture(false);
+        var fixture = tls.fixture;
+        when(tls.engine.getHandshakeStatus()).thenAnswer(_ -> {
+            fixture.clock.set(5);
+            return SSLEngineResult.HandshakeStatus.NEED_WRAP;
+        });
+        when(tls.channel.write(any(ByteBuffer.class))).thenAnswer(invocation -> {
+            fixture.clock.set(10);
+            fixture.tasks.getFirst().run();
+            return drain(invocation.getArgument(0));
+        });
+
+        assertThrows(SocketWriterException.class, () -> fixture.socket.write(BufferData.create("data")));
+
+        verify(fixture.abort, timeout(5000)).run();
+    }
+
+    private static int drain(ByteBuffer buffer) {
+        int remaining = buffer.remaining();
+        buffer.position(buffer.limit());
+        return remaining;
+    }
+
     private static final class Fixture {
-        private final HelidonSocket delegate = mock(HelidonSocket.class);
+        private final HelidonSocket delegate;
         private final Runnable abort = mock(Runnable.class);
         private final AtomicLong clock = new AtomicLong();
         private final List<Runnable> tasks = new ArrayList<>();
@@ -311,11 +413,44 @@ class WriteTimeoutSocketTest {
         private final WriteTimeoutSocket socket;
 
         private Fixture() {
+            this(mock(HelidonSocket.class));
+        }
+
+        private Fixture(HelidonSocket delegate) {
+            this.delegate = delegate;
             when(scheduler.schedule(any(Runnable.class), anyLong(), eq(TimeUnit.NANOSECONDS))).thenAnswer(invocation -> {
                 tasks.add(invocation.getArgument(0));
                 return future;
             });
             socket = new WriteTimeoutSocket(delegate, Duration.ofNanos(10), scheduler, abort, clock::get);
+        }
+    }
+
+    private static final class TlsFixture {
+        // Initialize the channel superclass so its final close method can run during TLS teardown.
+        private final SocketChannel channel = mock(SocketChannel.class,
+                                                   withSettings().useConstructor(SelectorProvider.provider()));
+        private final SSLEngine engine = mock(SSLEngine.class);
+        private final Fixture fixture;
+
+        private TlsFixture(boolean closing) throws Exception {
+            SSLSession session = mock(SSLSession.class);
+            when(engine.getSession()).thenReturn(session);
+            when(session.getPacketBufferSize()).thenReturn(8);
+            when(session.getApplicationBufferSize()).thenReturn(8);
+            when(engine.unwrap(any(ByteBuffer.class), any(ByteBuffer.class))).thenAnswer(invocation -> {
+                ByteBuffer buffer = invocation.getArgument(0);
+                buffer.get();
+                return new SSLEngineResult(SSLEngineResult.Status.OK,
+                                           SSLEngineResult.HandshakeStatus.NEED_WRAP, 1, 0);
+            });
+            when(engine.wrap(any(ByteBuffer.class), any(ByteBuffer.class))).thenAnswer(invocation -> {
+                ByteBuffer buffer = invocation.getArgument(1);
+                buffer.put(new byte[] {1, 2, 3});
+                return new SSLEngineResult(closing ? SSLEngineResult.Status.CLOSED : SSLEngineResult.Status.OK,
+                                           SSLEngineResult.HandshakeStatus.FINISHED, 0, 3);
+            });
+            fixture = new Fixture(TlsNioSocket.server(channel, engine, "connection", "listener"));
         }
     }
 }

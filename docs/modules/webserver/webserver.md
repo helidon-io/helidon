@@ -123,7 +123,8 @@ provide per-binding quotas or strict fairness, and configuration fails when
 `L < N`.
 
 If a socket write exceeds the listener’s `write-timeout`, WebServer closes the
-connection, including any HTTP/2 streams sharing it.
+connection, including any HTTP/2 streams sharing it. On NIO TLS listeners, the
+timeout also applies to each control buffer sent during a handshake or graceful shutdown.
 
 Binding runtime, factory, provider, planning, context, TLS-selection, and
 protocol-handoff contracts are internal Helidon integration APIs, not a
