@@ -57,6 +57,8 @@ interface MessageConfigBlueprint<T> extends Prototype.Factory<Message<T>> {
      * Setting this option replaces the current entries; adding a value replaces the value with the same exact name.
      * The builder accumulates entries in a mutable map and the prototype contains an immutable snapshot.
      * Local metadata remains in-process and is not part of portable headers or generic connector mapping.
+     * Connectors may interpret explicitly documented entries as per-message delivery options, as described by
+     * {@link Message#localMetadata()}.
      *
      * @return local metadata
      */

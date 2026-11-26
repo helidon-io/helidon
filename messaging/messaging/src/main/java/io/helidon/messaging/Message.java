@@ -100,8 +100,11 @@ public interface Message<T> {
      * Metadata local to this message envelope.
      * <p>
      * Local metadata follows the same envelope while it is used in-process. Connectors and generic message mappers
-     * must never serialize or map it to a transport. A local value must be explicitly promoted to a portable header
-     * before it can be sent, including any necessary redaction and size limit.
+     * must not automatically copy or serialize its entries into message payloads, headers, or properties. A connector
+     * may interpret explicitly documented entries as per-message delivery options, including through provider APIs or
+     * provider-defined message control properties. Unrecognized entries and failure diagnostics remain local.
+     * Publishing a local value as message data requires an explicit application decision, including any necessary
+     * redaction and size limit.
      *
      * @return immutable local metadata
      */
