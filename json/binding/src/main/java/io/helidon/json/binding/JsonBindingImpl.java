@@ -266,14 +266,14 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
     @Override
     public <T> T deserialize(Reader reader, Class<T> type) {
         JsonDeserializer<T> deserializer = deserializer(type);
-        JsonParser parser = JsonParserSupport.createStreamParser(reader, maxReplayBytes);
+        JsonParser parser = JsonParser.create(reader, maxReplayBytes);
         return Deserializers.deserialize(parser, deserializer);
     }
 
     @Override
     public <T> T deserialize(Reader reader, GenericType<T> type) {
         JsonDeserializer<T> deserializer = deserializer(type);
-        JsonParser parser = JsonParserSupport.createStreamParser(reader, maxReplayBytes);
+        JsonParser parser = JsonParser.create(reader, maxReplayBytes);
         return Deserializers.deserialize(parser, deserializer);
     }
 
@@ -540,7 +540,7 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
     }
 
     private <T> T deserializeStream(JsonDeserializer<T> deserializer, InputStream source, int bufferSize) {
-        JsonParser parser = JsonParserSupport.createStreamParser(source, bufferSize, maxReplayBytes);
+        JsonParser parser = JsonParser.create(source, bufferSize, maxReplayBytes);
         return Deserializers.deserialize(parser, deserializer);
     }
 

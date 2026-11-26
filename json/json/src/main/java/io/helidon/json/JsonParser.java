@@ -139,7 +139,32 @@ public interface JsonParser {
      * @return a new JsonParser instance
      */
     static JsonParser create(InputStream inputStream, int bufferSize) {
-        return JsonParserSupport.createStreamParser(inputStream, bufferSize, Integer.MAX_VALUE);
+        return create(inputStream, bufferSize, Integer.MAX_VALUE);
+    }
+
+    /**
+     * Create a streaming parser with a limit on buffer growth while a {@linkplain #mark() mark} is active.
+     * The parser can use its existing buffer at any size. A limit of zero prevents growth while marked.
+     *
+     * @param inputStream the input stream containing JSON data
+     * @param bufferSize initial buffer size in bytes, at least 6
+     * @param maxReplayBytes maximum capacity in bytes for a buffer grown while marked
+     * @return a new parser positioned at the first token
+     * @throws IllegalArgumentException if the buffer size is less than 6 or the replay limit is negative
+     */
+    static JsonParser create(InputStream inputStream, int bufferSize, int maxReplayBytes) {
+        Objects.requireNonNull(inputStream);
+        if (bufferSize <= 5) {
+            throw new IllegalArgumentException("Buffer size must be greater than 5");
+        }
+        if (maxReplayBytes < 0) {
+            throw new IllegalArgumentException("max-replay-size must be non-negative");
+        }
+        JsonParserStream parser = new JsonParserStream(inputStream, bufferSize, maxReplayBytes);
+        if (WHITESPACE_CHARS[parser.currentByte() & 0xff]) {
+            parser.nextToken();
+        }
+        return parser;
     }
 
     /**
@@ -169,7 +194,22 @@ public interface JsonParser {
      * @return a new JsonParser instance
      */
     static JsonParser create(Reader reader) {
-        return JsonParserSupport.createStreamParser(reader, Integer.MAX_VALUE);
+        return create(reader, Integer.MAX_VALUE);
+    }
+
+    /**
+     * Create a parser from a reader using the default buffer size and the replay limit described by
+     * {@link #create(InputStream, int, int)}.
+     *
+     * @param reader the reader containing JSON data
+     * @param maxReplayBytes maximum capacity in bytes for a buffer grown while marked
+     * @return a new parser positioned at the first token
+     * @throws IllegalArgumentException if the replay limit is negative
+     */
+    static JsonParser create(Reader reader, int maxReplayBytes) {
+        return create(new ReaderInputStream(Objects.requireNonNull(reader)),
+                      JsonParserStream.DEFAULT_BUFFER_SIZE,
+                      maxReplayBytes);
     }
 
     /**

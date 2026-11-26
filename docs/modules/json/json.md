@@ -151,6 +151,8 @@ JsonBinding binding = JsonBinding.builder().maxReplaySize(Size.create(1, Size.Un
 ```
 
 The binding sets the limit when it creates a JSON parser from an `InputStream` or `Reader`.
+When creating a parser directly, use `JsonParser.create(inputStream, bufferSize, maxReplayBytes)`
+or `JsonParser.create(reader, maxReplayBytes)` to set the limit in bytes.
 A parser supplied to `JsonBinding.deserialize(parser, type)` keeps the limit chosen by its creator
 for its entire lifetime. Byte-array and materialized `JsonValue` inputs already hold their replay data.
 For Smile, set `maxReplaySize` on the `SmileConfig` passed to `SmileParser.create(inputStream, smileConfig)`.

@@ -16,8 +16,6 @@
 
 package io.helidon.json;
 
-import java.io.InputStream;
-import java.io.Reader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Objects;
@@ -50,41 +48,6 @@ public final class JsonParserSupport {
             throw new IllegalArgumentException("max-replay-size must be between 0 and " + Integer.MAX_VALUE + " bytes", e);
         }
         throw new IllegalArgumentException("max-replay-size must be non-negative");
-    }
-
-    /**
-     * Creates a native text stream parser with a fixed limit on marked buffer growth.
-     *
-     * @param source JSON input stream
-     * @param bufferSize initial buffer capacity in bytes
-     * @param maxReplayBytes maximum capacity for marked buffer growth in bytes
-     * @return the parser positioned at its first token
-     */
-    public static JsonParser createStreamParser(InputStream source, int bufferSize, int maxReplayBytes) {
-        Objects.requireNonNull(source);
-        if (bufferSize <= 5) {
-            throw new IllegalArgumentException("Buffer size must be greater than 5");
-        }
-        if (maxReplayBytes < 0) {
-            throw new IllegalArgumentException("max-replay-size must be non-negative");
-        }
-        JsonParserStream parser = new JsonParserStream(source, bufferSize, maxReplayBytes);
-        if (JsonParserArray.WHITESPACE_CHARS[parser.currentByte() & 0xff]) {
-            parser.nextToken();
-        }
-        return parser;
-    }
-
-    /**
-     * Creates a native text stream parser from a reader with a fixed limit on marked buffer growth.
-     *
-     * @param source JSON input reader
-     * @param maxReplayBytes maximum capacity for marked buffer growth in bytes
-     * @return the parser positioned at its first token
-     */
-    public static JsonParser createStreamParser(Reader source, int maxReplayBytes) {
-        return createStreamParser(new ReaderInputStream(Objects.requireNonNull(source)), JsonParserStream.DEFAULT_BUFFER_SIZE,
-                                  maxReplayBytes);
     }
 
     /**

@@ -37,7 +37,7 @@ class JsonParserReplayTest {
     void fullMarkedBufferFailsBeforeReadingTheFollowingByte() {
         byte[] bytes = "[\"abcdef\",42]".getBytes(StandardCharsets.UTF_8);
         var input = new ByteArrayInputStream(bytes);
-        JsonParser parser = JsonParserSupport.createStreamParser(input, 8, 8);
+        JsonParser parser = JsonParser.create(input, 8, 8);
         parser.nextToken();
         parser.mark();
         parser.skip();
@@ -55,7 +55,7 @@ class JsonParserReplayTest {
     @Test
     void fullMarkedBufferCanBeConsumedBeforeCheckingForEof() {
         byte[] value = "\"abcdef\"".getBytes(StandardCharsets.UTF_8);
-        JsonParser parser = JsonParserSupport.createStreamParser(new ByteArrayInputStream(value), 8, 8);
+        JsonParser parser = JsonParser.create(new ByteArrayInputStream(value), 8, 8);
         parser.mark();
         assertThat(parser.readString(), is("abcdef"));
         JsonException exception = assertThrows(JsonException.class, parser::hasNext);
@@ -75,7 +75,7 @@ class JsonParserReplayTest {
                 return super.read(bytes, offset, Math.min(3, length));
             }
         };
-        JsonParser parser = JsonParserSupport.createStreamParser(input, 16, 32);
+        JsonParser parser = JsonParser.create(input, 16, 32);
         parser.nextToken();
         parser.mark();
         assertThrows(JsonException.class, parser::readJsonString);
