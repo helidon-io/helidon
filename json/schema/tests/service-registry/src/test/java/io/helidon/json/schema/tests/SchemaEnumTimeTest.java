@@ -107,7 +107,7 @@ class SchemaEnumTimeTest {
     }
 
     // JsonObject on 4.x does not compare exact key/value associations. Compare typed values instead.
-    private static Matcher<Object> jsonEqualTo(Object expected) {
+    static Matcher<Object> jsonEqualTo(Object expected) {
         return new FeatureMatcher<>(is(jsonValue(expected)), "JSON value", "JSON value") {
             @Override
             protected Object featureValueOf(Object actual) {
