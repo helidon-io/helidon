@@ -16,23 +16,32 @@
 
 package io.helidon.http;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsEmptyCollection.emptyCollectionOf;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -91,9 +100,17 @@ class HeaderNamesTest {
 
             if (value instanceof HeaderNameEnum) {
                 assertThat(value.index(), not(-1));
+                assertThat(HeaderNames.create(value.lowerCase()), sameInstance(value));
+                assertThat(HeaderNames.createFromLowercase(value.lowerCase()), sameInstance(value));
             }
 
         }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"en", "tr", "az"})
+    void testLowerCaseNamesAreLocaleIndependent(String language, @TempDir Path directory) throws IOException, InterruptedException {
+        verifyInFreshJvm(language, directory);
     }
 
     @Test
@@ -233,6 +250,46 @@ class HeaderNamesTest {
 
         if (!errors.isEmpty()) {
             fail("HeaderNames has inconsistent values: \n" + String.join("\n", errors));
+        }
+    }
+
+    private static void verifyInFreshJvm(String language, Path directory) throws IOException, InterruptedException {
+        // A fresh JVM ensures the default locale is set before the header constants are initialized.
+        String executable = System.getProperty("os.name").startsWith("Windows") ? "java.exe" : "java";
+        Path java = Path.of(System.getProperty("java.home"), "bin", executable);
+        String classpath = System.getProperty("surefire.test.class.path", System.getProperty("java.class.path"));
+        Path output = directory.resolve(language + ".log");
+        ProcessBuilder builder = new ProcessBuilder(java.toString(), "-Duser.language=" + language,
+                                                    "-cp", classpath, LocaleValidation.class.getName(), language)
+                .redirectErrorStream(true)
+                .redirectOutput(output.toFile());
+        builder.environment().remove("JAVA_TOOL_OPTIONS");
+        builder.environment().remove("_JAVA_OPTIONS");
+        builder.environment().remove("JDK_JAVA_OPTIONS");
+        Process process = builder.start();
+        try {
+            boolean completed = process.waitFor(30, TimeUnit.SECONDS);
+            String diagnostic = "Header validation for " + language + ":\n" + Files.readString(output);
+            assertThat(diagnostic, completed, is(true));
+            assertThat(diagnostic, process.exitValue(), is(0));
+        } finally {
+            if (process.isAlive()) {
+                process.destroyForcibly();
+                assertThat("Header validation process terminated", process.waitFor(10, TimeUnit.SECONDS), is(true));
+            }
+        }
+    }
+
+    public static class LocaleValidation {
+        public static void main(String[] args) throws NoSuchFieldException, IllegalAccessException {
+            assertThat(Locale.getDefault().getLanguage(), is(args[0]));
+            for (String constant : constants) {
+                Field field = clazz.getField(constant);
+                if (HeaderName.class.equals(field.getType())) {
+                    HeaderName value = (HeaderName) field.get(null);
+                    assertThat(constant, value.lowerCase(), is(value.defaultCase().toLowerCase(Locale.ROOT)));
+                }
+            }
         }
     }
 }

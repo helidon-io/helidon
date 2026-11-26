@@ -120,7 +120,7 @@ enum HeaderNameEnum implements HeaderName {
 
     HeaderNameEnum(String http1Case) {
         this.http1Case = http1Case;
-        this.lowerCase = this.http1Case.toLowerCase();
+        this.lowerCase = Ascii.toLowerCase(this.http1Case);
         this.index = this.ordinal();
         this.nameBytes = http1Case.getBytes(StandardCharsets.US_ASCII);
     }
