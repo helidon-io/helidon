@@ -320,13 +320,6 @@ class JdbcTransactionPoolTest {
     }
 
     /**
-     * Registers two public lifecycle observers which throw one shared failure,
-     * then proves real completion, connection release, and same-thread reuse.
-     *
-     * @param databaseName isolated MySQL database name
-     * @param commit whether to exercise commit rather than rollback
-     */
-    /**
      * A single connection pool must recover after success, early return, and a caught callback processing failure.
      */
     @Test
@@ -410,6 +403,13 @@ class JdbcTransactionPoolTest {
         }
     }
 
+    /**
+     * Verifies that the transaction completes and releases its connection when two lifecycle observers throw the same
+     * exception. A subsequent transaction on the same thread checks that the connection can be reused.
+     *
+     * @param databaseName The name identifies the isolated MySQL database.
+     * @param commit Use {@code true} to exercise commit and {@code false} to exercise rollback.
+     */
     private static void assertSharedCompletionFailureReleasesConnection(String databaseName, boolean commit) {
         try (HikariDataSource dataSource = dataSource(databaseName)) {
             JdbcClient.builder().dataSource(dataSource).build()

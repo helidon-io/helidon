@@ -255,8 +255,13 @@ final class JdbcMethodGenerator {
         if (plan.mappingKind() != JdbcMethodPlan.MappingKind.SCALAR) {
             generatedFieldNames.add(plan.mapperFieldName());
         }
-        generatedFieldNames.add(JdbcCodegenTypes.JDBC_TYPE.className());
-        generatedFieldNames.add(JdbcCodegenTypes.GENERATED_JDBC_DATA.className());
+        // The class model can qualify a type to resolve an import collision. Reserve the package prefix as well.
+        for (TypeName qualifier : List.of(JdbcCodegenTypes.JDBC_TYPE, JdbcCodegenTypes.GENERATED_JDBC_DATA)) {
+            generatedFieldNames.add(qualifier.className());
+            String packageName = qualifier.packageName();
+            int separator = packageName.indexOf('.');
+            generatedFieldNames.add(separator < 0 ? packageName : packageName.substring(0, separator));
+        }
         // Reserve Objects across execution types so generated null checks resolve to java.util.Objects.
         generatedFieldNames.add(Objects.class.getSimpleName());
         if (plan.callable() != null) {

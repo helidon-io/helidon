@@ -119,6 +119,52 @@ class JdbcCallableGenerationTest {
     }
 
     @Test
+    void protectsQualifiedTypePrefixes() throws IOException {
+        TestCompiler.Result result = compiler().addSource("Repository.java", """
+                package example;
+
+                import io.helidon.data.Data;
+                import io.helidon.data.jdbc.Jdbc;
+
+                @Data.Repository @Data.Provider("jdbc")
+                public interface Repository {
+                    @Jdbc.Statement("${application.sql.call:{? = call routine(:java)}}")
+                    @Jdbc.OutParameter
+                    int total(Integer java);
+
+                    @Jdbc.Statement("SELECT :input")
+                    @Jdbc.Execution(Jdbc.ExecutionType.QUERY)
+                    int query(@Data.Param("input") Integer io);
+
+                    @Jdbc.Statement("SELECT VALUE FROM ITEMS")
+                    JDBCType jdbcType();
+
+                    @Jdbc.Statement("SELECT VALUE FROM ITEMS")
+                    Objects objects();
+
+                    @Jdbc.Statement("SELECT VALUE FROM ITEMS")
+                    GeneratedJdbcData generatedJdbcData();
+                }
+
+                record JDBCType(int value) {
+                }
+
+                record Objects(int value) {
+                }
+
+                record GeneratedJdbcData(int value) {
+                }
+                """).build().compile();
+        assertThat(result.diagnostics().toString(), result.success(), is(true));
+        String generated = Files.readString(result.sourceOutput().resolve("example/Repository__Jdbc.java"));
+        assertThat(generated, containsString(".returns(java.sql.JDBCType.INTEGER)"));
+        assertThat(generated, containsString("java.util.Objects.requireNonNull("));
+        assertThat(generated, containsString("io.helidon.data.jdbc.GeneratedJdbcData.createGenerated("));
+        assertThat(generated, containsString(".bind(\"java\", data__java)"));
+        assertThat(generated, containsString(".bind(1, data__io)"));
+    }
+
+    @Test
     void compilesOptionalScalarCursorAndCursorPresenceMappings() {
         TestCompiler.Result result = compile("""
                 @Jdbc.Statement("{? = call routine(:input)}")
