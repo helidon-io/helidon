@@ -65,9 +65,9 @@ class LimitHandlers {
     static class QueuedSemaphoreHandler implements LimiterHandler {
         private final Semaphore semaphore;
         private final int queueLength;
-        private final long timeoutMillis;
+        private final long timeoutNanos;
         private final Supplier<Token> tokenSupplier;
-        private final long maxWaitMillis;
+        private final long maxWaitNanos;
         private final Optional<Runnable> beforeAcquire;
 
         QueuedSemaphoreHandler(Semaphore semaphore,
@@ -81,13 +81,13 @@ class LimitHandlers {
                                int queueLength,
                                Duration queueTimeout,
                                Supplier<Token> tokenSupplier,
-                               long maxWaitMillis,
+                               long maxWaitNanos,
                                Runnable beforeAcquire) {
             this.semaphore = semaphore;
             this.queueLength = queueLength;
-            this.timeoutMillis = queueTimeout.toMillis();
+            this.timeoutNanos = TimeUnit.NANOSECONDS.convert(queueTimeout);
             this.tokenSupplier = tokenSupplier;
-            this.maxWaitMillis = maxWaitMillis;
+            this.maxWaitNanos = maxWaitNanos > 0 ? maxWaitNanos : timeoutNanos;
             this.beforeAcquire = Optional.ofNullable(beforeAcquire);
         }
 
@@ -107,20 +107,19 @@ class LimitHandlers {
         }
 
         private Optional<Token> tryAcquireWithWait() throws InterruptedException {
-            long remainingWaitMillis = timeoutMillis;
-            long waitMillis = maxWaitMillis > 0 ? Math.min(maxWaitMillis, timeoutMillis) : timeoutMillis;
+            long remainingNanos = timeoutNanos;
             do {
-                long actualWaitMillis = Math.min(waitMillis, remainingWaitMillis);
+                long waitNanos = Math.min(maxWaitNanos, remainingNanos);
                 beforeAcquire.ifPresent(Runnable::run);
-                if (semaphore.tryAcquire(actualWaitMillis, TimeUnit.MILLISECONDS)) {
+                if (semaphore.tryAcquire(waitNanos, TimeUnit.NANOSECONDS)) {
                     return Optional.of(tokenSupplier.get());
                 }
-                remainingWaitMillis -= actualWaitMillis;
-            } while (remainingWaitMillis > 0);
-            if (timeoutMillis > 0 && beforeAcquire.isPresent()) {
+                remainingNanos -= waitNanos;
+            } while (remainingNanos > 0);
+            if (timeoutNanos > 0 && beforeAcquire.isPresent()) {
                 // A permit may have become due during the final wait; refill without extending the wait budget.
                 beforeAcquire.get().run();
-                if (semaphore.tryAcquire(0, TimeUnit.MILLISECONDS)) {
+                if (semaphore.tryAcquire(0, TimeUnit.NANOSECONDS)) {
                     return Optional.of(tokenSupplier.get());
                 }
             }

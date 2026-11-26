@@ -54,9 +54,11 @@ interface ThroughputLimitConfigBlueprint extends Prototype.Factory<ThroughputLim
     RateLimitingAlgorithmType rateLimitingAlgorithm();
 
     /**
-     * Number of operations to allow during the relevant time window.
+     * Nonnegative number of operations to allow during the time window.
      * Defaults to {@value ThroughputLimit#DEFAULT_AMOUNT}.
-     * When set to {@code 0}, we switch to unlimited.
+     * When set to {@code 0}, we switch to unlimited unless a semaphore is supplied.
+     * With a supplied semaphore and {@code 0} amount, permits are returned when work completes
+     * and no time-based replenishment is performed.
      *
      * @return number of permits
      */
@@ -65,8 +67,9 @@ interface ThroughputLimitConfigBlueprint extends Prototype.Factory<ThroughputLim
     int amount();
 
     /**
-     * Duration of the time window over which operations will be counted.
-     * Defaults to {@value ThroughputLimit#DEFAULT_DURATION}
+     * Duration of the time window, which must be positive when the amount is positive.
+     * Ignored when the amount is zero.
+     * Defaults to {@value ThroughputLimit#DEFAULT_DURATION}.
      *
      * @return duration of the time window
      */
@@ -118,7 +121,10 @@ interface ThroughputLimitConfigBlueprint extends Prototype.Factory<ThroughputLim
 
     /**
      * Explicitly configured semaphore.
-     * Note that if this is set, all other configuration is ignored.
+     * With {@code 0} amount, the limit uses the semaphore to cap concurrent work and requires at least
+     * one available permit at construction. With a positive amount, the configured rate limiting algorithm
+     * replenishes permits, and the semaphore can start empty. The initial permit count must be nonnegative.
+     * Queue, clock, name, and metrics configuration also apply.
      *
      * @return semaphore instance
      */
@@ -126,6 +132,7 @@ interface ThroughputLimitConfigBlueprint extends Prototype.Factory<ThroughputLim
 
     /**
      * A clock that supplies nanosecond time.
+     * The supplier must return a value on every invocation without throwing an exception.
      *
      * @return supplier of current nanoseconds, defaults to {@link java.lang.System#nanoTime()}
      */
