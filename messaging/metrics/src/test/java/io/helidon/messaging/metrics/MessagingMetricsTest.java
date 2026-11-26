@@ -26,6 +26,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import io.helidon.messaging.BatchDeliveryException;
+import io.helidon.messaging.Message;
+import io.helidon.messaging.MessageBatch;
 import io.helidon.messaging.MessagingChannel;
 import io.helidon.messaging.MessagingGraph;
 import io.helidon.metrics.api.Clock;
@@ -43,11 +45,13 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class MessagingMetricsTest {
+    private static final MessageBatch<String> BATCH = MessageBatch.create(Message.create("order"));
     private static final String DURATION = "messaging.processing.duration";
     private static final String FAILURES = "messaging.processing.failures";
 
@@ -58,21 +62,23 @@ class MessagingMetricsTest {
         try (MetricsTestSupport environment = new MetricsTestSupport(MetricsConfig.create())) {
             environment.clock.advance(startingNanos);
             ChannelMetrics metrics = environment.observe();
-            ChannelMetrics.Recorder recorder = metrics.channel("orders");
-
-            var started = recorder.start();
-            environment.clock.advance(15);
-            recorder.finish(started, false);
-            started = recorder.start();
-            environment.clock.advance(25);
-            recorder.finish(started, true);
+            var failure = new IllegalStateException("Delivery failed");
+            var dispatch = metrics.observe("orders", batch -> {
+                if (batch.get(0).entity().equals("fail")) {
+                    environment.clock.advance(25);
+                    throw failure;
+                }
+                environment.clock.advance(15);
+            });
+            dispatch.accept(BATCH);
+            var failedBatch = MessageBatch.create(Message.create("fail"));
+            assertThat(assertThrows(IllegalStateException.class, () -> dispatch.accept(failedBatch)), sameInstance(failure));
 
             Timer timer = environment.timer("orders");
             assertThat(timer.count(), is(2L));
             assertThat(timer.totalTime(TimeUnit.NANOSECONDS), is(40D));
             assertThat(environment.counter("orders").count(), is(1L));
-            ChannelMetrics.Recorder again = metrics.channel("orders");
-            again.finish(again.start(), false);
+            successfulDispatch(metrics, "orders").run();
             assertThat(timer.count(), is(3L));
             metrics.close();
             assertThat(environment.timer("orders").count(), is(3L));
@@ -85,14 +91,13 @@ class MessagingMetricsTest {
         try (MetricsTestSupport environment = new MetricsTestSupport(MetricsConfig.create())) {
             ChannelMetrics first = environment.observe();
             ChannelMetrics second = environment.observe();
-            ChannelMetrics.Recorder retired = first.channel("orders");
-            ChannelMetrics.Recorder surviving = second.channel("orders");
-            retired.finish(retired.start(), false);
-            var late = retired.start();
+            Runnable retired = successfulDispatch(first, "orders");
+            Runnable surviving = failingDispatch(second, "orders");
+            retired.run();
             first.close();
 
-            retired.finish(late, true);
-            surviving.finish(surviving.start(), true);
+            retired.run();
+            surviving.run();
             assertThat(environment.timer("orders").count(), is(2L));
             assertThat(environment.counter("orders").count(), is(1L));
             first.close();
@@ -101,10 +106,10 @@ class MessagingMetricsTest {
             assertThat(environment.timer("orders").count(), is(2L));
 
             ChannelMetrics replacement = environment.observe();
-            ChannelMetrics.Recorder current = replacement.channel("orders");
-            retired.finish(late, true);
-            surviving.finish(late, true);
-            current.finish(current.start(), false);
+            Runnable current = successfulDispatch(replacement, "orders");
+            retired.run();
+            surviving.run();
+            current.run();
             assertThat(environment.timer("orders").count(), is(3L));
             assertThat(environment.counter("orders").count(), is(1L));
         }
@@ -116,10 +121,10 @@ class MessagingMetricsTest {
         try (MetricsTestSupport first = new MetricsTestSupport(MetricsConfig.create());
              MetricsTestSupport second = new MetricsTestSupport(MetricsConfig.create())) {
             ChannelMetrics firstMetrics = first.observe();
-            ChannelMetrics.Recorder firstRecorder = firstMetrics.channel("orders");
-            ChannelMetrics.Recorder secondRecorder = second.observe().channel("orders");
-            firstRecorder.finish(firstRecorder.start(), true);
-            secondRecorder.finish(secondRecorder.start(), false);
+            Runnable firstRecorder = failingDispatch(firstMetrics, "orders");
+            Runnable secondRecorder = successfulDispatch(second.observe(), "orders");
+            firstRecorder.run();
+            secondRecorder.run();
             firstMetrics.close();
 
             assertThat(first.timer("orders").count(), is(1L));
@@ -146,8 +151,7 @@ class MessagingMetricsTest {
             });
             second.registry.onMeterAdded(_ -> {
                 if (returnToFirstRegistry && enteredSecond.compareAndSet(false, true)) {
-                    ChannelMetrics.Recorder recursive = first.observe().channel("recursive");
-                    recursive.finish(recursive.start(), true);
+                    failingDispatch(first.observe(), "recursive").run();
                 }
             });
 
@@ -184,16 +188,13 @@ class MessagingMetricsTest {
             });
             first.registry.onMeterAdded(_ -> {
                 if (entered.compareAndSet(false, true)) {
-                    assertThrows(AssertionError.class, () -> second.observe().channel("orders"));
-                    ChannelMetrics.Recorder retry = second.observe().channel("orders");
-                    retry.finish(retry.start(), true);
-                    ChannelMetrics.Recorder recursive = first.observe().channel("recursive");
-                    recursive.finish(recursive.start(), true);
+                    assertThrows(AssertionError.class, () -> second.observe().observe("orders", _ -> { }));
+                    failingDispatch(second.observe(), "orders").run();
+                    failingDispatch(first.observe(), "recursive").run();
                 }
             });
 
-            ChannelMetrics.Recorder outer = first.observe().channel("orders");
-            outer.finish(outer.start(), false);
+            successfulDispatch(first.observe(), "orders").run();
             assertThat(first.timer("orders").count(), is(1L));
             assertThat(second.timer("orders").count(), is(1L));
             assertThat(second.counter("orders").count(), is(1L));
@@ -211,15 +212,14 @@ class MessagingMetricsTest {
                 if (entered.compareAndSet(false, true)) {
                     ChannelMetrics metrics = environment.observe();
                     nested.set(metrics);
-                    ChannelMetrics.Recorder recorder = metrics.channel("orders");
-                    recorder.finish(recorder.start(), true);
+                    failingDispatch(metrics, "orders").run();
                 }
             });
 
             ChannelMetrics outer = environment.observe();
-            ChannelMetrics.Recorder recorder = outer.channel("orders");
+            Runnable recorder = successfulDispatch(outer, "orders");
             nested.get().close();
-            recorder.finish(recorder.start(), false);
+            recorder.run();
             assertThat(environment.timer("orders").count(), is(1L));
             assertThat(environment.counter("orders").count(), is(0L));
             outer.close();
@@ -232,7 +232,7 @@ class MessagingMetricsTest {
         // Closing another graph in a provider callback must stop its recorder without calling back into the provider.
         try (MetricsTestSupport environment = new MetricsTestSupport(MetricsConfig.create())) {
             ChannelMetrics previous = environment.observe();
-            ChannelMetrics.Recorder closed = previous.channel("previous");
+            Runnable closed = failingDispatch(previous, "previous");
             AtomicBoolean entered = new AtomicBoolean();
             environment.registry.onMeterAdded(_ -> {
                 if (entered.compareAndSet(false, true)) {
@@ -241,9 +241,8 @@ class MessagingMetricsTest {
             });
 
             ChannelMetrics next = environment.observe();
-            ChannelMetrics.Recorder recorder = next.channel("orders");
-            recorder.finish(recorder.start(), false);
-            closed.finish(closed.start(), true);
+            successfulDispatch(next, "orders").run();
+            closed.run();
             assertThat(environment.timer("orders").count(), is(1L));
             assertThat(environment.timer("previous").count(), is(0L));
             assertThat(environment.counter("previous").count(), is(0L));
@@ -259,10 +258,8 @@ class MessagingMetricsTest {
             ChannelMetrics metrics = environment.observe();
             environment.registry.onMeterAdded(_ -> metrics.close());
 
-            ChannelMetrics.Recorder recorder = metrics.channel("orders");
-            recorder.finish(recorder.start(), true);
-            ChannelMetrics.Recorder afterClose = metrics.channel("later");
-            afterClose.finish(afterClose.start(), true);
+            failingDispatch(metrics, "orders").run();
+            failingDispatch(metrics, "later").run();
 
             assertThat(environment.timer("orders").count(), is(0L));
             assertThat(environment.counter("orders").count(), is(0L));
@@ -281,11 +278,9 @@ class MessagingMetricsTest {
         try {
             var config = MessagingMetricsConfig.builder().enabled(enabled).buildPrototype();
             ChannelMetrics metrics = ChannelMetrics.create(config, manager.registry());
-            ChannelMetrics.Recorder recorder = metrics.channel("orders");
-            recorder.finish(recorder.start(), true);
+            failingDispatch(metrics, "orders").run();
             metrics.close();
-            ChannelMetrics.Recorder other = metrics.channel("other");
-            other.finish(other.start(), true);
+            failingDispatch(metrics, "other").run();
         } finally {
             manager.shutdown();
         }
@@ -297,8 +292,7 @@ class MessagingMetricsTest {
         try (MetricsTestSupport environment = new MetricsTestSupport(MetricsConfig.builder().enabled(false).build(),
                                                                     FaultyRegistry::new)) {
             FaultyRegistry handler = (FaultyRegistry) environment.registry;
-            ChannelMetrics.Recorder recorder = environment.observe().channel("orders");
-            recorder.finish(recorder.start(), true);
+            failingDispatch(environment.observe(), "orders").run();
             assertThat(environment.registry.meters(), empty());
             assertThat(handler.clockRequests.get(), is(0));
         }
@@ -312,9 +306,9 @@ class MessagingMetricsTest {
                 .build();
         try (MetricsTestSupport environment = new MetricsTestSupport(config, FaultyRegistry::new)) {
             FaultyRegistry handler = (FaultyRegistry) environment.registry;
-            ChannelMetrics.Recorder recorder = environment.observe().channel("orders");
+            Runnable recorder = failingDispatch(environment.observe(), "orders");
             int clockReads = environment.clock.reads.get();
-            recorder.finish(recorder.start(), true);
+            recorder.run();
 
             assertThat(environment.registry.timer(DURATION, environment.tags("orders")).isEmpty(), is(true));
             assertThat(environment.counter("orders").count(), is(1L));
@@ -330,8 +324,7 @@ class MessagingMetricsTest {
                 .addMeter(builder -> builder.namePattern(Pattern.compile(Pattern.quote(FAILURES))).enabled(false))
                 .build();
         try (MetricsTestSupport environment = new MetricsTestSupport(config)) {
-            ChannelMetrics.Recorder recorder = environment.observe().channel("orders");
-            recorder.finish(recorder.start(), true);
+            failingDispatch(environment.observe(), "orders").run();
 
             assertThat(environment.timer("orders").count(), is(1L));
             assertThat(environment.registry.counter(FAILURES, environment.tags("orders")).isEmpty(), is(true));
@@ -345,13 +338,11 @@ class MessagingMetricsTest {
             FaultyRegistry handler = (FaultyRegistry) environment.registry;
             handler.filteredChannel = "ignored";
             ChannelMetrics metrics = environment.observe();
-            ChannelMetrics.Recorder ignored = metrics.channel("ignored");
-            ignored.finish(ignored.start(), true);
+            failingDispatch(metrics, "ignored").run();
             assertThat(environment.registry.meters(), empty());
             assertThat(handler.clockRequests.get(), is(0));
 
-            ChannelMetrics.Recorder included = metrics.channel("orders");
-            included.finish(included.start(), true);
+            failingDispatch(metrics, "orders").run();
             assertThat(environment.timer("orders").count(), is(1L));
             assertThat(environment.counter("orders").count(), is(1L));
         }
@@ -364,15 +355,14 @@ class MessagingMetricsTest {
             FaultyRegistry handler = (FaultyRegistry) environment.registry;
             handler.fault = Fault.REGISTER;
             ChannelMetrics first = environment.observe();
-            ChannelMetrics.Recorder failed = first.channel("orders");
-            failed.finish(failed.start(), true);
+            failingDispatch(first, "orders").run();
             assertThat(environment.timer("orders").count(), is(0L));
             assertThat(environment.registry.counter(FAILURES, environment.tags("orders")).isEmpty(), is(true));
 
             handler.fault = Fault.NONE;
-            ChannelMetrics.Recorder subsequent = environment.observe().channel("orders");
+            Runnable subsequent = successfulDispatch(environment.observe(), "orders");
             first.close();
-            subsequent.finish(subsequent.start(), false);
+            subsequent.run();
             assertThat(environment.timer("orders").count(), is(1L));
         }
     }
@@ -388,8 +378,7 @@ class MessagingMetricsTest {
                 .build();
         try (MetricsTestSupport environment = new MetricsTestSupport(config, factory)) {
             ChannelMetrics existing = environment.observe();
-            ChannelMetrics.Recorder payments = existing.channel("payments");
-            payments.finish(payments.start(), true);
+            failingDispatch(existing, "payments").run();
             AtomicBoolean failed = new AtomicBoolean();
             environment.registry.onMeterAdded(meter -> {
                 if (meter.id().name().equals(failingMeter) && failed.compareAndSet(false, true)) {
@@ -398,15 +387,13 @@ class MessagingMetricsTest {
             });
 
             ChannelMetrics broken = environment.observe();
-            ChannelMetrics.Recorder failedRecorder = broken.channel("orders");
-            failedRecorder.finish(failedRecorder.start(), true);
+            failingDispatch(broken, "orders").run();
             assertThat(environment.timer("orders").count(), is(0L));
             assertThat(environment.timer("payments").count(), is(1L));
             assertThat(environment.counter("payments").count(), is(1L));
 
             ChannelMetrics replacement = environment.observe();
-            ChannelMetrics.Recorder recorder = replacement.channel("orders");
-            recorder.finish(recorder.start(), false);
+            successfulDispatch(replacement, "orders").run();
             assertThat(environment.timer("orders").count(), is(1L));
             broken.close();
             replacement.close();
@@ -422,13 +409,13 @@ class MessagingMetricsTest {
         try (MetricsTestSupport environment = new MetricsTestSupport(MetricsConfig.create(), FaultyRegistry::new)) {
             FaultyRegistry handler = (FaultyRegistry) environment.registry;
             ChannelMetrics first = environment.observe();
-            ChannelMetrics.Recorder broken = first.channel("orders");
-            ChannelMetrics.Recorder surviving = environment.observe().channel("orders");
+            Runnable broken = failingDispatch(first, "orders");
+            Runnable surviving = successfulDispatch(environment.observe(), "orders");
             handler.fault = Fault.RECORD;
-            broken.finish(broken.start(), true);
+            broken.run();
             handler.fault = Fault.NONE;
-            broken.finish(broken.start(), true);
-            surviving.finish(surviving.start(), false);
+            broken.run();
+            surviving.run();
 
             assertThat(environment.timer("orders").count(), is(1L));
             assertThat(environment.counter("orders").count(), is(0L));
@@ -440,11 +427,11 @@ class MessagingMetricsTest {
         // A failed clock stops recording for this graph, including after the clock becomes available again.
         try (MetricsTestSupport environment = new MetricsTestSupport(MetricsConfig.create())) {
             ChannelMetrics metrics = environment.observe();
-            ChannelMetrics.Recorder recorder = metrics.channel("orders");
+            Runnable recorder = failingDispatch(metrics, "orders");
             environment.clock.fail = true;
-            recorder.finish(recorder.start(), true);
+            recorder.run();
             environment.clock.fail = false;
-            recorder.finish(recorder.start(), true);
+            recorder.run();
             assertThat(environment.timer("orders").count(), is(0L));
             metrics.close();
             assertThat(environment.counter("orders").count(), is(0L));
@@ -457,21 +444,35 @@ class MessagingMetricsTest {
         try (MetricsTestSupport environment = new MetricsTestSupport(MetricsConfig.create(), FaultyRegistry::new)) {
             FaultyRegistry handler = (FaultyRegistry) environment.registry;
             ChannelMetrics metrics = environment.observe();
-            ChannelMetrics.Recorder recorder = metrics.channel("orders");
-            var started = recorder.start();
-            metrics.close();
+            var failure = new IllegalStateException("Delivery failed during close");
+            var dispatch = metrics.observe("orders", _ -> {
+                metrics.close();
+                throw failure;
+            });
+            assertThat(assertThrows(IllegalStateException.class, () -> dispatch.accept(BATCH)), sameInstance(failure));
             assertThat(handler.removals.get(), is(0));
-            recorder.finish(started, true);
             assertThat(environment.timer("orders").count(), is(0L));
 
             ChannelMetrics replacement = environment.observe();
-            ChannelMetrics.Recorder current = replacement.channel("orders");
-            current.finish(current.start(), false);
+            successfulDispatch(replacement, "orders").run();
             replacement.close();
             assertThat(handler.removals.get(), is(0));
             assertThat(environment.timer("orders").count(), is(1L));
             assertThat(environment.counter("orders").count(), is(0L));
         }
+    }
+
+    private static Runnable successfulDispatch(ChannelMetrics metrics, String channel) {
+        var dispatch = metrics.observe(channel, _ -> { });
+        return () -> dispatch.accept(BATCH);
+    }
+
+    private static Runnable failingDispatch(ChannelMetrics metrics, String channel) {
+        var failure = new IllegalStateException("Delivery failed");
+        var dispatch = metrics.observe(channel, _ -> {
+            throw failure;
+        });
+        return () -> assertThat(assertThrows(IllegalStateException.class, () -> dispatch.accept(BATCH)), sameInstance(failure));
     }
 
     private enum Fault {

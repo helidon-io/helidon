@@ -22,9 +22,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 import io.helidon.messaging.BatchDeliveryException;
 import io.helidon.messaging.Emitter;
+import io.helidon.messaging.Message;
 import io.helidon.messaging.MessageBatch;
 import io.helidon.messaging.MessagingChannel;
 import io.helidon.messaging.MessagingGraph;
@@ -103,7 +105,8 @@ class MessagingMetricsLifecycleTest {
         // Close the same observer while its timer-added callback is blocked; close must finish before registration resumes.
         CountDownLatch entered = new CountDownLatch(1);
         CountDownLatch resume = new CountDownLatch(1);
-        AtomicReference<ChannelMetrics.Recorder> created = new AtomicReference<>();
+        AtomicReference<Consumer<MessageBatch<?>>> dispatch = new AtomicReference<>();
+        IllegalStateException failure = new IllegalStateException("Processing failed");
         try (MetricsTestSupport environment = new MetricsTestSupport()) {
             ChannelMetrics metrics = environment.observe();
             environment.meters.onMeterAdded(meter -> {
@@ -112,7 +115,9 @@ class MessagingMetricsLifecycleTest {
                     await(resume, "Test did not release registration");
                 }
             });
-            Task builder = new Task(() -> created.set(metrics.channel("orders")));
+            Task builder = new Task(() -> dispatch.set(metrics.observe("orders", _ -> {
+                throw failure;
+            })));
             Task closer = new Task(metrics::close);
             builder.start();
             try {
@@ -125,8 +130,8 @@ class MessagingMetricsLifecycleTest {
                 closer.join();
             }
             builder.awaitCompletion("Registration did not finish");
-            ChannelMetrics.Recorder recorder = created.get();
-            recorder.finish(recorder.start(), true);
+            var batch = MessageBatch.create(Message.create("order"));
+            assertThat(assertThrows(IllegalStateException.class, () -> dispatch.get().accept(batch)), sameInstance(failure));
             assertThat(environment.timer("orders").count(), is(0L));
             assertThat(environment.counter("orders").count(), is(0L));
         }

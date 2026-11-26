@@ -96,7 +96,22 @@ final class ChannelMetrics implements MessagingService.Instance {
         };
     }
 
-    Recorder channel(String channel) {
+    @Override
+    public void close() {
+        if (registry == null) {
+            return;
+        }
+        lock.lock();
+        try {
+            closed = true;
+            recorders.forEach(Recorder::close);
+            recorders.clear();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private Recorder channel(String channel) {
         if (registry == null || closed) {
             return NOOP_RECORDER;
         }
@@ -134,21 +149,6 @@ final class ChannelMetrics implements MessagingService.Instance {
         }
     }
 
-    @Override
-    public void close() {
-        if (registry == null) {
-            return;
-        }
-        lock.lock();
-        try {
-            closed = true;
-            recorders.forEach(Recorder::close);
-            recorders.clear();
-        } finally {
-            lock.unlock();
-        }
-    }
-
     private Registration register(String channel) {
         Map<String, String> tags = Map.of("channel", channel);
         boolean timed = registry.isMeterEnabled(DURATION) && registry.isMeterEnabled(DURATION, tags);
@@ -174,7 +174,7 @@ final class ChannelMetrics implements MessagingService.Instance {
         return new Registration(clock, timer, counter);
     }
 
-    static final class Recorder {
+    private static final class Recorder {
         private final FailureReporter failures;
         // Published once, then only cleared on close or failure. Provider calls use a local snapshot.
         private volatile Registration registration;
@@ -184,7 +184,7 @@ final class ChannelMetrics implements MessagingService.Instance {
             this.failures = failures;
         }
 
-        long start() {
+        private long start() {
             Registration current = registration;
             if (current == null || current.timer == null) {
                 return 0;
@@ -197,7 +197,7 @@ final class ChannelMetrics implements MessagingService.Instance {
             }
         }
 
-        void finish(long started, boolean failed) {
+        private void finish(long started, boolean failed) {
             Registration current = registration;
             if (current == null) {
                 return;
