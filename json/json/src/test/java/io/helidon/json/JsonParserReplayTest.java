@@ -23,6 +23,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -185,6 +186,36 @@ class JsonParserReplayTest {
         }
         parser.nextToken();
         assertThat(parser.readInt(), is(2));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void orderedProbesFollowTheSyntheticStartAndItsMark(boolean stream) {
+        byte[] json = "{\"a\":1,\"b\":2}".getBytes(StandardCharsets.UTF_8);
+        JsonParser source = stream ? JsonParser.create(new ByteArrayInputStream(json)) : JsonParser.create(json);
+        source.nextToken();
+        JsonParser wrapper = ObjectStartParser.create(source);
+        JsonKey a = JsonKey.create("a");
+        JsonKey b = JsonKey.create("b");
+
+        wrapper.mark();
+        assertThat(wrapper.tryReadProperty(a), is(false));
+        assertThat(wrapper.tryNextProperty(b), is(false));
+        assertThat(wrapper.currentByte(), is((byte) '{'));
+        assertThat(wrapper.nextToken(), is((byte) '"'));
+        assertThat(wrapper.tryReadProperty(b), is(false));
+        assertThat(wrapper.tryReadProperty(a), is(true));
+        assertThat(wrapper.readInt(), is(1));
+        assertThat(wrapper.tryNextProperty(a), is(false));
+        assertThat(wrapper.tryNextProperty(b), is(true));
+        assertThat(wrapper.readInt(), is(2));
+        assertThat(wrapper.nextToken(), is((byte) '}'));
+
+        wrapper.resetToMark();
+        assertThat(wrapper.tryReadProperty(a), is(false));
+        assertThat(wrapper.nextToken(), is((byte) '"'));
+        assertThat(wrapper.tryReadProperty(a), is(true));
+        assertThat(wrapper.readInt(), is(1));
     }
 
     @ParameterizedTest

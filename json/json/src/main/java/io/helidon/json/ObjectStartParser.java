@@ -149,6 +149,16 @@ public final class ObjectStartParser extends JsonParserBase {
     }
 
     @Override
+    public boolean tryReadProperty(JsonKey key) {
+        return parser.tryReadProperty(Objects.requireNonNull(key));
+    }
+
+    @Override
+    public boolean tryNextProperty(JsonKey key) {
+        return parser.tryNextProperty(Objects.requireNonNull(key));
+    }
+
+    @Override
     public char readChar() {
         return parser.readChar();
     }
