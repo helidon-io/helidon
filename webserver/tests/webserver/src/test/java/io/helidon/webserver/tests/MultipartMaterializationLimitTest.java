@@ -17,17 +17,24 @@
 package io.helidon.webserver.tests;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.GZIPOutputStream;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.Size;
 import io.helidon.config.Config;
+import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.Status;
@@ -37,11 +44,13 @@ import io.helidon.http.encoding.gzip.GzipEncoding;
 import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.MediaSupport;
+import io.helidon.http.media.ReadableEntity;
 import io.helidon.http.media.jackson.JacksonSupport;
 import io.helidon.http.media.jsonb.JsonbSupport;
 import io.helidon.http.media.multipart.MultiPart;
 import io.helidon.http.media.multipart.MultiPartSupport;
 import io.helidon.http.media.multipart.ReadablePart;
+import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http1.Http1Config;
@@ -49,11 +58,13 @@ import io.helidon.webserver.http1.Http1ConnectionSelector;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -61,6 +72,7 @@ class MultipartMaterializationLimitTest {
     private static final int PART_LIMIT = 1024;
     private static final String BOUNDARY = "materialization-boundary";
     private static final String CONTENT_TYPE = "multipart/form-data; boundary=" + BOUNDARY;
+    private static final HeaderName CONNECTION_ID = HeaderNames.create("X-Connection-Id");
 
     @ParameterizedTest
     @EnumSource(value = Kind.class, names = {"STRING", "JSON_B", "JACKSON", "CUSTOM"})
@@ -101,6 +113,114 @@ class MultipartMaterializationLimitTest {
                 assertThat(response.status(), is(Status.OK_200));
                 assertThat(readParts(response.as(MultiPart.class), Kind.STRING), is(2L * PART_LIMIT));
             }
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({"false, false", "false, true", "true, false", "true, true"})
+    void multipartCleanupCompletesClientResponse(boolean decorated, boolean readerFailure) throws IOException {
+        try (var connection = new Connection(Kind.STRING, decorated)) {
+            MultiPart parts = connection.client.get("/streamed").requestEntity(MultiPart.class);
+            CompletableFuture<?> completed = connection.completed.get();
+            try (parts) {
+                ReadablePart first = parts.next();
+                assertThat("Lazy reader retains the response", completed.isDone(), is(false));
+                if (readerFailure) {
+                    IllegalStateException failure = assertThrows(IllegalStateException.class,
+                                                                () -> first.as(String.class));
+                    assertThat(failure.getMessage(), containsString("Maximum materialized entity size exceeded"));
+                } else {
+                    assertThat(first.inputStream().read(), is((int) 'A'));
+                }
+            }
+            assertThat("Multipart cleanup completes a response obtained through requestEntity",
+                       completed.isDone(), is(true));
+            try (var next = connection.client.get("/accepted").request()) {
+                assertThat(next.status(), is(Status.OK_200));
+                assertThat(readParts(next.as(MultiPart.class), Kind.STRING), is((long) PART_LIMIT));
+            }
+        }
+    }
+
+    @Test
+    void fullMultipartIterationCompletesClientResponseBeforeHttpEpilogue() {
+        try (var connection = new Connection(Kind.STRING);
+             MultiPart parts = connection.client.get("/epilogue").requestEntity(MultiPart.class)) {
+            CompletableFuture<?> completed = connection.completed.get();
+            assertThat("Lazy reader retains the response", completed.isDone(), is(false));
+            assertThat(readParts(parts, Kind.STRING), is((long) PART_LIMIT));
+            assertThat("MIME completion releases the response with unread HTTP epilogue",
+                       completed.isDone(), is(true));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"identity", "gzip", "deflate"})
+    void closingUniteratedMultipartCompletesResponseWithDrainingDecorator(String encoding) {
+        try (var connection = new Connection(Kind.STRING, true, true, encoding)) {
+            MultiPart parts = connection.client.get("/accepted").requestEntity(MultiPart.class);
+            CompletableFuture<?> completed = connection.completed.get();
+            parts.close();
+            assertThat("Closing multipart before iteration completes its response", completed.isDone(), is(true));
+            assertThat("Response cleanup closes the service decorator", connection.decoratorCloses.get(), is(1));
+            assertThat("The service decorator can drain its delegate during cleanup",
+                       connection.decoratorCloseFailure.get(), nullValue());
+            try (var response = connection.client.get("/accepted").request()) {
+                assertThat(response.status(), is(Status.OK_200));
+                assertThat(response.headers().contains(HeaderNames.CONTENT_LENGTH), is(true));
+                if (!encoding.equals("identity")) {
+                    assertThat(response.headers().get(HeaderNames.CONTENT_ENCODING).get(), is(encoding));
+                }
+                assertThat(readParts(response.as(MultiPart.class), Kind.STRING), is((long) PART_LIMIT));
+            }
+            assertThat("Both service responses close their decorators", connection.decoratorCloses.get(), is(2));
+            assertThat("Decoding and draining the follow-up response succeeds",
+                       connection.decoratorCloseFailure.get(), nullValue());
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({"false, identity", "true, identity", "false, gzip", "true, gzip", "false, deflate", "true, deflate"})
+    void fullyConsumedFixedLengthMultipartCompletesCleanup(boolean decorated, String encoding) {
+        try (var connection = new Connection(Kind.STRING, decorated, decorated, encoding)) {
+            String firstConnection;
+            try (var response = connection.client.get("/accepted").request()) {
+                firstConnection = response.headers().get(CONNECTION_ID).get();
+                assertThat(readParts(response.as(MultiPart.class), Kind.STRING), is((long) PART_LIMIT));
+            }
+            try (var response = connection.client.get("/accepted").request()) {
+                // Codec framing can remain unread when the multipart message ends.
+                if (encoding.equals("identity")) {
+                    assertThat("Fully consumed identity multipart permits keep-alive reuse",
+                               response.headers().get(CONNECTION_ID).get(), is(firstConnection));
+                }
+                assertThat(readParts(response.as(MultiPart.class), Kind.STRING), is((long) PART_LIMIT));
+            }
+            assertThat("Full consumption permits decorator cleanup without decoding failures",
+                       connection.decoratorCloseFailure.get(), nullValue());
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void fullyConsumedMultipartCompletesRetainedEntityAndCopyOnce(boolean decorated) {
+        try (var connection = new Connection(Kind.STRING, decorated);
+             var response = connection.client.get("/accepted").request()) {
+            ReadableEntity original = response.entity();
+            var completions = new AtomicInteger();
+            ReadableEntity copy = original.copy(completions::incrementAndGet);
+            try (MultiPart parts = copy.as(MultiPart.class)) {
+                assertThat(original.consumed(), is(false));
+                assertThat(copy.consumed(), is(false));
+                assertThat(readParts(parts, Kind.STRING), is((long) PART_LIMIT));
+                assertThat("Full multipart iteration completes the retained entity", original.consumed(), is(true));
+                assertThat("Full multipart iteration completes its copy", copy.consumed(), is(true));
+                assertThat(completions.get(), is(1));
+                original.consume();
+                copy.consume();
+                assertThat("Repeated consumption preserves single completion", completions.get(), is(1));
+            }
+            assertThat("Closing the completed multipart preserves single completion", completions.get(), is(1));
         }
     }
 
@@ -190,6 +310,24 @@ class MultipartMaterializationLimitTest {
         return payload.toString().getBytes(StandardCharsets.US_ASCII);
     }
 
+    private static byte[] encodedMultipart(Kind kind, String encoding) {
+        byte[] parts = multipart(kind, PART_LIMIT);
+        if (encoding.equals("identity")) {
+            return parts;
+        }
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        try (OutputStream encoder = switch (encoding) {
+            case "gzip" -> new GZIPOutputStream(bytes);
+            case "deflate" -> new DeflaterOutputStream(bytes);
+            default -> throw new IllegalArgumentException("Unexpected encoding: " + encoding);
+        }) {
+            encoder.write(parts);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return bytes.toByteArray();
+    }
+
     private static MediaContext mediaContext(Kind kind) {
         var builder = MediaContext.builder()
                 .mediaSupportsDiscoverServices(false)
@@ -219,9 +357,25 @@ class MultipartMaterializationLimitTest {
     private static final class Connection implements AutoCloseable {
         private final WebServer server;
         private final Http1Client client;
+        private final AtomicReference<CompletableFuture<?>> completed = new AtomicReference<>();
+        private final AtomicInteger decoratorCloses = new AtomicInteger();
+        private final AtomicReference<Exception> decoratorCloseFailure = new AtomicReference<>();
 
         private Connection(Kind kind) {
+            this(kind, false);
+        }
+
+        private Connection(Kind kind, boolean decorated) {
+            this(kind, decorated, false);
+        }
+
+        private Connection(Kind kind, boolean decorated, boolean drainOnClose) {
+            this(kind, decorated, drainOnClose, "identity");
+        }
+
+        private Connection(Kind kind, boolean decorated, boolean drainOnClose, String encoding) {
             MediaContext context = mediaContext(kind);
+            byte[] accepted = encodedMultipart(kind, encoding);
             server = WebServer.builder()
                     .host("127.0.0.1")
                     .port(0)
@@ -236,9 +390,14 @@ class MultipartMaterializationLimitTest {
                     .routing(rules -> rules
                             .post("/parts",
                                   (req, res) -> res.send(Long.toString(readParts(req.content().as(MultiPart.class), kind))))
-                            .get("/accepted", (_, res) -> {
+                            .get("/accepted", (req, res) -> {
                                 res.headers().set(HeaderNames.CONTENT_TYPE, CONTENT_TYPE);
-                                res.send(multipart(kind, PART_LIMIT));
+                                res.headers().set(CONNECTION_ID, req.socketId());
+                                res.headers().set(HeaderNames.CONTENT_LENGTH, Integer.toString(accepted.length));
+                                if (!encoding.equals("identity")) {
+                                    res.headers().set(HeaderNames.CONTENT_ENCODING, encoding);
+                                }
+                                res.send(accepted);
                             })
                             .get("/rejected", (_, res) -> {
                                 res.headers().set(HeaderNames.CONTENT_TYPE, CONTENT_TYPE);
@@ -251,12 +410,49 @@ class MultipartMaterializationLimitTest {
                             .get("/streamed", (_, res) -> {
                                 res.headers().set(HeaderNames.CONTENT_TYPE, CONTENT_TYPE);
                                 res.send(multipart(kind, 3 * PART_LIMIT, 31));
+                            })
+                            .get("/epilogue", (_, res) -> {
+                                res.headers().set(HeaderNames.CONTENT_TYPE, CONTENT_TYPE);
+                                byte[] parts = multipart(kind, PART_LIMIT);
+                                byte[] body = Arrays.copyOf(parts, parts.length + 3 * PART_LIMIT);
+                                Arrays.fill(body, parts.length, body.length, (byte) 'E');
+                                res.send(body);
                             }))
                     .build()
                     .start();
             client = Http1Client.builder()
                     .baseUri("http://127.0.0.1:" + server.port())
                     .mediaContext(context)
+                    .contentEncoding(ContentEncodingContext.builder()
+                            .addContentEncoding(GzipEncoding.create())
+                            .addContentEncoding(DeflateEncoding.create())
+                            .build())
+                    .shareConnectionCache(false)
+                    .readTimeout(Duration.ofSeconds(10))
+                    .addService((chain, request) -> {
+                        completed.set(request.whenComplete().toCompletableFuture());
+                        var response = chain.proceed(request);
+                        if (decorated) {
+                            return WebClientServiceResponse.builder(response)
+                                    .inputStream(new FilterInputStream(response.inputStream().orElseThrow()) {
+                                        @Override
+                                        public void close() throws IOException {
+                                            try (InputStream delegate = in) {
+                                                if (drainOnClose) {
+                                                    delegate.transferTo(OutputStream.nullOutputStream());
+                                                }
+                                            } catch (IOException | RuntimeException e) {
+                                                decoratorCloseFailure.set(e);
+                                                throw e;
+                                            } finally {
+                                                decoratorCloses.incrementAndGet();
+                                            }
+                                        }
+                                    })
+                                    .build();
+                        }
+                        return response;
+                    })
                     .protocolConfig(it -> it.maxBufferedEntitySize(Size.create(PART_LIMIT)))
                     .build();
         }

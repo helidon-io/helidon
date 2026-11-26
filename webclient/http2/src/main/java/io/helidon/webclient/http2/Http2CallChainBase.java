@@ -25,7 +25,6 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.ClientRequestHeaders;
@@ -42,8 +41,10 @@ import io.helidon.http.encoding.ContentDecoder;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.http2.Http2Exception;
 import io.helidon.http.http2.Http2Headers;
+import io.helidon.http.media.ReadableEntity;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientConnectionTarget;
+import io.helidon.webclient.api.ClientResponseEntity;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.ConnectionKey;
 import io.helidon.webclient.api.HttpClientConfig;
@@ -117,6 +118,12 @@ abstract class Http2CallChainBase implements WebClientService.TransportChain {
 
     static Http2Headers readHeaders(Http2ClientStream stream) {
         return readHeaders(stream, null);
+    }
+
+    static boolean canCompleteEntityWithoutReading(InputStream inputStream) {
+        return inputStream instanceof RequestingInputStream requesting
+                && (requesting.finished || ((requesting.currentBuffer == null || requesting.currentBuffer.consumed())
+                && requesting.stream.entityFullyRead()));
     }
 
     static Http2Headers readHeaders(Http2ClientStream stream, Duration readTimeout) {
@@ -357,15 +364,16 @@ abstract class Http2CallChainBase implements WebClientService.TransportChain {
         this.responseStatus = response.status();
 
         WebClientServiceResponse.Builder builder = WebClientServiceResponse.builder();
-        if (response.entity().hasEntity()) {
-            builder.inputStream(response.inputStream());
+        ReadableEntity entity = response.entity();
+        if (entity.hasEntity()) {
+            builder.inputStream(entity.inputStream());
         }
         return builder
                 .serviceRequest(serviceRequest)
                 .whenComplete(whenComplete)
                 .status(response.status())
                 .headers(response.headers())
-                .connection(new Http2CallEntityChain.Http1ResponseResource(response))
+                .connection(new Http2CallEntityChain.Http1ResponseResource(response, entity))
                 .build();
     }
 
@@ -605,7 +613,7 @@ abstract class Http2CallChainBase implements WebClientService.TransportChain {
     }
 
     private static class RequestingInputStream extends InputStream {
-        private final Function<Integer, BufferData> bufferFunction;
+        private final Http2ClientStream stream;
         private final Runnable entityProcessedRunnable;
 
         private BufferData currentBuffer;
@@ -614,7 +622,8 @@ abstract class Http2CallChainBase implements WebClientService.TransportChain {
         RequestingInputStream(Http2ClientStream stream,
                               CompletableFuture<WebClientServiceResponse> whenComplete,
                               AtomicReference<WebClientServiceResponse> response) {
-            this.bufferFunction = stream::read;
+            this.stream = stream;
+            stream.responseInputStream(this);
             // we can only get the response at the time of completion, as the instance is created after this constructor
             // returns
             this.entityProcessedRunnable = () -> whenComplete.complete(response.get());
@@ -649,7 +658,7 @@ abstract class Http2CallChainBase implements WebClientService.TransportChain {
                 currentBuffer = null;
             }
             if (currentBuffer == null) {
-                currentBuffer = bufferFunction.apply(estimate);
+                currentBuffer = stream.read(estimate);
                 if (currentBuffer == null || currentBuffer == BufferData.empty()) {
                     entityProcessedRunnable.run();
                     finished = true;
@@ -660,9 +669,19 @@ abstract class Http2CallChainBase implements WebClientService.TransportChain {
 
     protected static class Http1ResponseResource implements ReleasableResource {
         private final HttpClientResponse response;
+        private final ReadableEntity entity;
 
-        Http1ResponseResource(HttpClientResponse response) {
+        Http1ResponseResource(HttpClientResponse response, ReadableEntity entity) {
             this.response = response;
+            this.entity = entity;
+        }
+
+        void closeStreaming(Runnable closeStream) {
+            try (HttpClientResponse _ = response) {
+                if (entity instanceof ClientResponseEntity clientEntity) {
+                    clientEntity.closeStreaming(closeStream);
+                }
+            }
         }
 
         @Override

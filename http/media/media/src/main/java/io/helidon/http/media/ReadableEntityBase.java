@@ -367,6 +367,18 @@ public abstract class ReadableEntityBase implements ReadableEntity {
         return readerContext().read(reader, type, inputStream(), requestHeaders, responseHeaders);
     }
 
+    /**
+     * Reader context that applies this entity's materialization limit to top-level and nested reads.
+     *
+     * @return this entity's reader context
+     */
+    protected final EntityReaderContext readerContext() {
+        if (readerContext == null) {
+            readerContext = new ReaderContext();
+        }
+        return readerContext;
+    }
+
     private static void consumeStream(InputStream stream) {
         try (stream) {
             if (stream.read() == -1) {
@@ -409,13 +421,6 @@ public abstract class ReadableEntityBase implements ReadableEntity {
             throw limited.limitExceeded;
         }
         return result;
-    }
-
-    private EntityReaderContext readerContext() {
-        if (readerContext == null) {
-            readerContext = new ReaderContext();
-        }
-        return readerContext;
     }
 
     private InputStream materializedInputStream() {

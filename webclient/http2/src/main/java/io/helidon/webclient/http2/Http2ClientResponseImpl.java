@@ -142,6 +142,7 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
         return ClientResponseEntity.create(
                 this::readBytes,
                 this::close,
+                this::closeStreamingEntity,
                 requestHeaders,
                 responseHeaders,
                 mediaContext,
@@ -174,6 +175,19 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
                 .trailers(responseTrailers)
                 .connection(stream)
                 .build();
+    }
+
+    private void closeStreamingEntity(Runnable completionProbe) {
+        try (Http2ClientResponse _ = this) {
+            if (!closed.get()) {
+                if (stream instanceof Http2CallChainBase.Http1ResponseResource fallback) {
+                    fallback.closeStreaming(completionProbe);
+                } else if (stream instanceof Http2ClientStream http2Stream
+                        && Http2CallChainBase.canCompleteEntityWithoutReading(http2Stream.responseInputStream())) {
+                    completionProbe.run();
+                }
+            }
+        }
     }
 
     private BufferData readBytes(int estimate) {

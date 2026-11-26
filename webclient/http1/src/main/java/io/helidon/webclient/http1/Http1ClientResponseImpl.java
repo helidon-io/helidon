@@ -16,8 +16,10 @@
 
 package io.helidon.webclient.http1;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.lang.System.Logger.Level;
 import java.time.Duration;
 import java.util.List;
@@ -225,7 +227,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
             try {
                 if (closeConnectionOnClose
                         || headers().containsToken(HeaderValues.CONNECTION_CLOSE)
-                        || Http1CallChainBase.isChunkedEntityDiscarded(wireInputStream)
+                        || Http1CallChainBase.isEntityDiscarded(wireInputStream)
                         || entityLength == ENTITY_LENGTH_CLOSE_DELIMITED) {
                     closeConnection();
                 } else {
@@ -315,7 +317,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     }
 
     private Headers doReadTrailers() {
-        if (Http1CallChainBase.isChunkedEntityDiscarded(wireInputStream)) {
+        if (Http1CallChainBase.isEntityDiscarded(wireInputStream)) {
             // A service discarded the upstream body; its retired connection has no readable trailer section.
             return ClientResponseTrailers.create();
         }
@@ -427,17 +429,39 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
         return ClientResponseEntity.create(
                 this::readBytes,
                 this::entityFullyRead,
+                this::closeStreamingEntity,
                 requestHeaders,
                 responseHeaders,
                 mediaContext,
                 protocolConfig.maxBufferedEntitySize().toBytes());
     }
 
+    private void closeStreamingEntity(Runnable closeStream) {
+        try {
+            if (!closed.get() && Http1CallChainBase.canCompleteEntityWithoutReading(wireInputStream)) {
+                try (Closeable _ = () -> {
+                    if (!closed.get()) {
+                        entityFullyRead();
+                    }
+                }) {
+                    closeStream.run();
+                }
+                return;
+            }
+            try (InputStream _ = wireInputStream == inputStream ? null : wireInputStream;
+                 Closeable _ = this::closeInputStream) {
+                Http1CallChainBase.discardEntity(wireInputStream);
+                close();
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
     private void entityFullyRead() {
         try {
             closeInputStream();
-            if (entityLength == ENTITY_LENGTH_CHUNKED && wireInputStream != null && wireInputStream != inputStream) {
-                // A buffering service need not delegate close to the original decoder; the transport body closes at most once.
+            if (wireInputStream != null && wireInputStream != inputStream) {
                 wireInputStream.close();
             }
             if (hasTrailers || entityLength == ENTITY_LENGTH_CHUNKED) {

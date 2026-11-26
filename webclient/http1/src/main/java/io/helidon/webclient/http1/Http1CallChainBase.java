@@ -182,8 +182,45 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
         return serviceResponse;
     }
 
-    static boolean isChunkedEntityDiscarded(InputStream inputStream) {
-        return inputStream instanceof CloseOnceInputStream closeOnce && closeOnce.chunkedInputStream.discarded;
+    static boolean isEntityDiscarded(InputStream inputStream) {
+        InputStream wireStream = inputStream instanceof CloseOnceInputStream closeOnce ? closeOnce.wireInputStream : inputStream;
+        return switch (wireStream) {
+            case ContentLengthInputStream contentLength -> contentLength.discarded;
+            case ChunkedInputStream chunked -> chunked.discarded;
+            case null, default -> false;
+        };
+    }
+
+    static boolean canCompleteEntityWithoutReading(InputStream inputStream) {
+        if (inputStream instanceof ContentLengthInputStream contentLength) {
+            return contentLength.remainingLength == 0;
+        }
+        if (inputStream instanceof CloseOnceInputStream closeOnce) {
+            return switch (closeOnce.wireInputStream) {
+                case ContentLengthInputStream contentLength -> contentLength.remainingLength == 0;
+                case ChunkedInputStream chunked -> chunked.canCompleteWithoutReading();
+                default -> false;
+            };
+        }
+        return false;
+    }
+
+    static void discardEntity(InputStream inputStream) {
+        switch (inputStream) {
+            case CloseOnceInputStream closeOnce -> closeOnce.discard();
+            case ContentLengthInputStream contentLength -> {
+                contentLength.finished = true;
+                contentLength.discarded = true;
+                contentLength.currentBuffer = null;
+            }
+            case ChunkedInputStream chunked -> {
+                chunked.finished = true;
+                chunked.discarded = true;
+                chunked.currentBuffer = null;
+            }
+            case null, default -> {
+            }
+        }
     }
 
     static void writeHeaders(ClientConnection connection,
@@ -633,13 +670,20 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
         } else if (!responseHeaders.contains(HeaderNames.TRANSFER_ENCODING)
                 && responseHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
             long length = responseHeaders.contentLength().getAsLong();
-            inputStream = new ContentLengthInputStream(helidonSocket,
-                                                       reader,
-                                                       whenComplete,
-                                                       response,
-                                                       length,
-                                                       recvListener,
-                                                       transportObservation);
+            var contentLengthInputStream = new ContentLengthInputStream(helidonSocket,
+                                                                       reader,
+                                                                       whenComplete,
+                                                                       response,
+                                                                       length,
+                                                                       recvListener,
+                                                                       transportObservation);
+            InputStream decodedStream = decoder.apply(contentLengthInputStream);
+            if (decodedStream == contentLengthInputStream && transportObservation == null) {
+                return contentLengthInputStream;
+            }
+            return new CloseOnceInputStream(transportObservation == null
+                                                    ? decodedStream : transportObservation.inputStream(decodedStream),
+                                            contentLengthInputStream);
         } else {
             // we assume the rest of the connection is entity (valid for HTTP/1.0, HTTP CONNECT method etc.
             inputStream = new EverythingInputStream(helidonSocket, reader, whenComplete, response, recvListener,
@@ -755,6 +799,7 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
 
         private BufferData currentBuffer;
         private boolean finished;
+        private boolean discarded;
         private long remainingLength;
 
         ContentLengthInputStream(HelidonSocket socket,
@@ -1033,6 +1078,46 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
             }
         }
 
+        private boolean canCompleteWithoutReading() {
+            if (failure != null || discarded || chunkRemaining != 0 || (currentBuffer != null && !currentBuffer.consumed())) {
+                return false;
+            }
+            int available = reader.available();
+            if (available == 0) {
+                return false;
+            }
+            BufferData buffered = reader.getBuffer(available);
+            if (!finished && chunkTerminatorPending) {
+                if (buffered.available() < 2 || buffered.read() != Bytes.CR_BYTE || buffered.read() != Bytes.LF_BYTE) {
+                    return false;
+                }
+            }
+            if (!finished) {
+                int sizeLineLength = buffered.indexOf(Bytes.CR_BYTE);
+                if (sizeLineLength < 0 || sizeLineLength >= 256 || buffered.available() < sizeLineLength + 2) {
+                    return false;
+                }
+                try {
+                    if (parseChunkSizeLine(buffered.readString(sizeLineLength, StandardCharsets.US_ASCII)) != 0) {
+                        return false;
+                    }
+                } catch (RuntimeException _) {
+                    return false;
+                }
+                if (buffered.read() != Bytes.CR_BYTE || buffered.read() != Bytes.LF_BYTE) {
+                    return false;
+                }
+            }
+            int ending = 0x0D0A;
+            while (buffered.available() > 0) {
+                ending = (ending << 8) | buffered.read();
+                if (ending == 0x0D0A0D0A) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         private void consumeExpectedFinalChunk() {
             try {
                 if (readChunkSize(reader) != 0) {
@@ -1131,18 +1216,26 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
 
     private static final class CloseOnceInputStream extends FilterInputStream {
         private final AtomicBoolean closed = new AtomicBoolean();
-        private final ChunkedInputStream chunkedInputStream;
+        private final InputStream delegate;
+        private final InputStream wireInputStream;
 
-        private CloseOnceInputStream(InputStream inputStream, ChunkedInputStream chunkedInputStream) {
+        private CloseOnceInputStream(InputStream inputStream, InputStream wireInputStream) {
             super(inputStream);
-            this.chunkedInputStream = chunkedInputStream;
+            this.delegate = inputStream;
+            this.wireInputStream = wireInputStream;
         }
 
         @Override
         public void close() throws IOException {
             if (closed.compareAndSet(false, true)) {
-                super.close();
+                delegate.close();
             }
+        }
+
+        private void discard() {
+            discardEntity(wireInputStream);
+            // Cancellation exposes EOF without asking an unfinished decoder to read more compressed bytes.
+            in = InputStream.nullInputStream();
         }
     }
 
