@@ -23,6 +23,8 @@ import java.sql.JDBCType;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.time.LocalDate;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -42,8 +44,10 @@ import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -286,6 +290,121 @@ class JdbcCallableFailureTest {
             assertThat(application.getSuppressed().length, is(2));
             assertThat(render(fatal), not(containsString("Secret")));
             fixture.verifyClosed(2);
+        }
+    }
+
+    @Test
+    void closesAfterFatalTranslation() throws Exception {
+        for (boolean transactional : new boolean[] {false, true}) {
+            for (boolean setup : new boolean[] {false, true}) {
+                String description = "transactional=" + transactional + ", setup=" + setup;
+                try (Fixture fixture = new Fixture(false, transactional)) {
+                    LinkageError fatal = new LinkageError("The JDBC metadata accessor failed.");
+                    SQLException sqlFailure = mock(SQLException.class);
+                    when(sqlFailure.getSQLState()).thenThrow(fatal);
+                    if (setup) {
+                        doThrow(sqlFailure).when(fixture.callable)
+                                .registerOutParameter(1, JDBCType.INTEGER.getVendorTypeNumber());
+                    } else {
+                        doThrow(sqlFailure).when(fixture.callable).close();
+                    }
+                    JdbcClient.Call call = fixture.statement("{call routine(?)}").call().out("value", 1, JDBCType.INTEGER);
+                    assertThat(description, assertThrows(LinkageError.class, call::execute, description), sameInstance(fatal));
+                    verify(fixture.callable).close();
+                    if (transactional) {
+                        try {
+                            assertThrows(TxException.class, () -> fixture.manager.commit("failure"), description);
+                            verify(fixture.connection).rollback();
+                        } finally {
+                            fixture.active = false;
+                            fixture.manager.end();
+                        }
+                    }
+                    verify(fixture.connection).close();
+                }
+            }
+        }
+    }
+
+    @Test
+    void retainsCaughtRowTranslationError() throws Exception {
+        try (Fixture fixture = new Fixture(false, true)) {
+            LinkageError fatal = new LinkageError("The JDBC metadata accessor failed.");
+            SQLException sqlFailure = mock(SQLException.class);
+            when(sqlFailure.getSQLState()).thenThrow(fatal);
+            when(fixture.result.getInt(1)).thenThrow(sqlFailure);
+            JdbcClient.Call call = fixture.call();
+            LinkageError observed = assertThrows(LinkageError.class, () -> call.consume(result -> {
+                JdbcClient.Rows<Integer> rows = fixture.rows(result, row -> {
+                    assertThat(assertThrows(LinkageError.class, () -> row.get(1, Integer.class)), sameInstance(fatal));
+                    return 42;
+                });
+                assertThat(assertThrows(LinkageError.class, rows::one), sameInstance(fatal));
+            }));
+            assertThat(observed, sameInstance(fatal));
+            fixture.complete(true);
+        }
+    }
+
+    @Test
+    void avoidsSuppressingCallbackWrapper() throws Exception {
+        try (Fixture fixture = new Fixture(false, true)) {
+            when(fixture.result.wasNull()).thenReturn(true);
+            AtomicReference<DataException> original = new AtomicReference<>();
+            DataException observed = assertThrows(DataException.class, () -> fixture.call().consume(result -> {
+                JdbcClient.Rows<Integer> rows = fixture.rows(result, row -> row.get(1, Integer.class));
+                original.set(assertThrows(DataException.class, rows::one));
+                throw new IllegalStateException("The callback wrapped the processing failure.", original.get());
+            }));
+            assertThat(observed, sameInstance(original.get()));
+            assertThat(observed.getSuppressed(), is(new Throwable[0]));
+            fixture.complete(true);
+        }
+    }
+
+    @Test
+    void retainsFatalWhenCauseAccessorFails() throws Exception {
+        for (boolean transactional : new boolean[] {false, true}) {
+            String description = "transactional=" + transactional;
+            try (Fixture fixture = new Fixture(false, transactional)) {
+                AssertionError original = new AssertionError("The row mapper failed.");
+                LinkageError accessorFailure = new LinkageError("The callback cause accessor failed.");
+                Error observed = assertThrows(Error.class, () -> fixture.call().consume(result -> {
+                    JdbcClient.Rows<Integer> rows = fixture.rows(result, _ -> {
+                        throw original;
+                    });
+                    assertThat(description, assertThrows(AssertionError.class, rows::one, description), sameInstance(original));
+                    throw new IllegalStateException("The callback wrapped the processing failure.", original) {
+                        @Override
+                        public Throwable getCause() {
+                            throw accessorFailure;
+                        }
+                    };
+                }), description);
+                assertThat(description, observed, sameInstance(original));
+                assertThat(description, observed.getSuppressed(), is(new Throwable[0]));
+                fixture.complete(true);
+            }
+        }
+    }
+
+    @Test
+    void retainsCaughtDateFailures() throws Exception {
+        for (boolean transactional : new boolean[] {false, true}) {
+            String description = "transactional=" + transactional;
+            try (Fixture fixture = new Fixture(false, transactional)) {
+                when(fixture.callable.getDate(eq(1), any(Calendar.class)))
+                        .thenThrow(new SQLException("The driver DATE conversion failed."));
+                AtomicReference<DataException> first = new AtomicReference<>();
+                DataException observed = assertThrows(DataException.class, () -> fixture.statement("{call routine(?)}")
+                        .call().out("value", 1, JDBCType.DATE).consume(result -> {
+                            result.skipRemainingResults();
+                            first.set(assertThrows(DataException.class,
+                                    () -> result.optional("value", LocalDate.class), description));
+                        }), description);
+                assertThat(description, observed, sameInstance(first.get()));
+                fixture.complete(true);
+            }
         }
     }
 

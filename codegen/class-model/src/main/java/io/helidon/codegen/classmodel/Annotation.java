@@ -305,6 +305,8 @@ public final class Annotation extends CommonComponent {
             Objects.requireNonNull(name);
             Objects.requireNonNull(property);
             if (!property.explicit()) {
+                // Emitting a defaulted member would make it explicit when the generated Java is compiled.
+                // Keep its value separately so toTypesAnnotation() can reconstruct the metadata.
                 parameters.remove(name);
                 defaultedProperties.put(name, property);
                 return this;
@@ -342,13 +344,17 @@ public final class Annotation extends CommonComponent {
         }
 
         /**
-         * Adds annotation parameter.
+         * Adds an annotation parameter.
          *
-         * @param parameter annotation parameter
-         * @return updated builder instance
+         * @param parameter The parameter includes its declaration provenance.
+         * @return The updated builder.
+         * @throws NullPointerException The parameter is null.
          */
         public Builder addParameter(AnnotationParameter parameter) {
             Objects.requireNonNull(parameter);
+            if (!parameter.explicit()) {
+                return addParameter(parameter.name(), AnnotationProperty.create(toTypesValue(parameter.value()), false));
+            }
             defaultedProperties.remove(parameter.name());
             parameters.put(parameter.name(), parameter);
             return this;

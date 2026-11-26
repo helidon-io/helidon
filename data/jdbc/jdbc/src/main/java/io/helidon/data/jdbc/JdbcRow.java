@@ -19,7 +19,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Consumer;
 
 import io.helidon.data.DataException;
 
@@ -37,8 +36,7 @@ final class JdbcRow implements JdbcClient.Row {
     private final JdbcColumnLayout columns;
     private final JdbcOperation operation;
     private final Thread callbackThread;
-    private final Runnable scopeCheck;
-    private final Consumer<Throwable> failureRecorder;
+    private final JdbcCallResult callScope;
 
     // Volatile makes expiration visible to code that retained the row after the callback.
     private volatile boolean active = true;
@@ -51,13 +49,11 @@ final class JdbcRow implements JdbcClient.Row {
      * @param operation current operation
      */
     JdbcRow(ResultSet resultSet, JdbcColumnLayout columns, JdbcOperation operation) {
-        this(resultSet, columns, operation, null, null);
+        this(resultSet, columns, operation, null);
     }
 
-    JdbcRow(ResultSet resultSet, JdbcColumnLayout columns, JdbcOperation operation,
-            Runnable scopeCheck, Consumer<Throwable> failureRecorder) {
-        this.scopeCheck = scopeCheck;
-        this.failureRecorder = failureRecorder;
+    JdbcRow(ResultSet resultSet, JdbcColumnLayout columns, JdbcOperation operation, JdbcCallResult callScope) {
+        this.callScope = callScope;
         this.resultSet = resultSet;
         this.columns = columns;
         this.operation = operation;
@@ -143,9 +139,12 @@ final class JdbcRow implements JdbcClient.Row {
             T result = (T) value;
             return result;
         } catch (SQLException e) {
-            RuntimeException failure = JdbcExceptionTranslator.translate(operation, e);
-            record(failure);
-            throw failure;
+            try {
+                throw JdbcExceptionTranslator.translate(operation, e);
+            } catch (RuntimeException | Error failure) {
+                record(failure);
+                throw failure;
+            }
         } catch (Error failure) {
             record(failure);
             throw failure;
@@ -168,8 +167,8 @@ final class JdbcRow implements JdbcClient.Row {
     }
 
     private void record(Throwable failure) {
-        if (failureRecorder != null) {
-            failureRecorder.accept(failure);
+        if (callScope != null) {
+            callScope.retain(failure);
         }
     }
 
@@ -190,8 +189,8 @@ final class JdbcRow implements JdbcClient.Row {
      * Verifies that the current callback can read this row.
      */
     private void ensureReadable() {
-        if (scopeCheck != null) {
-            scopeCheck.run();
+        if (callScope != null) {
+            callScope.check();
         }
         if (!active) {
             throw new IllegalStateException("A JDBC row is valid only during its mapper callback.");

@@ -156,7 +156,8 @@ The following annotations describe a JDBC repository and its methods:
 |------------|---------|
 | `@Jdbc.Client` | Selects the JDBC client managed by the Service Registry. |
 | `@Jdbc.Statement` | Declares the SQL for a method. |
-| `@Jdbc.Execution` | Selects `AUTO`, `QUERY`, or `UPDATE` execution. |
+| `@Jdbc.Execution` | Selects `AUTO`, `QUERY`, `UPDATE`, or `CALL` execution. |
+| `@Jdbc.OutParameter` | Declares an output or leading return for a [stored procedure or function](stored-procedures.md). |
 | `@Jdbc.GeneratedKeys` | Requests generated keys from an update. |
 | `@Jdbc.RowMapper` | Selects a row mapper service supplied by the application. |
 | `@Data.Param` | Associates a repository parameter with a named SQL marker. It belongs to the Helidon Data API, but currently applies only to repository methods using `@Jdbc.Statement`. `Data.Query` and Jakarta Persistence repository generation ignore it. |
@@ -201,11 +202,14 @@ Positional `?` markers bind parameters in Java declaration order:
 long updateStatus(String status, long id);
 ```
 
-A statement uses either named markers or positional markers rather than mixing
-the two forms. Every method parameter must be referenced by at least one named
-marker or represented by one positional marker. A named parameter can appear
-more than once. With positional markers, the number of Java parameters must
-equal the number of markers.
+Use one marker style for the SQL arguments, either named or positional. Each
+input must have at least one named marker or exactly one positional marker.
+
+A callable statement can have a leading `?` for the return value even when its
+arguments use named markers, as in `{? = call ORDER_TOTAL(:orderId)}`. The
+leading `?` is registered as an output and has no corresponding Java method
+parameter. See [Stored Procedures and Functions](stored-procedures.md) for the
+registration rules.
 
 Repository parameters cannot represent a variable length SQL `IN` list. Each
 value requires a separate scalar parameter and marker. The imperative model can
@@ -269,11 +273,12 @@ determines case sensitivity and collation.
 
 ### Execution Types
 
-`@Jdbc.Execution` defaults to `AUTO`. Helidon infers query or update execution
-from the Java method contract and JDBC annotations, not from SQL keywords.
+`@Jdbc.Execution` defaults to `AUTO`. Helidon selects `QUERY`, `UPDATE`, or
+`CALL` based on the Java method contract and JDBC annotations.
 
 | Method contract | Inferred execution |
 |-----------------|--------------------|
+| `@Jdbc.OutParameter` | `CALL`. See [Stored Procedures and Functions](stored-procedures.md). |
 | `@Jdbc.GeneratedKeys` | Update that maps generated keys |
 | `void` | Update |
 | `Optional<T>` or `List<T>` | Query |
@@ -281,9 +286,9 @@ from the Java method contract and JDBC annotations, not from SQL keywords.
 | `@Jdbc.RowMapper` without generated keys | Query |
 | Primitive `int` or `long` when no other annotation determines execution | Ambiguous. The method must declare `QUERY` or `UPDATE`. |
 
-Because primitive `int` and `long` can represent either a scalar query result
-or an update count, methods returning these types need an explicit execution
-type:
+When no annotation determines execution, a primitive `int` or `long` can
+represent either a scalar query result or an update count. Declare `QUERY` or
+`UPDATE` to resolve that ambiguity:
 
 ```java
 @Jdbc.Statement("SELECT COUNT(*) FROM CONTACT")

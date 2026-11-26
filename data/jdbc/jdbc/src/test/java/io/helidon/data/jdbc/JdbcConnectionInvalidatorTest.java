@@ -89,7 +89,7 @@ class JdbcConnectionInvalidatorTest {
 
     /**
      * Proves the first fatal infrastructure failure remains primary while a
-     * later fatal abort and recoverable close failure contribute sanitized diagnostics.
+     * later fatal abort and recoverable close failure are retained.
      */
     @Test
     void infrastructureInvalidationRetainsTheFirstFatalError() throws Exception {
@@ -104,7 +104,7 @@ class JdbcConnectionInvalidatorTest {
 
         assertThat(reportedFailure, sameInstance(primary));
         assertThat(primary.getSuppressed().length, is(2));
-        assertSanitized(primary.getSuppressed()[0], abortFailure, "aborting a connection");
+        assertThat(primary.getSuppressed()[0], sameInstance(abortFailure));
         assertSanitized(primary.getSuppressed()[1], closeFailure, "closing an invalidated connection");
     }
 

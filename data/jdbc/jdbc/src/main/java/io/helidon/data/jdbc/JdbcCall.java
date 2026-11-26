@@ -16,8 +16,9 @@
 package io.helidon.data.jdbc;
 
 import java.sql.JDBCType;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.BitSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -25,7 +26,8 @@ final class JdbcCall implements JdbcClient.Call {
     private final JdbcStatement statement;
     private final JdbcRunner runner;
     private final int parameterCount;
-    private final List<JdbcCallOutput> outputs = new ArrayList<>();
+    private final Map<String, JdbcCallOutput> outputs = new LinkedHashMap<>();
+    private final BitSet outputSlots = new BitSet();
 
     JdbcCall(JdbcStatement statement, JdbcRunner runner, int parameterCount) {
         this.statement = statement;
@@ -114,7 +116,7 @@ final class JdbcCall implements JdbcClient.Call {
     @Override
     public JdbcClient.OutParameters outputs() {
         statement.ensureMutable();
-        for (JdbcCallOutput output : outputs) {
+        for (JdbcCallOutput output : outputs.values()) {
             if (!output.typeName().isEmpty() || JdbcCallOutput.canonical(output.type()) == null) {
                 throw new IllegalStateException("The output registration is outside the detached scalar snapshot profile.");
             }
@@ -122,7 +124,7 @@ final class JdbcCall implements JdbcClient.Call {
         return map(result -> {
             Objects.requireNonNull(result, "The callable result must not be null.");
             result.skipRemainingResults();
-            return JdbcOutParameters.capture(result, outputs);
+            return JdbcOutParameters.capture(result, outputs.values());
         });
     }
 
@@ -139,7 +141,8 @@ final class JdbcCall implements JdbcClient.Call {
     @Override
     public <T> T map(JdbcClient.CallMapper<T> mapper) {
         Objects.requireNonNull(mapper, "The call mapper must not be null.");
-        return runner.call(statement.callOperation(outputs), List.copyOf(outputs), mapper);
+        // Claiming the statement freezes the registrations for this invocation.
+        return runner.call(statement.callOperation(outputSlots), outputs, mapper);
     }
 
     private JdbcClient.Call register(JdbcCallOutput output) {
@@ -147,13 +150,12 @@ final class JdbcCall implements JdbcClient.Call {
         if (output.name().isBlank() || output.index() < 1 || output.index() > parameterCount) {
             throw new IllegalArgumentException("An output requires a nonblank name and a valid JDBC position.");
         }
-        for (JdbcCallOutput existing : outputs) {
-            if (existing.name().equals(output.name()) || existing.index() == output.index()) {
-                throw new IllegalArgumentException("Output names and positions must be unique.");
-            }
+        if (outputs.containsKey(output.name()) || outputSlots.get(output.index() - 1)) {
+            throw new IllegalArgumentException("Output names and positions must be unique.");
         }
         statement.validateOutputPosition(output.index());
-        outputs.add(output);
+        outputs.put(output.name(), output);
+        outputSlots.set(output.index() - 1);
         return this;
     }
 }

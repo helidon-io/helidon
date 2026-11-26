@@ -16,6 +16,7 @@
 package io.helidon.data.jdbc;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -36,6 +37,7 @@ final class JdbcConfiguredStatement {
     private final boolean namedMarkers;
     private final boolean leadingReturn;
     private final Map<String, List<Integer>> positions;
+    private final BitSet repeatedSlots;
 
     private JdbcConfiguredStatement(String sql, int parameterCount, Map<String, List<Integer>> positions, boolean namedMarkers,
                                     boolean leadingReturn) {
@@ -44,6 +46,12 @@ final class JdbcConfiguredStatement {
         this.namedMarkers = namedMarkers;
         this.leadingReturn = leadingReturn;
         this.positions = Map.copyOf(positions);
+        this.repeatedSlots = new BitSet(0);
+        for (List<Integer> slots : positions.values()) {
+            if (slots.size() > 1) {
+                slots.forEach(repeatedSlots::set);
+            }
+        }
     }
 
     static JdbcConfiguredStatement create(String source) {
@@ -53,8 +61,7 @@ final class JdbcConfiguredStatement {
         PlanBuilder builder = new PlanBuilder(source);
         JdbcSqlScanner.scan(source, builder);
         boolean leadingReturn = builder.firstPosition >= 0
-                && source.substring(0, builder.firstPosition).matches("(?is)\\s*\\{\\s*")
-                && source.substring(builder.firstPosition + 1).matches("(?is)\\s*=\\s*call\\b.*");
+                && JdbcSqlScanner.callableReturnMarker(source, builder.firstPosition, builder.firstPosition + 1);
         if (builder.named && builder.positionalCount > 0 && !(leadingReturn && builder.positionalCount == 1)) {
             throw new IllegalArgumentException("The SQL statement must not mix named and positional markers.");
         }
@@ -111,6 +118,17 @@ final class JdbcConfiguredStatement {
         return definition;
     }
 
+    static JdbcConfiguredStatement createStatement(String source, List<String> names, boolean namedOnly) {
+        JdbcConfiguredStatement definition = create(source, names);
+        if (definition.leadingReturn && definition.namedMarkers) {
+            throw new IllegalArgumentException("A leading return with named arguments requires CALL execution.");
+        }
+        if (namedOnly && !definition.namedMarkers) {
+            throw new IllegalArgumentException("The repository parameter contract requires named SQL markers.");
+        }
+        return definition;
+    }
+
     String sql() {
         return sql;
     }
@@ -128,7 +146,7 @@ final class JdbcConfiguredStatement {
     }
 
     void validateOutputPosition(int index) {
-        if (positions.values().stream().anyMatch(slots -> slots.size() > 1 && slots.contains(index))) {
+        if (repeatedSlots.get(index)) {
             throw new IllegalArgumentException("An OUT or INOUT marker must occur exactly once.");
         }
     }
@@ -169,6 +187,9 @@ final class JdbcConfiguredStatement {
 
         @Override
         public void namedMarker(int start, int end) {
+            if (parameterCount == 0 && JdbcSqlScanner.callableReturnMarker(source, start, end)) {
+                throw new IllegalArgumentException("A leading callable return must use a positional marker.");
+            }
             if (end < source.length() && source.charAt(end) == '.') {
                 throw new IllegalArgumentException("The SQL statement does not support dotted marker names.");
             }

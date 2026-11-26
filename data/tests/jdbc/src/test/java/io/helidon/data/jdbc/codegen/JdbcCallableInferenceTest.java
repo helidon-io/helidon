@@ -28,6 +28,7 @@ import java.util.Map;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.codegen.apt.AptProcessor;
+import io.helidon.codegen.classmodel.AnnotationParameter;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.testing.TestCompiler;
 import io.helidon.common.Generated;
@@ -390,7 +391,12 @@ class JdbcCallableInferenceTest {
                 Annotation copiedStatement = (Annotation) loader.loadClass("example.Metadata")
                         .getMethod("statement").invoke(null);
                 assertThat(copiedStatement.stringValue(), is(statement.stringValue()));
-                for (Annotation declaration : List.of(output, reconstructed)) {
+                Annotation rebuilt = io.helidon.codegen.classmodel.Annotation.builder().type(Jdbc.OutParameter.class)
+                        .addParameter(AnnotationParameter.builder().name("type")
+                                .value(reconstructed.property("type").orElseThrow()))
+                        .build().toTypesAnnotation();
+                assertThat(rebuilt.property("type").orElseThrow().explicit(), is(explicit));
+                for (Annotation declaration : List.of(output, reconstructed, rebuilt)) {
                     StringWriter source = new StringWriter();
                     ClassModel.builder().type(TypeName.create("example.Repository")).classType(ElementKind.INTERFACE)
                             .addAnnotation(Annotation.create(Data.Repository.class))

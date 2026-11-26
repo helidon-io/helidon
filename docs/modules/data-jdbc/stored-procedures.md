@@ -688,6 +688,17 @@ return slot. A PostgreSQL function with multiple OUT parameters instead uses
 configured for that function profile; `callIfNoReturn` sends the same call form to a
 procedure. These are driver connection settings. See the
 [pgJDBC routine guide](https://jdbc.postgresql.org/documentation/callproc/).
+
+Helidon reads callable `LocalDate` outputs using a UTC calendar and extracts the
+date fields in UTC. This avoids dependence on the JVM default time zone where the
+driver honors the calendar during retrieval. PostgreSQL JDBC 42.7.14 converts DATE
+outputs during execution using the JVM default time zone. A date on a calendar day
+skipped by that zone can become the following day before Helidon reads it. Subsequent
+retrieval with a UTC calendar cannot recover the original date. This affects both
+scalar snapshots and generated `LocalDate` outputs. For PostgreSQL functions, an
+application can instead select the function through the query API, which uses typed
+`LocalDate` result-set mapping.
+
 MySQL Connector/J does not support
 `REF_CURSOR` output registration. Use the routine's direct result sets when it provides
 them; Data JDBC does not substitute direct results for an unsupported cursor output.

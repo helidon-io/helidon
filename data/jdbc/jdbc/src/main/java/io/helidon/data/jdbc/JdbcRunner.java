@@ -23,6 +23,7 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.sql.DataSource;
@@ -142,7 +143,7 @@ final class JdbcRunner {
         };
     }
 
-    <T> T call(JdbcOperation operation, List<JdbcCallOutput> outputs, JdbcClient.CallMapper<T> mapper) {
+    <T> T call(JdbcOperation operation, Map<String, JdbcCallOutput> outputs, JdbcClient.CallMapper<T> mapper) {
         JdbcConnectionLease lease = null;
         CallableStatement statement = null;
         JdbcCallResult result = null;
@@ -155,7 +156,7 @@ final class JdbcRunner {
             statement = JdbcExceptionTranslator.invoke("preparing a callable JDBC statement",
                                                         () -> connection.prepareCall(operation.sql()));
             CallableStatement callable = statement;
-            for (JdbcCallOutput output : outputs) {
+            for (JdbcCallOutput output : outputs.values()) {
                 JdbcExceptionTranslator.invokeVoid("registering a callable JDBC output", () -> {
                     if (!output.typeName().isEmpty()) {
                         callable.registerOutParameter(output.index(), output.type().getVendorTypeNumber(), output.typeName());
@@ -174,18 +175,33 @@ final class JdbcRunner {
                 throw new DataException("The callable mapper returned null.");
             }
         } catch (SQLException caught) {
-            failure = JdbcExceptionTranslator.translate(operation, caught);
+            try {
+                failure = JdbcExceptionTranslator.translate(operation, caught);
+            } catch (RuntimeException | Error translationFailure) {
+                failure = translationFailure;
+            }
         } catch (Throwable caught) {
             failure = caught;
         }
-        if (result != null) {
-            failure = result.finish(failure);
+        try {
+            try {
+                if (result != null) {
+                    failure = result.finish(failure);
+                }
+            } catch (RuntimeException | Error finishingFailure) {
+                failure = JdbcExceptionTranslator.mergeOperationCleanup(failure, "finishing callable results", finishingFailure);
+            } finally {
+                failure = closeCallable(statement, "closing a callable statement", failure);
+            }
+        } finally {
+            try {
+                if (failure != null && lease != null) {
+                    lease.processingFailed();
+                }
+            } finally {
+                failure = closeCallable(lease, "closing a callable connection lease", failure);
+            }
         }
-        failure = closeCallable(statement, "closing a callable statement", failure);
-        if (failure != null && lease != null) {
-            lease.processingFailed();
-        }
-        failure = closeCallable(lease, "closing a callable connection lease", failure);
         if (failure != null) {
             rethrow(operation, failure);
         }

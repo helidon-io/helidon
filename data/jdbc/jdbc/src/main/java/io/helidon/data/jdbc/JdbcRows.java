@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Result stage for a mapped JDBC query or generated keys.
+ * Materialized cardinality stage for a mapped JDBC result.
  *
  * @param <T> mapped type
  */
@@ -93,5 +93,4 @@ final class JdbcRows<T> implements JdbcClient.Rows<T> {
     public List<T> list() {
         return statement.list(mapper, plan);
     }
-
 }

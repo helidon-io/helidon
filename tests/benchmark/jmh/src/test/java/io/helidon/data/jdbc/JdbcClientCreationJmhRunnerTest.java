@@ -16,6 +16,8 @@
 package io.helidon.data.jdbc;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Test;
 import org.openjdk.jmh.results.format.ResultFormatType;
@@ -25,7 +27,45 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
 class JdbcClientCreationJmhRunnerTest {
+
+    @Test
+    void callableValues() {
+        JdbcCallableJmhBenchmark benchmark = new JdbcCallableJmhBenchmark();
+        for (int count : new int[] {1, 8, 64}) {
+            JdbcCallableJmhBenchmark.OutputState state = new JdbcCallableJmhBenchmark.OutputState();
+            state.outputCount(count);
+            state.setup();
+            benchmark.registerOutputs(state);
+            benchmark.execute(state);
+            assertThat("Scoped lookup with " + count + " outputs", benchmark.lookupOutputs(state), is(count * (count + 1) / 2));
+            JdbcClient.OutParameters outputs = benchmark.snapshotOutputs(state);
+            for (int index = 0; index < count; index++) {
+                String name = "output" + index;
+                assertThat("Snapshot with " + count + " outputs at " + name, outputs.get(name, Integer.class), is(index + 1));
+            }
+        }
+    }
+
+    @Test
+    void mappedRows() {
+        JdbcCallableJmhBenchmark benchmark = new JdbcCallableJmhBenchmark();
+        for (int count : new int[] {1, 128}) {
+            JdbcCallableJmhBenchmark.RowState state = new JdbcCallableJmhBenchmark.RowState();
+            state.rowCount(count);
+            state.setup();
+            List<Integer> expected = IntStream.range(0, count).boxed().toList();
+            for (int execution = 1; execution <= 2; execution++) {
+                String description = " with " + count + " rows on execution " + execution;
+                assertThat("CALL" + description, benchmark.mapCallableRows(state), is(expected));
+                assertThat("SELECT" + description, benchmark.mapQueryRows(state), is(expected));
+                assertThat("Generated keys" + description, benchmark.mapGeneratedKeys(state), is(expected));
+            }
+        }
+    }
 
     @Test
     void run() throws RunnerException {

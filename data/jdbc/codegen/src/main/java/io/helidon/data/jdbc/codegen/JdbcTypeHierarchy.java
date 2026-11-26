@@ -185,7 +185,7 @@ final class JdbcTypeHierarchy {
     private static ParameterBindingContract parameterBindingContract(TypedElementInfo method, String sql, RoundContext context) {
         List<TypedElementInfo> parameters = method.parameterArguments();
         JdbcSqlParameterPlan plan = JdbcCallablePlan.selected(method, context)
-                ? JdbcCallablePlan.create(method, context, sql).parameterPlan()
+                ? JdbcCallablePlan.create(method, context, sql, null).parameterPlan()
                 : JdbcSqlParameterPlan.create(sql, method.parameterArguments(), method);
         List<ParameterBinding> bindings = plan.binds()
                 .stream()
@@ -240,8 +240,14 @@ final class JdbcTypeHierarchy {
                 return false;
             }
         }
-        return JdbcExecutionSelection.create(first) == JdbcExecutionSelection.create(second)
+        return effectiveExecution(first, context) == effectiveExecution(second, context)
                 && outputContract(first, context).equals(outputContract(second, context));
+    }
+
+    private static JdbcExecutionSelection effectiveExecution(TypedElementInfo method, RoundContext context) {
+        JdbcExecutionSelection requested = JdbcExecutionSelection.create(method);
+        return requested == JdbcExecutionSelection.AUTO && JdbcCallablePlan.selected(method, context)
+                ? JdbcExecutionSelection.CALL : requested;
     }
 
     private static List<OutputContract> outputContract(TypedElementInfo method, RoundContext context) {

@@ -39,8 +39,8 @@ import io.helidon.data.DataException;
  * Runtime exceptions are sanitized only when the caller has established that
  * they came directly from a JDBC invocation. Application and row mapper
  * failures retain their original type and identity. A primary fatal {@link Error}
- * propagates unchanged. Secondary JDBC failures are sanitized before attachment,
- * including errors whose diagnostics could expose driver details.
+ * propagates unchanged. Callable cleanup sanitizes secondary JDBC failures before
+ * attachment, including errors whose diagnostics could expose driver details.
  */
 final class JdbcExceptionTranslator {
 
@@ -236,7 +236,11 @@ final class JdbcExceptionTranslator {
         if (primary == failure) {
             return primary;
         }
-        if (failure instanceof Error error && !(primary instanceof Error)) {
+        if (failure instanceof Error error) {
+            if (primary instanceof Error) {
+                primary.addSuppressed(error);
+                return primary;
+            }
             error.addSuppressed(sanitize("retaining an earlier JDBC infrastructure failure", primary));
             return error;
         }
@@ -256,11 +260,19 @@ final class JdbcExceptionTranslator {
         if (primary == failure) {
             return primary;
         }
-        if (primary instanceof Error) {
-            // Cleanup is a JDBC boundary, so secondary errors require sanitized diagnostics too.
-            return suppress(primary, operation, failure);
+        Throwable cleanup;
+        try {
+            if (primary instanceof Error) {
+                return suppress(primary, operation, failure);
+            }
+            cleanup = mergeInfrastructure(null, operation, failure);
+        } catch (RuntimeException | Error diagnosticFailure) {
+            // A broken driver diagnostic must not interrupt cleanup of the remaining resources.
+            if (primary instanceof Error) {
+                return suppress(primary, operation, diagnostic(operation, diagnosticFailure));
+            }
+            cleanup = diagnosticFailure instanceof Error ? diagnosticFailure : diagnostic(operation, diagnosticFailure);
         }
-        Throwable cleanup = mergeInfrastructure(null, operation, failure);
         return mergeProcessingFailures(primary, cleanup);
     }
 
@@ -286,6 +298,38 @@ final class JdbcExceptionTranslator {
         // Nested processing boundaries can observe the same secondary failure more than once.
         for (Throwable suppressed : primary.getSuppressed()) {
             if (suppressed == secondary) {
+                return primary;
+            }
+        }
+        // The callback may already wrap the retained failure or link it as suppressed evidence.
+        ArrayDeque<Throwable> pending = new ArrayDeque<>();
+        Map<Throwable, Boolean> seen = new IdentityHashMap<>();
+        seen.put(secondary, Boolean.TRUE);
+        pending.add(secondary);
+        while (!pending.isEmpty()) {
+            Throwable candidate = pending.removeFirst();
+            if (candidate == primary) {
+                return primary;
+            }
+            Throwable cause;
+            try {
+                cause = candidate.getCause();
+            } catch (RuntimeException | Error _) {
+                // Keep the selected failure when an accessor prevents us from ruling out a cycle.
+                return primary;
+            }
+            if (cause != null && seen.putIfAbsent(cause, Boolean.TRUE) == null) {
+                pending.addLast(cause);
+            }
+            for (Throwable suppressed : candidate.getSuppressed()) {
+                if (seen.putIfAbsent(suppressed, Boolean.TRUE) == null) {
+                    if (seen.size() > MAX_EXCEPTION_GRAPH_NODES) {
+                        return primary;
+                    }
+                    pending.addLast(suppressed);
+                }
+            }
+            if (seen.size() > MAX_EXCEPTION_GRAPH_NODES) {
                 return primary;
             }
         }

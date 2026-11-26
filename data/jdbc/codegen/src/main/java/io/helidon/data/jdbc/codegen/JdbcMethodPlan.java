@@ -126,7 +126,7 @@ final class JdbcMethodPlan {
         JdbcSqlReference reference = JdbcSqlReference.parse(sql, method);
 
         if (JdbcCallablePlan.selected(method, roundContext)) {
-            return JdbcCallablePlan.create(method, roundContext, sql);
+            return JdbcCallablePlan.create(method, roundContext, sql, reference);
         }
 
         Return result = returnPlan(method);

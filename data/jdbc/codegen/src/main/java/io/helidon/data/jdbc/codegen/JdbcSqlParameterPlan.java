@@ -92,6 +92,13 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds, int parameterCount) {
                                             TypedElementInfo method,
                                             TypeHierarchyResolver resolver) {
         validateParameters(parameters, method);
+        validateParameterNames(parameters, method, resolver);
+        return new JdbcSqlParameterPlan(name, parameters.stream().map(parameter -> binding(0, parameter)).toList());
+    }
+
+    static void validateParameterNames(List<TypedElementInfo> parameters,
+                                       TypedElementInfo method,
+                                       TypeHierarchyResolver resolver) {
         for (int index = 0; index < parameters.size(); index++) {
             TypedElementInfo parameter = parameters.get(index);
             if (!parameter.hasAnnotation(JdbcCodegenTypes.DATA_PARAM) && !resolver.parameterNameAvailable(parameter)) {
@@ -100,7 +107,6 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds, int parameterCount) {
                         + "or redeclare the method in this repository with an explicit parameter name.");
             }
         }
-        return new JdbcSqlParameterPlan(name, parameters.stream().map(parameter -> binding(0, parameter)).toList());
     }
 
     /**

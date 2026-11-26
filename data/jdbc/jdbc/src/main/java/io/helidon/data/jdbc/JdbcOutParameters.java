@@ -15,8 +15,8 @@
  */
 package io.helidon.data.jdbc;
 
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -31,14 +31,14 @@ final class JdbcOutParameters implements JdbcClient.OutParameters {
         this.values = Map.copyOf(values);
     }
 
-    static JdbcOutParameters capture(JdbcClient.CallResult result, List<JdbcCallOutput> outputs) {
+    static JdbcOutParameters capture(JdbcClient.CallResult result, Collection<JdbcCallOutput> outputs) {
         Map<String, Class<?>> types = new HashMap<>();
         Map<String, Object> values = new HashMap<>();
         for (JdbcCallOutput output : outputs) {
             Class<?> type = JdbcCallOutput.canonical(output.type());
             types.put(output.name(), type);
-            result.optional(output.name(), type).ifPresent(value ->
-                    values.put(output.name(), value instanceof byte[] bytes ? bytes.clone() : value));
+            // The callable result already detaches the driver value before handing it to the snapshot.
+            result.optional(output.name(), type).ifPresent(value -> values.put(output.name(), value));
         }
         return new JdbcOutParameters(types, values);
     }

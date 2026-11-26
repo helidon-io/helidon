@@ -188,12 +188,9 @@ final class JdbcRepositoryClassGenerator {
                 if (plan.callable() != null) {
                     constructor.addContent(JdbcCodegenTypes.GENERATED_JDBC_DATA).addContent(".prepareCall(")
                             .addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME).addContent(", ");
-                } else if (plan.method().parameterArguments().stream()
-                                .anyMatch(parameter -> parameter.hasAnnotation(JdbcCodegenTypes.DATA_PARAM))) {
-                    constructor.addContent(JdbcCodegenTypes.GENERATED_JDBC_DATA).addContent(".prepareNamed(")
-                            .addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME).addContent(", ");
                 } else {
-                    constructor.addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME).addContent(".prepare(");
+                    constructor.addContent(JdbcCodegenTypes.GENERATED_JDBC_DATA).addContent(".prepareStatement(")
+                            .addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME).addContent(", ");
                 }
                 constructor.addContent(sqlName).addContent(", ").addContent(List.class).addContent(".of(");
                 List<String> parameterNames = plan.callable() == null
@@ -213,6 +210,9 @@ final class JdbcRepositoryClassGenerator {
                     constructor.addContent(", ").addContent(String.valueOf(plan.callable().namedOnly()))
                             .addContent(", ").addContent(String.valueOf(plan.callable().outputs().stream()
                                     .anyMatch(output -> output.marker().isEmpty())));
+                } else {
+                    constructor.addContent(", ").addContent(String.valueOf(plan.method().parameterArguments().stream()
+                            .anyMatch(parameter -> parameter.hasAnnotation(JdbcCodegenTypes.DATA_PARAM))));
                 }
                 constructor.addContentLine(");").addContentLine("}");
             }

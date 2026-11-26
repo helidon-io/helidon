@@ -31,8 +31,11 @@ import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -45,7 +48,7 @@ import io.helidon.data.NonUniqueResultException;
 final class JdbcCallResult implements JdbcClient.CallResult {
     private final JdbcOperation operation;
     private final CallableStatement statement;
-    private final List<JdbcCallOutput> outputs;
+    private final Map<String, JdbcCallOutput> outputs;
     private final JdbcConnectionLease lease;
     private final Thread thread = Thread.currentThread();
     private final Set<String> selectedCursors = new HashSet<>();
@@ -61,7 +64,7 @@ final class JdbcCallResult implements JdbcClient.CallResult {
     private Throwable failure;
 
     JdbcCallResult(JdbcOperation operation, CallableStatement statement,
-                   List<JdbcCallOutput> outputs, JdbcConnectionLease lease) {
+                   Map<String, JdbcCallOutput> outputs, JdbcConnectionLease lease) {
         this.operation = operation;
         this.statement = statement;
         this.outputs = outputs;
@@ -170,8 +173,20 @@ final class JdbcCallResult implements JdbcClient.CallResult {
                     byte[] bytes = statement.getBytes(index);
                     return bytes == null ? null : bytes.clone();
                 } else if (target == Date.class || target == LocalDate.class) {
+                    if (target == LocalDate.class) {
+                        // Use the same UTC calendar for retrieval and field extraction to preserve its calendar rules.
+                        Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"), Locale.ROOT);
+                        Date date = statement.getDate(index, calendar);
+                        if (date == null) {
+                            return null;
+                        }
+                        calendar.setTime(date);
+                        int year = calendar.get(Calendar.YEAR);
+                        return LocalDate.of(calendar.get(Calendar.ERA) == GregorianCalendar.BC ? 1 - year : year,
+                                            calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.DAY_OF_MONTH));
+                    }
                     Date date = statement.getDate(index);
-                    return date == null ? null : target == LocalDate.class ? date.toLocalDate() : new Date(date.getTime());
+                    return date == null ? null : new Date(date.getTime());
                 } else if (target == Time.class || target == LocalTime.class) {
                     if (target == LocalTime.class) {
                         return statement.getObject(index, LocalTime.class);
@@ -258,10 +273,17 @@ final class JdbcCallResult implements JdbcClient.CallResult {
         return primary;
     }
 
-    private void check() {
+    void check() {
         if (!open || Thread.currentThread() != thread || failure != null) {
             throw new IllegalStateException("The callable result is expired, failed, or accessed from another thread.");
         }
+    }
+
+    void retain(Throwable caught) {
+        if (failure == null) {
+            lease.processingFailed();
+        }
+        failure = JdbcExceptionTranslator.mergeProcessingFailures(failure, caught);
     }
 
     private JdbcCallOutput output(String name) {
@@ -269,8 +291,11 @@ final class JdbcCallResult implements JdbcClient.CallResult {
         if (kind != JdbcClient.CallResultKind.END || cursorPending || terminalActive) {
             throw new IllegalStateException("Outputs require END with no active row channel.");
         }
-        return outputs.stream().filter(output -> output.name().equals(name)).findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("The output name is not registered."));
+        JdbcCallOutput output = outputs.get(name);
+        if (output == null) {
+            throw new IllegalArgumentException("The output name is not registered.");
+        }
+        return output;
     }
 
     private JdbcCallOutput selectCursor(String name) {
@@ -330,22 +355,15 @@ final class JdbcCallResult implements JdbcClient.CallResult {
 
     private <T> T process(Action<T> action) {
         try {
-            return action.run();
-        } catch (SQLException caught) {
-            RuntimeException translated = JdbcExceptionTranslator.translate(operation, caught);
-            retain(translated);
-            throw translated;
+            try {
+                return action.run();
+            } catch (SQLException caught) {
+                throw JdbcExceptionTranslator.translate(operation, caught);
+            }
         } catch (RuntimeException | Error caught) {
             retain(caught);
             throw caught;
         }
-    }
-
-    private void retain(Throwable caught) {
-        if (failure == null) {
-            lease.processingFailed();
-        }
-        failure = JdbcExceptionTranslator.mergeProcessingFailures(failure, caught);
     }
 
     @FunctionalInterface
@@ -402,8 +420,7 @@ final class JdbcCallResult implements JdbcClient.CallResult {
                         if (cardinality >= 0 && !values.isEmpty()) {
                             throw new NonUniqueResultException("The callable result contains more than one row.");
                         }
-                        JdbcRow row = new JdbcRow(current, columns, operation,
-                                                  JdbcCallResult.this::check, JdbcCallResult.this::retain);
+                        JdbcRow row = new JdbcRow(current, columns, operation, JdbcCallResult.this);
                         T value;
                         try {
                             value = mapper.map(row);
@@ -426,9 +443,12 @@ final class JdbcCallResult implements JdbcClient.CallResult {
                     }
                     return List.copyOf(values);
                 } catch (SQLException caught) {
-                    RuntimeException translated = JdbcExceptionTranslator.translate(operation, caught);
-                    retain(translated);
-                    throw translated;
+                    try {
+                        throw JdbcExceptionTranslator.translate(operation, caught);
+                    } catch (RuntimeException | Error translated) {
+                        retain(translated);
+                        throw translated;
+                    }
                 } catch (RuntimeException | Error caught) {
                     retain(caught);
                     throw caught;

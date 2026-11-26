@@ -108,6 +108,26 @@ class ScanTypeInfoFactoryTest {
         }
     }
 
+    @Test
+    void preservesClassfileValueProvenance() {
+        try (ScanResult scan = scanner().acceptClasses(Implicit.class.getName(), Explicit.class.getName()).scan()) {
+            ScanContext context = new TestContext(scan);
+            Annotation implicit = ScanAnnotationFactory.createAnnotation(context,
+                    scan.getClassInfo(Implicit.class.getName()).getDirectAnnotationInfo().get(Choice.class.getName()));
+            Annotation explicit = ScanAnnotationFactory.createAnnotation(context,
+                    scan.getClassInfo(Explicit.class.getName()).getDirectAnnotationInfo().get(Choice.class.getName()));
+            assertThat(implicit, is(explicit));
+            assertThat(implicit.hashCode(), is(explicit.hashCode()));
+            assertThat(implicit.toString(), is(explicit.toString()));
+            for (String property : Set.of("mode", "count", "nested")) {
+                assertThat(property, implicit.property(property).orElseThrow().explicit(), is(false));
+                assertThat(property, explicit.property(property).orElseThrow().explicit(), is(true));
+            }
+            assertThat(implicit.annotationValue("nested").orElseThrow().property("value").orElseThrow().explicit(), is(false));
+            assertThat(explicit.annotationValue("nested").orElseThrow().property("value").orElseThrow().explicit(), is(true));
+        }
+    }
+
     private static ClassGraph scanner() {
         return new ClassGraph()
                 .enableClassLoaders(ScanTypeInfoFactoryTest.class.getClassLoader())
@@ -119,6 +139,10 @@ class ScanTypeInfoFactoryTest {
                 .ignoreClassVisibility()
                 .ignoreFieldVisibility()
                 .ignoreMethodVisibility();
+    }
+
+    enum Mode {
+        NONE
     }
 
     @Retention(RetentionPolicy.RUNTIME)
@@ -141,6 +165,18 @@ class ScanTypeInfoFactoryTest {
         void execute();
     }
 
+    @Retention(RetentionPolicy.CLASS)
+    @interface Choice {
+        Mode mode() default Mode.NONE;
+        int count() default 0;
+        Nested nested() default @Nested;
+    }
+
+    @Retention(RetentionPolicy.CLASS)
+    @interface Nested {
+        String value() default "default";
+    }
+
     static class Parent implements Contract {
         private String parentField;
 
@@ -161,6 +197,14 @@ class ScanTypeInfoFactoryTest {
 
         private static class Hidden {
         }
+    }
+
+    @Choice
+    static final class Implicit {
+    }
+
+    @Choice(mode = Mode.NONE, count = 0, nested = @Nested("default"))
+    static final class Explicit {
     }
 
     private static class TestContext implements ScanContext {

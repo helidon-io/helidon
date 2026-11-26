@@ -48,6 +48,77 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 class JdbcCallableGenerationTest {
     @Test
+    void rejectsInvalidOutputMarkerNames() {
+        TestCompiler.Result result = compile("""
+                @Jdbc.Statement("${application.sql.call}")
+                @Jdbc.OutParameter("bad-name")
+                int read();
+                """);
+        assertThat(result.diagnostics().toString(), containsString("must follow SQL marker naming rules"));
+        TestCompiler.Result valid = compile("""
+                @Jdbc.Statement("{call routine(:résultat)}")
+                @Jdbc.OutParameter("résultat")
+                int read();
+                """);
+        assertThat(valid.diagnostics().toString(), valid.success(), is(true));
+    }
+
+    @Test
+    void rejectsNamedReturnSlots() {
+        for (String sql : List.of("{:total = call routine()}", "${application.sql.call:{ :total=CALL routine()}}")) {
+            TestCompiler.Result result = compile("""
+                    @Jdbc.Statement("%s")
+                    @Jdbc.OutParameter("total")
+                    int read();
+                    """.formatted(sql));
+            assertThat(sql, result.diagnostics().toString(), containsString("return must use a positional marker"));
+        }
+    }
+
+    @Test
+    void generatesOrdinaryPreparationForQueriesAndUpdates() throws IOException {
+        TestCompiler.Result result = compile("""
+                @Jdbc.Statement("${application.query}")
+                @Jdbc.Execution(Jdbc.ExecutionType.QUERY)
+                int query(@Data.Param("return") int value, int input);
+
+                @Jdbc.Statement("${application.update}")
+                @Jdbc.Execution(Jdbc.ExecutionType.UPDATE)
+                void update(@Data.Param("return") int value, int input);
+                """);
+        assertThat(result.diagnostics().toString(), result.success(), is(true));
+        String generated = Files.readString(result.sourceOutput().resolve("example/Repository__Jdbc.java"));
+        for (String field : List.of("SQL_QUERY", "SQL_UPDATE")) {
+            assertThat(generated, containsString("this." + field + " = GeneratedJdbcData.prepareStatement(jdbcClient, data__sql, "
+                                                        + "List.of(\"return\", \"input\"), true)"));
+        }
+    }
+
+    @Test
+    void protectsGeneratedTypeQualifiers() throws IOException {
+        TestCompiler.Result result = compile("""
+                @Jdbc.Statement("{? = call routine(:JDBCType)}")
+                @Jdbc.OutParameter
+                int total(int JDBCType);
+
+                @Jdbc.Statement("{call routine()}")
+                @Jdbc.Execution(Jdbc.ExecutionType.CALL)
+                void consume(Consumer<JdbcClient.CallResult> Objects);
+
+                @Jdbc.Statement("SELECT :JDBCType, :GeneratedJdbcData")
+                @Jdbc.Execution(Jdbc.ExecutionType.QUERY)
+                int query(Integer JDBCType, Integer GeneratedJdbcData);
+
+                @Jdbc.Statement("${application.sql.query:SELECT :Objects}")
+                String queryWithObjects(String Objects);
+                """);
+        assertThat(result.diagnostics().toString(), result.success(), is(true));
+        String generated = Files.readString(result.sourceOutput().resolve("example/Repository__Jdbc.java"));
+        assertThat(generated, containsString(".returns(JDBCType.INTEGER)"));
+        assertThat(generated, containsString(".bind(\"Objects\", data__Objects)"));
+    }
+
+    @Test
     void compilesOptionalScalarCursorAndCursorPresenceMappings() {
         TestCompiler.Result result = compile("""
                 @Jdbc.Statement("{? = call routine(:input)}")
@@ -67,17 +138,6 @@ class JdbcCallableGenerationTest {
                 }
                 """);
         assertThat(result.diagnostics().toString(), result.success(), is(true));
-    }
-
-    @Test
-    void rejectsMissingExplicitRegistrationType() {
-        TestCompiler.Result result = compile("""
-                @Jdbc.Statement("{call routine(:value)}")
-                @Jdbc.OutParameter("value")
-                void execute();
-                """);
-        assertThat(result.success(), is(false));
-        assertThat(String.join("\n", result.diagnostics()), containsString("type"));
     }
 
     @Test
@@ -242,6 +302,7 @@ import javax.lang.model.element.TypeElement;
                 interface Middle extends Root { }
                 interface Other {
                     @Jdbc.Statement("{call routine(:value, :other)}")
+                    @Jdbc.Execution(Jdbc.ExecutionType.CALL)
                     @Jdbc.OutParameter(value = "other", type = JDBCType.VARCHAR, scale = -1, typeName = "")
                     @Jdbc.OutParameter(value = "value", type = JDBCType.INTEGER)
                     JdbcClient.OutParameters execute();

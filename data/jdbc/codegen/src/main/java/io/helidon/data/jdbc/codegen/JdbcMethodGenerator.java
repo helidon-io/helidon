@@ -245,7 +245,7 @@ final class JdbcMethodGenerator {
                 .addAnnotation(Annotation.create(Override.class));
         plan.method().typeParameters()
                 .forEach(typeParameter -> method.addGenericArgument(TypeArgument.create(typeParameter)));
-        // Repository parameters can shadow unqualified generated fields. Override parameter names are not part of
+        // Repository parameters can shadow fields and type names used in generated code. Override parameter names are not part of
         // the Java method signature, so rename only colliding implementation parameters and retain their bind mapping.
         Set<String> generatedFieldNames = new HashSet<>();
         generatedFieldNames.add(JdbcCodegenConstants.JDBC_CLIENT_NAME);
@@ -255,7 +255,12 @@ final class JdbcMethodGenerator {
         if (plan.mappingKind() != JdbcMethodPlan.MappingKind.SCALAR) {
             generatedFieldNames.add(plan.mapperFieldName());
         }
+        generatedFieldNames.add(JdbcCodegenTypes.JDBC_TYPE.className());
+        generatedFieldNames.add(JdbcCodegenTypes.GENERATED_JDBC_DATA.className());
+        // Reserve Objects across execution types so generated null checks resolve to java.util.Objects.
+        generatedFieldNames.add(Objects.class.getSimpleName());
         if (plan.callable() != null) {
+            generatedFieldNames.add(JdbcCodegenTypes.JDBC_CLIENT.className());
             // Component mapper names are final after service resolution and record mapper reuse.
             for (JdbcCallablePlan.Output output : plan.callable().components()) {
                 if (output.mapping() != null) {

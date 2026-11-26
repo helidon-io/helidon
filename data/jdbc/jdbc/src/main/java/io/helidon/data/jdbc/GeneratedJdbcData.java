@@ -72,18 +72,17 @@ public final class GeneratedJdbcData {
     }
 
     /**
-     * Prepares named SQL for a generated repository with input aliases or ordinary callable outputs.
+     * Prepares named SQL for a generated repository with effective parameter aliases.
      * The native provider validates the complete input contract and scans SQL once
      * without acquiring JDBC resources. The returned supplier creates fresh stages
      * without rescanning SQL or capturing a transaction context.
      * The SQL must contain a named marker and use exactly the unique input names
-     * supplied in the list. For CALL, the list includes outputs and a leading return
-     * named return. Only input markers may repeat. The list is defensively copied.
+     * supplied in the list. Markers may repeat, and the list is defensively copied.
      * The supplier is safe to share. Individual stages are not safe for concurrent mutation.
      *
      * @param client The native Helidon JDBC client owns execution.
      * @param sql The SQL contains named markers for every logical input.
-     * @param inputNames The effective names identify all logical inputs and callable outputs.
+     * @param inputNames The effective names identify inputs in declaration order.
      * @return The supplier retains an immutable definition and creates fresh stages.
      * @throws NullPointerException The client, SQL, list, or a list entry is null.
      * @throws IllegalArgumentException The SQL or input contract is invalid, or SQL does not use named markers.
@@ -99,7 +98,38 @@ public final class GeneratedJdbcData {
             return clientImpl.prepareNamed(sql, inputNames);
         }
         throw new UnsupportedOperationException(
-                "Named preparation for generated repositories requires the native Helidon JDBC client.");
+                "Named preparation for generated aliases requires the native Helidon JDBC client.");
+    }
+
+    /**
+     * Prepares ordinary generated SQL without the callable exception to mixed marker validation.
+     *
+     * @param client The client owns the prepared statement.
+     * @param sql The SQL supplies the input markers.
+     * @param inputNames The names identify the inputs in declaration order.
+     * @param namedOnly Whether the repository requires named markers.
+     * @return The supplier creates fresh statements.
+     * @throws NullPointerException The client, SQL, list, or a list entry is null.
+     * @throws IllegalArgumentException The SQL does not satisfy the compiled input contract.
+     * @throws UnsupportedOperationException Named preparation requires the native client.
+     */
+    @Api.Since("28.0.0")
+    public static Supplier<Statement> prepareStatement(JdbcClient client, String sql, List<String> inputNames,
+                                                       boolean namedOnly) {
+        Objects.requireNonNull(client, "The JDBC client must not be null.");
+        Objects.requireNonNull(sql, "The SQL statement must not be null.");
+        Objects.requireNonNull(inputNames, "The input names must not be null.");
+        inputNames.forEach(name -> Objects.requireNonNull(name, "The input name must not be null."));
+        List<String> names = List.copyOf(inputNames);
+        if (client instanceof JdbcClientImpl clientImpl) {
+            return clientImpl.prepareStatement(sql, names, namedOnly);
+        }
+        if (namedOnly) {
+            throw new UnsupportedOperationException(
+                    "Named preparation for generated repositories requires the native Helidon JDBC client.");
+        }
+        JdbcConfiguredStatement.createStatement(sql, names, false);
+        return client.prepare(sql, names);
     }
 
     /**

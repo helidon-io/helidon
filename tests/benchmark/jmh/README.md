@@ -39,14 +39,12 @@ the repository root:
 mvn -ntp clean install -DskipTests
 ```
 
-## JDBC statement creation and binding
-
-The JDBC benchmarks measure statement creation and parameter binding before connection acquisition and do not require a
-database. Creation cases compare cached imperative and generated paths with one repeated SQL string and 32 warmed SQL
-strings. Binding cases cover SELECT and UPDATE statements with 1, 2, 8, and 32 inputs through cached imperative,
-generated, and prepared paths.
-
-Run this smoke test from the repository root after installing the prerequisite artifacts:
+The JDBC client creation benchmark isolates the statement-stage path before
+connection acquisition. It compares the cached imperative path with the
+compile-time marker-count path used by generated repositories for one repeated
+SQL string and 32 pre-warmed SQL strings. By default its runner executes at 1,
+8, 32, and 128 threads and writes one JSON result per thread count. A short
+smoke run can use:
 
 ```shell
 mvn test -Ptests,jmh -pl :helidon-data-jdbc,:helidon-tests-benchmark-jmh -am \
@@ -56,18 +54,46 @@ mvn test -Ptests,jmh -pl :helidon-data-jdbc,:helidon-tests-benchmark-jmh -am \
     -Djdbc.client.creation.jmh.measurementIterations=1 -Djdbc.client.creation.jmh.measurementMillis=100 -ntp
 ```
 
-For performance comparisons, omit the smoke timing overrides to use three 500 ms warmup iterations and five 1,000 ms
-measurement iterations. Optionally add `-Djdbc.client.creation.jmh.forks=3` for three forks or use
-`jdbc.client.creation.jmh.include` to filter methods by regular expression. Keep benchmark sources, JDKs, JVM options,
-parameter sets, and thread counts consistent between revisions.
+## JDBC callable outputs
 
-By default, the runner uses 1, 8, 32, and 128 threads and writes one JSON file per thread count to
-`target/jdbc-client-creation-jmh-result-t<N>.json` under the benchmark module. Save these files before another run
-because their names are reused. The runner does not automatically compare results against a baseline or fail the build
-for a performance regression.
+`JdbcCallableJmhBenchmark` measures registration, execution with marker coverage validation, scoped output lookup,
+and detached scalar snapshots with 1, 8, and 64 outputs. Each operation creates a fresh call from a prepared definition.
+The terminal cases include registration, JDBC stub execution, and cleanup, so their timings are cumulative.
+The thread-local JDBC stubs perform no database work. These benchmarks measure provider overhead and allocations,
+including proxy dispatch, and do not establish driver or database performance.
 
-The runner measures throughput and sampled execution time without GC profiling. Allocation measurements require a
-separate JMH invocation with `-prof gc`.
+Build the benchmark and its classpath from the repository root after installing the prerequisite artifacts:
+
+```shell
+mvn -ntp -f tests/benchmark/jmh/pom.xml -DskipTests package dependency:build-classpath -Dmdep.outputFile=target/jmh-classpath.txt
+```
+
+Run the callable benchmarks with the GC profiler to record time per call and bytes allocated per call:
+
+```shell
+java -cp "tests/benchmark/jmh/target/classes:$(cat tests/benchmark/jmh/target/jmh-classpath.txt)" org.openjdk.jmh.Main '.*JdbcCallableJmhBenchmark\.(registerOutputs|execute|lookupOutputs|snapshotOutputs)$' -t 1 -prof gc -rf json -rff tests/benchmark/jmh/target/jdbc-callable-jmh-result.json -foe true -jvmArgs '-Xms256m -Xmx256m'
+```
+
+The defaults use two forks, three one-second warmup iterations, and five one-second measurement iterations.
+For a smoke run, add `-f 1 -wi 1 -w 100ms -i 1 -r 100ms`. Smoke timings only verify that the benchmarks execute.
+Save the JSON results before another run. Use identical benchmark sources, JDKs, JVM options, output counts,
+and thread counts when comparing revisions. Compare each method at the same output count and inspect
+`gc.alloc.rate.norm` alongside its timing.
+
+## JDBC row mapping
+
+The row benchmarks materialize a direct callable result, a query result, and generated keys using the same integer
+column mapper. Each operation uses a prepared SQL definition and includes statement execution and resource cleanup.
+Each path runs with 1 and 128 rows from the JDBC stub. Use the Maven command above to build the benchmark and its classpath.
+
+```shell
+java -cp "tests/benchmark/jmh/target/classes:$(cat tests/benchmark/jmh/target/jmh-classpath.txt)" org.openjdk.jmh.Main '.*JdbcCallableJmhBenchmark\.map(CallableRows|QueryRows|GeneratedKeys)$' -t 1 -prof gc -rf json -rff tests/benchmark/jmh/target/jdbc-row-mapping-jmh-result.json -foe true -jvmArgs '-Xms256m -Xmx256m'
+```
+
+To compare runtime revisions, use the same compiled benchmark and change only the JDBC runtime jar in the classpath.
+Compare time per operation, its confidence interval, and allocated bytes per operation at each row count. Subtract
+the 1-row score from the 128-row score and divide by 127 to estimate the cost per additional row. This estimate includes
+JDBC stub dispatch and result materialization. Use the full run for comparisons.
 
 ## Messaging runtime
 

@@ -149,6 +149,10 @@ final class JdbcClientImpl implements JdbcClient {
                 JdbcConfiguredStatement.createCall(sql, logicalNames, namedOnly, leadingReturn));
     }
 
+    Supplier<Statement> prepareStatement(String sql, List<String> inputNames, boolean namedOnly) {
+        return new JdbcStatementFactory(runner, JdbcConfiguredStatement.createStatement(sql, inputNames, namedOnly));
+    }
+
     /**
      * Creates a statement stage from a code-generation plan whose SQL and
      * physical marker count were validated at compilation time.

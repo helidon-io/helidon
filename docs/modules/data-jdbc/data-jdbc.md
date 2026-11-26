@@ -174,8 +174,11 @@ directions. When these structural elements vary, select them from a closed set
 of values defined by the application. Do not construct them directly from
 application input.
 
-Declarative statements support either named markers or positional `?` markers
-in a given statement. Imperative statements use positional markers.
+Declarative statements use named markers or positional `?` markers for their
+arguments. Imperative `create(...)` uses positional markers, and `prepare(...)`
+supports both argument styles. A callable statement can have a leading `? = call`
+slot for the return value followed by named arguments. Other mixtures of named
+and positional markers are rejected.
 [Statement Parameters](declarative.md#statement-parameters) and
 [Parameter Binding](imperative.md#parameter-binding) explain the two forms.
 

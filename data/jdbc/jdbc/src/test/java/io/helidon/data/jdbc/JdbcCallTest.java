@@ -335,8 +335,12 @@ class JdbcCallTest {
             JdbcClient.OutParameters result = client.create("{call routine(?)}").call()
                     .out("value", 1, type).outputs();
             bytes[0] = 9;
-            result.get("value", byte[].class)[0] = 8;
-            result.optional("value", byte[].class).orElseThrow()[1] = 7;
+            byte[] first = result.get("value", byte[].class);
+            byte[] second = result.optional("value", byte[].class).orElseThrow();
+            first[0] = 8;
+            assertThat(type.name(), second, is(new byte[] {1, 2}));
+            second[1] = 7;
+            assertThat(type.name(), first, is(new byte[] {8, 2}));
             assertThat(type.name(), result.get("value", byte[].class), is(new byte[] {1, 2}));
         }
     }
@@ -357,16 +361,27 @@ class JdbcCallTest {
     }
 
     @Test
-    void mapsRowsWithoutReexecutionAndExpiresEvent() throws Exception {
+    void mapsRowsOnlyOnce() throws Exception {
         rows(1, 42);
         client.create("{call routine()}").call().consume(result -> {
             JdbcClient.Rows<Integer> stage = result.rows(row -> row.get(1, Integer.class));
             assertThat(stage.one(), is(42));
             assertThrows(IllegalStateException.class, stage::one);
+        });
+        verify(statement).execute();
+    }
+
+    @Test
+    void expiresUnconsumedEvent() throws Exception {
+        rows(1, 42);
+        ResultSet resultSet = statement.getResultSet();
+        client.create("{call routine()}").call().consume(result -> {
+            JdbcClient.Rows<Integer> stage = result.rows(row -> row.get(1, Integer.class));
             result.next();
             assertThrows(IllegalStateException.class, stage::list);
         });
-        verify(statement).execute();
+        verify(resultSet, never()).next();
+        verify(resultSet).close();
     }
 
     /**
@@ -519,7 +534,8 @@ class JdbcCallTest {
         when(statement.getBigDecimal(1)).thenReturn(new BigDecimal("1.234"));
         when(statement.getString(1)).thenReturn("value");
         when(statement.getBytes(1)).thenReturn(new byte[] {0, 1, (byte) 255});
-        when(statement.getDate(1)).thenReturn(Date.valueOf(date));
+        when(statement.getDate(eq(1), any(Calendar.class)))
+                .thenReturn(new Date(date.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()));
         when(statement.getObject(1, LocalTime.class)).thenReturn(time);
         when(statement.getTimestamp(1)).thenReturn(Timestamp.valueOf(timestamp));
         when(statement.getTimestamp(eq(1), any(Calendar.class))).thenReturn(Timestamp.from(timestamp.toInstant(ZoneOffset.UTC)));
@@ -533,7 +549,7 @@ class JdbcCallTest {
         when(statement.getBigDecimal(1)).thenReturn(null);
         when(statement.getString(1)).thenReturn(null);
         when(statement.getBytes(1)).thenReturn(null);
-        when(statement.getDate(1)).thenReturn(null);
+        when(statement.getDate(eq(1), any(Calendar.class))).thenReturn(null);
         when(statement.getObject(1, LocalTime.class)).thenReturn(null);
         when(statement.getTimestamp(eq(1), any(Calendar.class))).thenReturn(null);
         for (Map.Entry<JDBCType, Object> entry : samples.entrySet()) {
@@ -545,6 +561,40 @@ class JdbcCallTest {
             assertThrows(IllegalArgumentException.class, () -> result.optional("value", Object.class));
             assertThrows(IllegalArgumentException.class, () -> result.optional("missing", canonical));
         }
+    }
+
+    @Test
+    void readsLocalDateInUtc() throws Exception {
+        List<LocalDate> dates = List.of(LocalDate.of(2011, 12, 30), LocalDate.of(2024, 2, 29), LocalDate.of(1500, 3, 1));
+        for (LocalDate expected : dates) {
+            when(statement.getDate(eq(1), any(Calendar.class))).thenAnswer(invocation -> {
+                Calendar calendar = invocation.getArgument(1);
+                assertThat(expected.toString(), calendar.getTimeZone().getID(), is("UTC"));
+                calendar.clear();
+                calendar.set(expected.getYear(), expected.getMonthValue() - 1, expected.getDayOfMonth());
+                return new Date(calendar.getTimeInMillis());
+            });
+            JdbcClient.OutParameters snapshot = client.create("{? = call routine()}").call()
+                    .returns(JDBCType.DATE).outputs();
+            assertThat(expected.toString(), snapshot.get("return", LocalDate.class), is(expected));
+            assertThat(expected.toString(), snapshot.optional("return", LocalDate.class), is(Optional.of(expected)));
+        }
+        verify(statement, times(dates.size())).close();
+        verify(connection, times(dates.size())).close();
+    }
+
+    @Test
+    void preservesLegacyDateOutput() throws Exception {
+        Date original = Date.valueOf("2024-02-29");
+        when(statement.getDate(1)).thenReturn(original);
+        Date captured = client.create("{? = call routine()}").call().returns(JDBCType.DATE).map(result -> {
+            result.skipRemainingResults();
+            return result.get("return", Date.class);
+        });
+        assertThat(captured, is(original));
+        assertThat(captured, not(sameInstance(original)));
+        verify(statement).close();
+        verify(connection).close();
     }
 
     /**
@@ -919,6 +969,23 @@ class JdbcCallTest {
         assertThrows(IllegalArgumentException.class, () -> client.prepare("{? = call routine(:value, ?)}"));
         assertThrows(IllegalArgumentException.class, () -> client.prepare("{? = call routine(:return)}"));
         assertThrows(IllegalArgumentException.class, () -> client.prepare("{? = call routine(?)}", List.of("value", "return")));
+        verify(source, never()).getConnection();
+    }
+
+    @Test
+    void rejectsInvalidReturnsWhilePreparingDefinitions() throws Exception {
+        String mixed = "{? = call routine(:input)}";
+        for (boolean namedOnly : new boolean[] {false, true}) {
+            IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                    () -> GeneratedJdbcData.prepareStatement(client, mixed, List.of("return", "input"), namedOnly),
+                    "namedOnly=" + namedOnly);
+            assertThat("namedOnly=" + namedOnly, failure.getMessage(), containsString("requires CALL execution"));
+        }
+        assertThrows(IllegalArgumentException.class,
+                () -> GeneratedJdbcData.prepareCall(client, "{ :value=call routine(:input)}",
+                                                    List.of("value", "input"), true, false));
+        assertThrows(IllegalArgumentException.class, () -> client.prepare("{:value = call routine(:input)}"));
+        client.prepare(mixed, List.of("return", "input")).get().bind("input", 7).call().returns(JDBCType.INTEGER);
         verify(source, never()).getConnection();
     }
 

@@ -16,6 +16,7 @@
 package io.helidon.data.jdbc;
 
 import java.sql.JDBCType;
+import java.util.BitSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -201,16 +202,14 @@ final class JdbcStatement implements JdbcClient.Statement {
         }
     }
 
-    JdbcOperation callOperation(List<JdbcCallOutput> outputs) {
+    JdbcOperation callOperation(BitSet outputSlots) {
         ensureMutable();
-        if (leadingReturn()
-                && (binds[0] != null || outputs.stream().noneMatch(output -> output.index() == 1))) {
+        if (leadingReturn() && (binds[0] != null || !outputSlots.get(0))) {
             throw new IllegalStateException("A leading callable return must be registered as an output and cannot be an input.");
         }
         for (int index = 0; index < binds.length; index++) {
-            int position = index + 1;
-            if (binds[index] == null && outputs.stream().noneMatch(output -> output.index() == position)) {
-                throw new IllegalStateException("A bind or output is missing at JDBC position " + position + ".");
+            if (binds[index] == null && !outputSlots.get(index)) {
+                throw new IllegalStateException("A bind or output is missing at JDBC position " + (index + 1) + ".");
             }
         }
         terminalState = true;

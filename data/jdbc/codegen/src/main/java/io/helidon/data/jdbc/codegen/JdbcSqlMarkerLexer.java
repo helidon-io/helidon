@@ -59,8 +59,7 @@ final class JdbcSqlMarkerLexer implements JdbcSqlScanHandler {
         JdbcSqlMarkerLexer lexer = new JdbcSqlMarkerLexer(sql);
         JdbcSqlScanner.scan(sql, lexer);
         boolean leadingReturn = callable && lexer.firstPosition >= 0
-                && sql.substring(0, lexer.firstPosition).matches("(?is)\\s*\\{\\s*")
-                && sql.substring(lexer.firstPosition + 1).matches("(?is)\\s*=\\s*call\\b.*");
+                && JdbcSqlScanner.callableReturnMarker(sql, lexer.firstPosition, lexer.firstPosition + 1);
         if (lexer.named && lexer.positional && !(leadingReturn && lexer.positionalCount == 1)) {
             throw malformed("Declarative SQL cannot mix named and positional markers", sql.length());
         }
@@ -83,6 +82,9 @@ final class JdbcSqlMarkerLexer implements JdbcSqlScanHandler {
 
     @Override
     public void namedMarker(int start, int end) {
+        if (markers.isEmpty() && JdbcSqlScanner.callableReturnMarker(source, start, end)) {
+            throw malformed("A leading callable return must use a positional marker", start);
+        }
         if (end < source.length() && source.charAt(end) == '.') {
             throw malformed("Dotted named parameters are not supported", start);
         }
