@@ -17,6 +17,7 @@
 package io.helidon.json.binding;
 
 import io.helidon.builder.api.Prototype;
+import io.helidon.json.JsonParserSupport;
 
 class JsonBindingConfigCustomMethods {
 
@@ -33,6 +34,13 @@ class JsonBindingConfigCustomMethods {
     static void addConverter(JsonBindingConfig.BuilderBase<?, ?> builder, JsonConverter<?> converter) {
         builder.addSerializer(converter)
                 .addDeserializer(converter);
+    }
+
+    static final class ReplaySizeValidator implements Prototype.BuilderDecorator<JsonBindingConfig.BuilderBase<?, ?>> {
+        @Override
+        public void decorate(JsonBindingConfig.BuilderBase<?, ?> builder) {
+            builder.maxReplaySize().ifPresent(JsonParserSupport::replayBufferBytes);
+        }
     }
 
 }

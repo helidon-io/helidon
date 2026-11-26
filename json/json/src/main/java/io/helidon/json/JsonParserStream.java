@@ -22,7 +22,6 @@ import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Objects;
 
@@ -40,6 +39,7 @@ import static io.helidon.json.JsonParserArray.SHORT_SIZE_BORDER;
 import static io.helidon.json.JsonParserArray.VALID_NUMBER_PARTS;
 import static io.helidon.json.JsonParserArray.WHITESPACE_CHARS;
 import static io.helidon.json.JsonParserArray.WHOLE_NUMBER_PARTS;
+import static io.helidon.json.JsonParserSupport.growStreamBuffer;
 
 /*
 This class is having mostly the same method implementations as ArrayJsonParser does.
@@ -48,10 +48,11 @@ I have decided to leave it like this and with a duplicit code.
  */
 final class JsonParserStream extends JsonTextParser {
 
-    private static final int DEFAULT_BUFFER_SIZE = 512;
+    static final int DEFAULT_BUFFER_SIZE = 512;
 
-    private final int configuredBufferSize;
     private final InputStream inputStream;
+    private final int maxReplayBytes;
+
     private boolean finished;
     private boolean bufferingJsonValue;
     private int jsonValueStart;
@@ -66,9 +67,9 @@ final class JsonParserStream extends JsonTextParser {
     private int mark = -1;
     private boolean replayMarked = false;
 
-    JsonParserStream(InputStream inputStream, int bufferSize) {
-        this.configuredBufferSize = bufferSize;
+    JsonParserStream(InputStream inputStream, int bufferSize, int maxReplayBytes) {
         this.inputStream = inputStream;
+        this.maxReplayBytes = maxReplayBytes;
         currentIndex = 0;
         buffer = new byte[bufferSize];
         try {
@@ -81,10 +82,6 @@ final class JsonParserStream extends JsonTextParser {
         if (bufferLength == 0) {
             throw new JsonDecodingException("Empty JSON input provided");
         }
-    }
-
-    JsonParserStream(InputStream inputStream) {
-        this(inputStream, DEFAULT_BUFFER_SIZE);
     }
 
     @Override
@@ -200,7 +197,7 @@ final class JsonParserStream extends JsonTextParser {
     }
 
     void ensure(int amount) {
-        if (currentIndex + amount >= bufferLength) {
+        if (currentIndex >= bufferLength - amount) {
             try {
                 // 1. Compact: shift unneeded prefix out so the required bytes can fit.
                 int preserveFrom;
@@ -228,17 +225,13 @@ final class JsonParserStream extends JsonTextParser {
                 }
 
                 // 2. Grow the backing array if it still cannot hold currentIndex + amount + 1 bytes.
-                int required = currentIndex + amount + 1;
+                long required = (long) currentIndex + amount + 1;
                 if (required > buffer.length) {
-                    int newSize = (int) Math.min(Integer.MAX_VALUE,
-                                                Math.max((long) required, (long) buffer.length * 2));
-                    byte[] newBuffer = new byte[newSize];
-                    System.arraycopy(buffer, 0, newBuffer, 0, kept);
-                    buffer = newBuffer;
+                    growBuffer(kept, required);
                 }
 
                 // 3. Read from the stream until we have enough bytes or EOF.
-                while (currentIndex + amount >= bufferLength) {
+                while (bufferLength < required) {
                     int lastRead = inputStream.read(buffer, bufferLength, buffer.length - bufferLength);
                     if (lastRead == -1) {
                         finished = true;
@@ -416,6 +409,8 @@ final class JsonParserStream extends JsonTextParser {
             replayMarked = false;
             finished = false;
             currentIndex = mark;
+            bufferingJsonValue = false;
+            jsonValueStart = 0;
         } else {
             throw new IllegalStateException("Parser tried to reset to the marked place, but no mark was found");
         }
@@ -2519,6 +2514,10 @@ final class JsonParserStream extends JsonTextParser {
         }
     }
 
+    private void growBuffer(int kept, long required) {
+        buffer = growStreamBuffer(this, buffer, kept, required, replayMarked ? maxReplayBytes : Integer.MAX_VALUE);
+    }
+
     private boolean expectedNext(char c) {
         return hasNext() && buffer[++currentIndex] == c;
     }
@@ -2602,8 +2601,7 @@ final class JsonParserStream extends JsonTextParser {
         } else {
             // Short reads can leave room in the buffer; expand only when it is full.
             if (bufferLength == buffer.length) {
-                int newCap = Math.addExact(buffer.length, Math.max(configuredBufferSize, buffer.length));
-                buffer = Arrays.copyOf(buffer, newCap);
+                growBuffer(bufferLength, (long) bufferLength + 1);
             }
             int lastRead = inputStream.read(buffer, bufferLength, buffer.length - bufferLength);
             if (lastRead == -1) {

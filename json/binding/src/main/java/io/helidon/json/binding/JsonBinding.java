@@ -513,6 +513,7 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
 
     /**
      * Deserializes JSON from a parser to an object of the specified type.
+     * A supplied stream parser retains the replay limit chosen at its creation.
      *
      * @param parser the parser containing JSON data
      * @param type   the class type to deserialize to
@@ -523,6 +524,7 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
 
     /**
      * Deserializes a JSON array from a parser to a list of objects of the specified item type.
+     * A supplied stream parser retains the replay limit chosen at its creation.
      *
      * @param parser   the parser containing JSON data
      * @param itemType the class type of each list item
@@ -535,6 +537,7 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
 
     /**
      * Deserializes JSON from a parser to an object of the specified generic type.
+     * A supplied stream parser retains the replay limit chosen at its creation.
      *
      * @param parser the parser containing JSON data
      * @param type   the generic type to deserialize to

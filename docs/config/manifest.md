@@ -51,6 +51,7 @@ See the [root type](config_reference.md).
 - [io.<wbr>helidon.<wbr>http.<wbr>media.<wbr>jsonp.<wbr>Jsonp<wbr>Support](io.helidon.http.media.jsonp.JsonpSupport.md)
 - [io.<wbr>helidon.<wbr>http.<wbr>media.<wbr>multipart.<wbr>Multi<wbr>Part<wbr>Support](io.helidon.http.media.multipart.MultiPartSupport.md)
 - [io.<wbr>helidon.<wbr>json.<wbr>binding.<wbr>Json<wbr>Binding](io.helidon.json.binding.JsonBinding.md)
+- [io.<wbr>helidon.<wbr>json.<wbr>smile.<wbr>Smile<wbr>Config](io.helidon.json.smile.SmileConfig.md)
 - [io.<wbr>helidon.<wbr>messaging.<wbr>Dead<wbr>Letter<wbr>Config](io.helidon.messaging.DeadLetterConfig.md)
 - [io.<wbr>helidon.<wbr>messaging.<wbr>Failure<wbr>Policy](io.helidon.messaging.FailurePolicy.md)
 - [io.<wbr>helidon.<wbr>messaging.<wbr>Messaging<wbr>Execution<wbr>Config](io.helidon.messaging.MessagingExecutionConfig.md)

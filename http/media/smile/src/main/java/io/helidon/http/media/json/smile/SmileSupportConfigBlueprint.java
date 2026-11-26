@@ -47,14 +47,16 @@ interface SmileSupportConfigBlueprint extends MediaSupportConfig, Prototype.Fact
      * @return JSON binding instance
      */
     @Option.DefaultMethod("create")
+    @Option.Configured
     JsonBinding jsonBinding();
 
     /**
-     * Smile generator configuration.
+     * Smile codec configuration whose replay limit, when set, takes precedence over the JSON binding limit.
      *
-     * @return smile generator configuration
+     * @return Smile codec configuration
      */
     @Option.DefaultMethod("create")
+    @Option.Configured
     SmileConfig smileConfig();
 
     /**

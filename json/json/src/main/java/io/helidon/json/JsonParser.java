@@ -123,12 +123,7 @@ public interface JsonParser {
      * @return a new JsonParser instance
      */
     static JsonParser create(InputStream inputStream) {
-        Objects.requireNonNull(inputStream);
-        JsonParserStream parser = new JsonParserStream(inputStream);
-        if (WHITESPACE_CHARS[parser.currentByte() & 0xff]) {
-            parser.nextToken();
-        }
-        return parser;
+        return create(inputStream, JsonParserStream.DEFAULT_BUFFER_SIZE);
     }
 
     /**
@@ -144,15 +139,7 @@ public interface JsonParser {
      * @return a new JsonParser instance
      */
     static JsonParser create(InputStream inputStream, int bufferSize) {
-        Objects.requireNonNull(inputStream);
-        if (bufferSize <= 5) {
-            throw new IllegalArgumentException("Buffer size must be greater than 5");
-        }
-        JsonParserStream parser = new JsonParserStream(inputStream, bufferSize);
-        if (WHITESPACE_CHARS[parser.currentByte() & 0xff]) {
-            parser.nextToken();
-        }
-        return parser;
+        return JsonParserSupport.createStreamParser(inputStream, bufferSize, Integer.MAX_VALUE);
     }
 
     /**
@@ -182,8 +169,7 @@ public interface JsonParser {
      * @return a new JsonParser instance
      */
     static JsonParser create(Reader reader) {
-        Objects.requireNonNull(reader);
-        return create(new ReaderInputStream(reader));
+        return JsonParserSupport.createStreamParser(reader, Integer.MAX_VALUE);
     }
 
     /**
@@ -572,6 +558,9 @@ public interface JsonParser {
      * This method saves the current parser position so it can be returned to later
      * using {@link #resetToMark()}. Useful for backtracking during parsing operations.
      * </p>
+     * A native stream parser retains marked input in its buffer. Its replay size limit is fixed at creation. When growing
+     * the buffer would exceed that limit, the parser throws a {@link JsonException} before reading further from the stream.
+     * Existing capacity remains available for replay until the mark is cleared or reset.
      */
     void mark();
 

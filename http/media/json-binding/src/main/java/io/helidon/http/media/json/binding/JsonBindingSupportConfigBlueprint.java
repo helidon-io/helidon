@@ -49,6 +49,7 @@ interface JsonBindingSupportConfigBlueprint extends MediaSupportConfig, Prototyp
      *
      * @return JSON binding instance
      */
+    @Option.Configured
     JsonBinding jsonBinding();
 
     /**

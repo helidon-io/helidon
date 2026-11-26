@@ -25,10 +25,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.OptionalLong;
+import java.util.stream.Stream;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
 import io.helidon.http.Status;
@@ -45,6 +48,9 @@ import io.helidon.json.smile.SmileConfig;
 import io.helidon.json.smile.SmileGenerator;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItems;
@@ -69,6 +75,31 @@ class SmileMediaTest {
     SmileMediaTest() {
         this.support = SmileSupport.create();
         support.init(MediaContext.create());
+    }
+
+    @ParameterizedTest
+    @MethodSource("readerReplayLimits")
+    void readerUsesTheSmileLimitAndFallsBackToTheBindingLimit(Map<String, String> settings, int expectedLimit) {
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.contentType(MediaTypes.APPLICATION_X_JACKSON_SMILE);
+        GenericType<Publication> type = GenericType.create(Publication.class);
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        String title = "chapter".repeat(100);
+        try (JsonGenerator generator = SmileGenerator.create(output)) {
+            generator.writeObjectStart().write("title", title).write("kind", "book").writeObjectEnd();
+        }
+
+        SmileSupport configured = SmileSupport.create(Config.just(ConfigSources.create(settings)));
+        configured.init(MediaContext.create());
+        var reader = configured.reader(type, headers).supplier().get();
+        var input = new ByteArrayInputStream(output.toByteArray());
+        if (expectedLimit < 0) {
+            assertThat(reader.read(type, input, headers), is(new PublishedBook(title)));
+        } else {
+            HttpException exception = assertThrows(HttpException.class, () -> reader.read(type, input, headers));
+            assertThat(exception.status(), is(Status.BAD_REQUEST_400));
+            assertThat(exception.getCause().getMessage(), containsString("max-replay-size of " + expectedLimit + " bytes"));
+        }
     }
 
     @Test
@@ -467,6 +498,16 @@ class SmileMediaTest {
         assertArrayEquals(new byte[] {1, 2, 3, 4, 5}, sanity.data());
     }
 
+    private static Stream<Arguments> readerReplayLimits() {
+        String binding = "json-binding.max-replay-size";
+        String smile = "smile-config.max-replay-size";
+        return Stream.of(Arguments.of(Map.of(), -1),
+                         Arguments.of(Map.of(binding, "600 B"), 600),
+                         Arguments.of(Map.of(smile, "600 B"), 600),
+                         Arguments.of(Map.of(binding, "0 B", smile, "900 B"), -1),
+                         Arguments.of(Map.of(binding, "900 B", smile, "0 B"), 0));
+    }
+
     private static byte[] concat(byte[] first, byte[] second) {
         byte[] out = new byte[first.length + second.length];
         System.arraycopy(first, 0, out, 0, first.length);
@@ -493,6 +534,16 @@ class SmileMediaTest {
 
     @Json.Entity
     record BinaryPayload(String name, byte[] data) {
+    }
+
+    @Json.Entity
+    @Json.Polymorphic(key = "kind")
+    @Json.Subtype(value = PublishedBook.class, alias = "book")
+    interface Publication {
+    }
+
+    @Json.Entity
+    record PublishedBook(String title) implements Publication {
     }
 
     @Json.Entity

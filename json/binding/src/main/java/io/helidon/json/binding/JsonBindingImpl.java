@@ -36,6 +36,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import io.helidon.common.GenericType;
 import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonParser;
+import io.helidon.json.JsonParserSupport;
 import io.helidon.json.JsonValue;
 
 final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
@@ -45,6 +46,7 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
     private static final char[] NULL_CHARS = "null".toCharArray();
 
     private final JsonBindingConfig config;
+    private final int maxReplayBytes;
     private final Map<Class<?>, JsonSerializer<?>> initialIdentitySerializers = new IdentityHashMap<>();
     private final Map<Class<?>, JsonDeserializer<?>> initialIdentityDeserializers = new IdentityHashMap<>();
     private final Map<Type, JsonSerializer<?>> initialSerializers = new HashMap<>();
@@ -61,6 +63,7 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
 
     JsonBindingImpl(JsonBindingConfig config) {
         this.config = config;
+        this.maxReplayBytes = config.maxReplaySize().map(JsonParserSupport::replayBufferBytes).orElse(Integer.MAX_VALUE);
         // Initialize serializers from config
         // Store by GenericType and by raw Type for lookup flexibility
         for (JsonSerializer<?> serializer : config.serializers()) {
@@ -248,7 +251,7 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
     @Override
     public <T> T deserialize(InputStream inputStream, int bufferSize, Class<T> type) {
         JsonDeserializer<T> deserializer = deserializer(type);
-        JsonParser parser = JsonParser.create(inputStream, bufferSize);
+        JsonParser parser = JsonParserSupport.createStreamParser(inputStream, bufferSize, maxReplayBytes);
         return Deserializers.deserialize(parser, deserializer);
     }
 
@@ -260,21 +263,21 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
     @Override
     public <T> T deserialize(InputStream inputStream, int bufferSize, GenericType<T> type) {
         JsonDeserializer<T> deserializer = deserializer(type);
-        JsonParser parser = JsonParser.create(inputStream, bufferSize);
+        JsonParser parser = JsonParserSupport.createStreamParser(inputStream, bufferSize, maxReplayBytes);
         return Deserializers.deserialize(parser, deserializer);
     }
 
     @Override
     public <T> T deserialize(Reader reader, Class<T> type) {
         JsonDeserializer<T> deserializer = deserializer(type);
-        JsonParser parser = JsonParser.create(reader);
+        JsonParser parser = JsonParserSupport.createStreamParser(reader, maxReplayBytes);
         return Deserializers.deserialize(parser, deserializer);
     }
 
     @Override
     public <T> T deserialize(Reader reader, GenericType<T> type) {
         JsonDeserializer<T> deserializer = deserializer(type);
-        JsonParser parser = JsonParser.create(reader);
+        JsonParser parser = JsonParserSupport.createStreamParser(reader, maxReplayBytes);
         return Deserializers.deserialize(parser, deserializer);
     }
 

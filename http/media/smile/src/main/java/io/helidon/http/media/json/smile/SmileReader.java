@@ -27,14 +27,23 @@ import io.helidon.http.Status;
 import io.helidon.http.media.EntityReaderBase;
 import io.helidon.json.JsonDecodingException;
 import io.helidon.json.binding.JsonBinding;
+import io.helidon.json.smile.SmileConfig;
 import io.helidon.json.smile.SmileParser;
 
 class SmileReader<T> extends EntityReaderBase<T> {
 
     private final JsonBinding jsonBinding;
+    private final SmileConfig smileConfig;
 
-    SmileReader(JsonBinding jsonBinding) {
+    SmileReader(JsonBinding jsonBinding, SmileConfig smileConfig) {
         this.jsonBinding = jsonBinding;
+        if (smileConfig.maxReplaySize().isPresent()) {
+            this.smileConfig = smileConfig;
+        } else {
+            this.smileConfig = jsonBinding.prototype().maxReplaySize()
+                    .map(size -> SmileConfig.builder(smileConfig).maxReplaySize(size).build())
+                    .orElse(smileConfig);
+        }
     }
 
     @Override
@@ -53,7 +62,7 @@ class SmileReader<T> extends EntityReaderBase<T> {
 
     private T read(GenericType<T> type, InputStream in) {
         try (in) {
-            return jsonBinding.deserialize(SmileParser.create(in), type);
+            return jsonBinding.deserialize(SmileParser.create(in, smileConfig), type);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

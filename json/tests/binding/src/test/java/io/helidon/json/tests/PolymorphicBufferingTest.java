@@ -16,32 +16,44 @@
 
 package io.helidon.json.tests;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.Size;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import io.helidon.json.JsonException;
 import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonParser;
+import io.helidon.json.ObjectStartParser;
 import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.json.binding.JsonBindingConfigurator;
 import io.helidon.json.binding.JsonDeserializer;
+import io.helidon.json.smile.SmileConfig;
 import io.helidon.json.smile.SmileGenerator;
 import io.helidon.json.smile.SmileParser;
 import io.helidon.testing.junit5.Testing;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -175,6 +187,137 @@ class PolymorphicBufferingTest {
         assertThat(input.position, is(bytes.length));
     }
 
+    @ParameterizedTest
+    @EnumSource(Codec.class)
+    void clampsMarkedGrowthAndRejectsTheNextExpansion(Codec codec) {
+        String name = "weekday".repeat(100);
+        byte[] bytes = codec.encode("{\"name\":\"" + name + "\"}");
+        // The Smile header precedes the mark. Leave room for a refill to discover the end of input.
+        int capacity = bytes.length - (codec == Codec.SMILE ? 4 : 0) + 1;
+        ProbeInputStream input = new ProbeInputStream(bytes, 3, 2 * capacity);
+        assertThat(codec.readWithLimit(binding, input, capacity),
+                   is(new PolymorphicOrderTest.DefaultValue(name)));
+        assertThat(input.largestBuffer, is(capacity));
+
+        ProbeInputStream capped = new ProbeInputStream(bytes, 3, 600);
+        JsonException exception = assertThrows(JsonException.class, () -> codec.readWithLimit(binding, capped, 600));
+        assertThat(exception.getMessage(), containsString("max-replay-size of 600 bytes"));
+        assertThat(capped.largestBuffer, is(600));
+    }
+
+    @ParameterizedTest
+    @EnumSource(Codec.class)
+    void existingCapacityAndUnmarkedGrowthRemainAvailable(Codec codec) {
+        var expected = new PolymorphicOrderTest.Sample("short", 1, null);
+        byte[] late = codec.encode("{\"name\":\"short\",\"kind\":\"sample\",\"count\":1}");
+        assertThat(codec.readWithLimit(binding, new ByteArrayInputStream(late), 0),
+                   is(expected));
+
+        String name = "x".repeat(700);
+        byte[] first = codec.encode("{\"kind\":\"sample\",\"name\":\"" + name + "\",\"count\":1}");
+        assertThat(codec.readWithLimit(binding, new ByteArrayInputStream(first), 0),
+                   is(new PolymorphicOrderTest.Sample(name, 1, null)));
+    }
+
+    @ParameterizedTest
+    @EnumSource(Codec.class)
+    void sizeAwareRefillsRespectTheLimit(Codec codec) {
+        String key = "p".repeat(506);
+        String value = codec == Codec.JSON ? "null" : "\"abcdefghijk\"";
+        byte[] bytes = codec.encode("{\"" + key + "\":" + value + ",\"kind\":\"sample\"}");
+        ProbeInputStream input = new ProbeInputStream(bytes, 512, 512);
+        JsonException exception = assertThrows(JsonException.class, () -> codec.readWithLimit(binding, input, 513));
+        assertThat(exception.getMessage(), containsString("max-replay-size of 513 bytes"));
+        assertThat(input.largestBuffer, is(512));
+    }
+
+    @ParameterizedTest
+    @EnumSource(Codec.class)
+    void callerSuppliedParsersKeepTheirLimit(Codec codec) {
+        String name = "z".repeat(700);
+        byte[] bytes = codec.encode("{\"name\":\"" + name + "\",\"kind\":\"sample\"}");
+        var expected = new PolymorphicOrderTest.Sample(name, 0, null);
+        JsonBinding strict = JsonBinding.builder().maxReplaySize(Size.ZERO).build();
+
+        JsonParser unlimited = codec.parser(new ByteArrayInputStream(bytes), 32);
+        assertThat(strict.deserialize(unlimited, PolymorphicOrderTest.Base.class), is(expected));
+        JsonParser array = codec == Codec.JSON ? JsonParser.create(bytes) : SmileParser.create(bytes);
+        assertThat(strict.deserialize(array, PolymorphicOrderTest.Base.class), is(expected));
+    }
+
+    @Test
+    void suppliedSmileLimitPersistsAcrossBindingsAndReset() {
+        String name = "z".repeat(700);
+        byte[] bytes = Codec.SMILE.encode("{\"name\":\"" + name + "\",\"kind\":\"sample\"}");
+        JsonBinding strict = JsonBinding.builder().maxReplaySize(Size.ZERO).build();
+        SmileConfig higher = SmileConfig.builder().maxReplaySize(Size.create(900)).build();
+        JsonParser finite = SmileParser.create(new ByteArrayInputStream(bytes), higher);
+        assertThat(strict.deserialize(finite, GenericType.create(PolymorphicOrderTest.Base.class)),
+                   is(new PolymorphicOrderTest.Sample(name, 0, null)));
+
+        SmileConfig lower = SmileConfig.builder().maxReplaySize(Size.create(600)).build();
+        JsonParser restricted = SmileParser.create(new ByteArrayInputStream(bytes), lower);
+        JsonException exception = assertThrows(JsonException.class,
+                                              () -> binding.deserialize(restricted, PolymorphicOrderTest.Base.class));
+        assertThat(exception.getMessage(), containsString("max-replay-size of 600"));
+        restricted.resetToMark();
+        restricted.mark();
+        assertThrows(JsonException.class, restricted::skip);
+        restricted.resetToMark();
+        assertThat(restricted.readJsonObject().stringValue("name").orElseThrow(), is(name));
+    }
+
+    @Test
+    void bindingAppliesItsLimitToTheJsonStreamsAndReadersItOpens() {
+        JsonBinding limited = JsonBinding.builder().maxReplaySize(Size.create(32)).build();
+        String name = "x".repeat(800);
+        String json = "  {\"name\":\"" + name + "\",\"kind\":\"sample\"}";
+        byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+        var type = GenericType.create(PolymorphicOrderTest.Base.class);
+
+        assertThrows(JsonException.class, () -> limited.deserialize(new StringReader(json), PolymorphicOrderTest.Base.class));
+        assertThrows(JsonException.class, () -> limited.deserialize(new StringReader(json), type));
+        assertThrows(JsonException.class,
+                     () -> limited.deserialize(new ByteArrayInputStream(bytes), PolymorphicOrderTest.Base.class));
+        assertThrows(JsonException.class, () -> limited.deserialize(new ByteArrayInputStream(bytes), 16, type));
+        assertThat(limited.deserialize(bytes, type), is(new PolymorphicOrderTest.Sample(name, 0, null)));
+    }
+
+    @Test
+    void wrappersPreserveTheSourceParserLimit() {
+        String json = "{\"name\":\"" + "x".repeat(800) + "\",\"kind\":\"sample\"}";
+        SmileConfig config = SmileConfig.builder().maxReplaySize(Size.create(600)).build();
+        JsonParser source = SmileParser.create(new ByteArrayInputStream(Codec.SMILE.encode(json)), config);
+        JsonParser wrapped = ObjectStartParser.create(source, 1);
+        JsonException exception = assertThrows(JsonException.class,
+                                              () -> binding.deserialize(wrapped, PolymorphicOrderTest.Base.class));
+        assertThat(exception.getMessage(), containsString("max-replay-size of 600"));
+
+        byte[] envelope = Codec.SMILE.encode("{\"child\":" + json + "}");
+        source = SmileParser.create(new ByteArrayInputStream(envelope), config);
+        source.nextToken();
+        JsonParser synthetic = ObjectStartParser.create(source);
+        synthetic.nextToken();
+        assertThat(synthetic.readString(), is("child"));
+        synthetic.nextToken();
+        synthetic.nextToken();
+        assertThrows(JsonException.class, () -> binding.deserialize(synthetic, PolymorphicOrderTest.Base.class));
+    }
+
+    @Test
+    void replaySizeConfigurationUsesOptionalByteUnits() {
+        Config config = Config.just(ConfigSources.create(Map.of("max-replay-size", "2 KiB")));
+        assertThat(JsonBinding.builder().config(config).build().prototype().maxReplaySize(), is(Optional.of(Size.create(2048))));
+        assertThat(SmileConfig.create(config).maxReplaySize(), is(Optional.of(Size.create(2048))));
+        assertThat(JsonBinding.builder().build().prototype().maxReplaySize(), is(Optional.empty()));
+        assertThat(SmileConfig.create().maxReplaySize(), is(Optional.empty()));
+
+        for (Size invalid : List.of(Size.create(-1), Size.create(2, Size.Unit.GIB))) {
+            assertThrows(IllegalArgumentException.class, () -> JsonBinding.builder().maxReplaySize(invalid).buildPrototype());
+            assertThrows(IllegalArgumentException.class, () -> SmileConfig.builder().maxReplaySize(invalid).build());
+        }
+    }
+
     private static Stream<Arguments> inputs() {
         return Stream.of(Arguments.of(Codec.JSON, 6, 1),
                          Arguments.of(Codec.JSON, 7, 3),
@@ -203,6 +346,15 @@ class PolymorphicBufferingTest {
 
         JsonParser parser(InputStream input, int bufferSize) {
             return this == JSON ? JsonParser.create(input, bufferSize) : SmileParser.create(input, bufferSize);
+        }
+
+        PolymorphicOrderTest.Base readWithLimit(JsonBinding binding, InputStream input, int maxBytes) {
+            Size limit = Size.create(maxBytes);
+            return switch (this) {
+            case JSON -> JsonBinding.builder().maxReplaySize(limit).build().deserialize(input, PolymorphicOrderTest.Base.class);
+            case SMILE -> binding.deserialize(SmileParser.create(input, SmileConfig.builder().maxReplaySize(limit).build()),
+                                              PolymorphicOrderTest.Base.class);
+            };
         }
     }
 

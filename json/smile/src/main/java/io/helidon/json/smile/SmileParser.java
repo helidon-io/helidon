@@ -205,10 +205,18 @@ public final class SmileParser extends JsonParserBase {
      * @return a new Smile parser instance
      */
     public static JsonParser create(InputStream inputStream) {
-        Objects.requireNonNull(inputStream);
-        SmileInputStreamParser parser = new SmileInputStreamParser(inputStream, SmileInputStreamParser.DEFAULT_BUFFER_SIZE);
-        parser.initializeFromHeaderOrDefaults();
-        return parser;
+        return create(inputStream, SmileInputStreamParser.DEFAULT_BUFFER_SIZE);
+    }
+
+    /**
+     * Creates a streaming parser with the configured replay limit. The input header determines the Smile encoding features.
+     *
+     * @param inputStream stream containing Smile data
+     * @param config Smile configuration
+     * @return a new stream parser
+     */
+    public static JsonParser create(InputStream inputStream, SmileConfig config) {
+        return new SmileInputStreamParser(Objects.requireNonNull(inputStream), Objects.requireNonNull(config));
     }
 
     /**
@@ -219,10 +227,7 @@ public final class SmileParser extends JsonParserBase {
      * @return a new Smile parser instance
      */
     public static JsonParser create(InputStream inputStream, int bufferSize) {
-        Objects.requireNonNull(inputStream);
-        SmileInputStreamParser parser = new SmileInputStreamParser(inputStream, bufferSize);
-        parser.initializeFromHeaderOrDefaults();
-        return parser;
+        return new SmileInputStreamParser(Objects.requireNonNull(inputStream), bufferSize);
     }
 
     static int matchAsciiKey(JsonParser parser, JsonStringMatcher matcher, byte[] input, int start, int length) {

@@ -28,8 +28,11 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.json.smile {
 
     requires static io.helidon.common.features.api;
+    requires static io.helidon.config.metadata;
 
-    requires io.helidon.json;
+    requires transitive io.helidon.config;
+    requires transitive io.helidon.json;
+
     requires io.helidon.common.buffers;
     requires io.helidon.builder.api;
 

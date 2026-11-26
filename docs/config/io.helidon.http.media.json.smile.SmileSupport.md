@@ -43,6 +43,27 @@ Configuration of Smile media support
 </td>
 <td>Content type to use if not configured (in response headers for server, and in request headers for client)</td>
 </tr>
+<tr>
+<td>
+<code>json-<wbr>binding</code>
+</td>
+<td>
+<code>Json<wbr>Binding<wbr>Config</code>
+</td>
+<td>JSON binding instance to use for serialization and deserialization</td>
+</tr>
+<tr>
+<td>
+<a id="smile-config"></a>
+<a href="io.helidon.json.smile.SmileConfig.md">
+<code>smile-<wbr>config</code>
+</a>
+</td>
+<td>
+<code>Smile<wbr>Config</code>
+</td>
+<td>Smile codec configuration whose replay limit, when set, takes precedence over the JSON binding limit</td>
+</tr>
 </tbody>
 </table>
 

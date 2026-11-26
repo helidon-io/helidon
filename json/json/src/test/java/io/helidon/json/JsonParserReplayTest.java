@@ -20,14 +20,71 @@ import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class JsonParserReplayTest {
+
+    @Test
+    void fullMarkedBufferFailsBeforeReadingTheFollowingByte() {
+        byte[] bytes = "[\"abcdef\",42]".getBytes(StandardCharsets.UTF_8);
+        var input = new ByteArrayInputStream(bytes);
+        JsonParser parser = JsonParserSupport.createStreamParser(input, 8, 8);
+        parser.nextToken();
+        parser.mark();
+        parser.skip();
+        int remaining = input.available();
+        JsonException exception = assertThrows(JsonException.class, parser::hasNext);
+        assertThat(exception.getMessage(), containsString("max-replay-size of 8 bytes"));
+        assertThat(input.available(), is(remaining));
+        parser.resetToMark();
+        assertThat(parser.readString(), is("abcdef"));
+        assertThat(parser.nextToken(), is((byte) ','));
+        parser.nextToken();
+        assertThat(parser.readInt(), is(42));
+    }
+
+    @Test
+    void fullMarkedBufferCanBeConsumedBeforeCheckingForEof() {
+        byte[] value = "\"abcdef\"".getBytes(StandardCharsets.UTF_8);
+        JsonParser parser = JsonParserSupport.createStreamParser(new ByteArrayInputStream(value), 8, 8);
+        parser.mark();
+        assertThat(parser.readString(), is("abcdef"));
+        JsonException exception = assertThrows(JsonException.class, parser::hasNext);
+        assertThat(exception.getMessage(), containsString("max-replay-size of 8 bytes"));
+        parser.clearMark();
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @Test
+    void resettingAfterFailedMaterializationReleasesTheAbandonedScalar() {
+        String value = "\"" + "x".repeat(100) + "\"";
+        byte[] document = ("[" + value + "," + value + "]").getBytes(StandardCharsets.UTF_8);
+        var input = new ByteArrayInputStream(document) {
+            @Override
+            public int read(byte[] bytes, int offset, int length) {
+                assertThat("Skipping after reset should reuse the buffer", bytes.length, lessThanOrEqualTo(32));
+                return super.read(bytes, offset, Math.min(3, length));
+            }
+        };
+        JsonParser parser = JsonParserSupport.createStreamParser(input, 16, 32);
+        parser.nextToken();
+        parser.mark();
+        assertThrows(JsonException.class, parser::readJsonString);
+        parser.resetToMark();
+        parser.skip();
+        assertThat(parser.nextToken(), is((byte) ','));
+        parser.nextToken();
+        parser.skip();
+        assertThat(parser.nextToken(), is((byte) ']'));
+    }
 
     @ParameterizedTest
     @EnumSource(Input.class)
