@@ -847,7 +847,7 @@ public final class SmileParser extends JsonParserBase {
     @Override
     public byte[] readBinary() {
         if (currentByte == (SmileConstants.TOKEN_BINARY_7BIT & 0xFF)) {
-            int rawLen = (int) readUnsignedVInt();
+            int rawLen = readBinaryArrayLength();
             byte[] data = decode7Bit(rawLen, encodedLength7Bit(rawLen));
             checkNextAfterValue();
             return data;
@@ -855,8 +855,8 @@ public final class SmileParser extends JsonParserBase {
             if (!rawBinaryEnabled) {
                 throw createException("Raw binary not enabled in header");
             }
-            int rawLen = (int) readUnsignedVInt();
-            if (currentIndex + rawLen >= bufferLength) {
+            int rawLen = readBinaryArrayLength();
+            if (rawLen > bufferLength - currentIndex - 1) {
                 throw createException("Unexpected end of the JSON");
             }
             byte[] bytes = new byte[rawLen];
@@ -880,29 +880,16 @@ public final class SmileParser extends JsonParserBase {
     @Override
     public void skip() {
         switch (currentByte()) {
-        case '"':
-            skipString();
-            break;
-        case '{':
-            skipObject();
-            break;
-        case '[':
-            skipArray();
-            break;
-        case '1':
-            skipNumber();
-            break;
-        case 't':
-        case 'n':
-        case 'f':
-            checkNextAfterValue();
-            break;
-        case ',':
-        case ':':
-            //NOOP
-            break;
-        default:
-            throw createException("Invalid JSON value to skip", currentByte());
+        case '"' -> skipString();
+        case '{' -> skipObject();
+        case '[' -> skipArray();
+        case '1' -> skipNumber();
+        case 'B' -> skipBinary();
+        case 't', 'n', 'f' -> checkNextAfterValue();
+        case ',', ':' -> {
+            // Synthetic events do not consume data.
+        }
+        default -> throw createException("Invalid JSON value to skip", currentByte());
         }
     }
 
@@ -1768,7 +1755,7 @@ public final class SmileParser extends JsonParserBase {
      * {@code rawLen} raw bytes: ceil(rawLen * 8 / 7).
      */
     private static int encodedLength7Bit(int rawLen) {
-        return (rawLen * 8 + 6) / 7;
+        return (int) ((rawLen * 8L + 6) / 7);
     }
 
     /**
@@ -1857,6 +1844,58 @@ public final class SmileParser extends JsonParserBase {
         } catch (CharacterCodingException e) {
             throw createException("Invalid UTF-8 sequence in Smile string", e);
         }
+    }
+
+    private void skipBinary() {
+        if (currentByte == (SmileConstants.TOKEN_BINARY_RAW & 0xFF) && !rawBinaryEnabled) {
+            throw createException("Raw binary not enabled in header");
+        }
+        long length = readBinaryLength();
+        if (currentByte == (SmileConstants.TOKEN_BINARY_7BIT & 0xFF)) {
+            long extra = length / 7 + (length % 7 == 0 ? 0 : 1);
+            if (length > Long.MAX_VALUE - extra) {
+                throw createException("Binary length is too large");
+            }
+            length += extra;
+        }
+        if (length > bufferLength - currentIndex - 1) {
+            throw createException("Unexpected end of binary data");
+        }
+        currentIndex += (int) length;
+        checkNextAfterValue();
+    }
+
+    private int readBinaryArrayLength() {
+        long length = readBinaryLength();
+        if (length > Integer.MAX_VALUE
+                || (currentByte == (SmileConstants.TOKEN_BINARY_7BIT & 0xFF)
+                && (length * 8 + 6) / 7 > Integer.MAX_VALUE)) {
+            throw createException("Binary length is too large");
+        }
+        return (int) length;
+    }
+
+    private long readBinaryLength() {
+        long length = 0;
+        for (int i = 0; i < 10; i++) {
+            if (currentIndex + 1 >= bufferLength) {
+                throw createException("Unexpected end of binary length");
+            }
+            int b = buffer[++currentIndex] & 0xFF;
+            boolean last = (b & 0x80) != 0;
+            if (last && (b & 0x40) != 0) {
+                throw createException("Invalid Smile VInt final byte: 0x" + Integer.toHexString(b));
+            }
+            int bits = last ? 6 : 7;
+            if (length > (Long.MAX_VALUE >>> bits)) {
+                throw createException("Binary length is too large");
+            }
+            length = (length << bits) | (b & (last ? 0x3F : 0x7F));
+            if (last) {
+                return length;
+            }
+        }
+        throw createException("Binary length is too large");
     }
 
     static final class LazyHash {

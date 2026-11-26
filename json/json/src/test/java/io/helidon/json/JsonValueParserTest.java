@@ -26,6 +26,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -619,21 +621,61 @@ class JsonValueParserTest {
 
     @Test
     public void testJsonValueParserKeepsOuterTokensAroundLargeNestedObject() {
-        StringBuilder json = new StringBuilder("{\"a\":{");
+        StringBuilder json = new StringBuilder("[{");
         for (int i = 0; i < 120; i++) {
             if (i > 0) {
                 json.append(',');
             }
             json.append("\"k").append(i).append("\":").append(i);
         }
-        json.append("},\"z\":999}");
+        json.append("},999]");
 
         JsonValue value = JsonParser.create(json.toString()).readJsonValue();
         JsonParser parser = JsonParser.create(value);
 
-        while (parser.hasNext()) {
+        assertThat(parser.currentByte(), is((byte) '['));
+        assertThat(parser.nextToken(), is((byte) '{'));
+        Map<String, Integer> actual = new LinkedHashMap<>();
+        Map<String, Integer> expected = new LinkedHashMap<>();
+        for (int i = 0; i < 120; i++) {
+            expected.put("k" + i, i);
+            assertThat(parser.nextToken(), is((byte) '"'));
+            String key = parser.readString();
+            assertThat(parser.nextToken(), is((byte) ':'));
             parser.nextToken();
+            actual.put(key, parser.readInt());
+            assertThat(parser.nextToken(), is(i == 119 ? (byte) '}' : (byte) ','));
         }
+        assertThat(actual, is(expected));
+        assertThat(parser.nextToken(), is((byte) ','));
+        assertThat(parser.nextToken(), is((byte) '9'));
+        assertThat(parser.readInt(), is(999));
+        assertThat(parser.nextToken(), is((byte) ']'));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {3, 4, 5, 7, 8, 9, 17})
+    void preservesSiblingsAfterNestedFramesGrow(int nestingDepth) {
+        JsonValue value = JsonString.create("leaf");
+        for (int i = 0; i < nestingDepth; i++) {
+            value = JsonArray.create(value, JsonNumber.create(i));
+        }
+        JsonParser parser = JsonParser.create(value);
+
+        assertThat(parser.currentByte(), is((byte) '['));
+        for (int i = 1; i < nestingDepth; i++) {
+            assertThat(parser.nextToken(), is((byte) '['));
+        }
+        assertThat(parser.nextToken(), is((byte) '"'));
+        assertThat(parser.readString(), is("leaf"));
+        for (int i = 0; i < nestingDepth; i++) {
+            assertThat(parser.nextToken(), is((byte) ','));
+            assertThat(parser.nextToken(), is((byte) Integer.toString(i).charAt(0)));
+            assertThat(parser.readInt(), is(i));
+            assertThat(parser.nextToken(), is((byte) ']'));
+        }
+        assertThat(parser.hasNext(), is(false));
     }
 
     @Test

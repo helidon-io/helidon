@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -412,6 +414,49 @@ class JsonValueParserMarkingTest {
             }
         }
         assertThat(remainingTokens(parser), is(expected));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {3, 4, 5, 7, 8, 9, 17})
+    void resetPreservesSiblingsAcrossFrameGrowth(int nestingDepth) {
+        JsonValue value = JsonString.create("leaf");
+        List<String> expected = new ArrayList<>();
+        expected.add("\"leaf");
+        for (int i = 0; i < nestingDepth; i++) {
+            value = JsonArray.create(value, JsonNumber.create(i));
+            expected.add(",");
+            expected.add("#" + i);
+            expected.add("]");
+        }
+        JsonParser parser = JsonParser.create(value);
+        assertThat(parser.currentByte(), is((byte) '['));
+
+        // Mark before growth, exhaust the frame stack, then replay the entire traversal.
+        parser.mark();
+        for (int i = 1; i < nestingDepth; i++) {
+            assertThat(parser.nextToken(), is((byte) '['));
+        }
+        assertThat(parser.nextToken(), is((byte) '"'));
+        assertThat(remainingTokens(parser), is(expected));
+        assertThat(parser.hasNext(), is(false));
+        parser.resetToMark();
+        assertThat(parser.currentByte(), is((byte) '['));
+        for (int i = 1; i < nestingDepth; i++) {
+            assertThat(parser.nextToken(), is((byte) '['));
+        }
+        assertThat(parser.nextToken(), is((byte) '"'));
+
+        // A mark made after growth must also retain every pending sibling and closing token.
+        for (int replay = 0; replay < 2; replay++) {
+            parser.mark();
+            assertThat(remainingTokens(parser), is(expected));
+            assertThat(parser.hasNext(), is(false));
+            parser.resetToMark();
+            assertThat(parser.currentByte(), is((byte) '"'));
+            assertThat(parser.readString(), is("leaf"));
+        }
+        assertThat(remainingTokens(parser), is(expected));
+        assertThat(parser.hasNext(), is(false));
     }
 
     @Test

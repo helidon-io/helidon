@@ -16,14 +16,22 @@
 
 package io.helidon.json.tests;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
 
+import io.helidon.json.JsonGenerator;
+import io.helidon.json.JsonParser;
 import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.json.smile.SmileConfig;
+import io.helidon.json.smile.SmileGenerator;
+import io.helidon.json.smile.SmileParser;
 import io.helidon.testing.junit5.Testing;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -158,6 +166,32 @@ public class SmileBinaryTest {
         assertArrayEquals(data, result.binary());
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void ignoresUnknownBinaryValuesAndContainers(boolean rawBinary) {
+        byte[] payload = createPattern(137, 37);
+        SmileConfig config = SmileConfig.builder().rawBinaryEnabled(rawBinary).build();
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        try (JsonGenerator generator = SmileGenerator.create(output, config)) {
+            generator.writeObjectStart();
+            generator.write("before", "left");
+            generator.writeBinary("ignoredBinary", payload);
+            generator.writeKey("ignoredArray").writeArrayStart().writeBinary(payload).writeArrayEnd();
+            generator.writeKey("ignoredObject").writeObjectStart().writeBinary("binary", payload).writeObjectEnd();
+            generator.write("after", "right");
+            generator.writeObjectEnd();
+        }
+        byte[] bytes = output.toByteArray();
+        KnownFields expected = new KnownFields("left", "right");
+        for (int bufferSize : new int[] {0, 5, 16, 512}) {
+            JsonParser parser = bufferSize == 0
+                    ? SmileParser.create(bytes)
+                    : SmileParser.create(new ByteArrayInputStream(bytes), bufferSize);
+            assertThat("buffer=" + bufferSize, jsonBinding.deserialize(parser, KnownFields.class), is(expected));
+            assertThat(parser.hasNext(), is(false));
+        }
+    }
+
     private void assertRoundTrip(byte[] data) {
         BinaryModel model = new BinaryModel(data);
         byte[] smileData = SmileBindingSupport.serializeSmile(jsonBinding, model);
@@ -188,5 +222,9 @@ public class SmileBinaryTest {
 
     @Json.Entity
     record MultiBinaryModel(byte[] binary1, byte[] binary2) {
+    }
+
+    @Json.Entity
+    record KnownFields(String before, String after) {
     }
 }
