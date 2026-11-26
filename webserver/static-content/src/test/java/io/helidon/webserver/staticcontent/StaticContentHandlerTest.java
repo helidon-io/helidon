@@ -80,6 +80,7 @@ import static io.helidon.http.HeaderNames.IF_MATCH;
 import static io.helidon.http.HeaderNames.IF_MODIFIED_SINCE;
 import static io.helidon.http.HeaderNames.IF_NONE_MATCH;
 import static io.helidon.http.HeaderNames.LOCATION;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -99,6 +100,16 @@ class StaticContentHandlerTest {
 
     @TempDir
     Path tempDir;
+
+    @Test
+    void statusMismatchReportsExpectedAndActualStatus() {
+        AssertionError error = assertThrows(AssertionError.class,
+                                           () -> assertHttpException(() -> {
+                                               throw new HttpException("Test", Status.NOT_MODIFIED_304);
+                                           }, Status.PRECONDITION_FAILED_412));
+
+        assertThat(error.getMessage(), containsString("Expected: 412, Actual: 304"));
+    }
 
     @Test
     void etag_InNoneMatch_NotAccept() {
@@ -2468,7 +2479,7 @@ class StaticContentHandlerTest {
         } catch (HttpException he) {
             if (status != null && status.code() != he.status().code()) {
                 throw new AssertionError("Unexpected status in RequestException. "
-                                                 + "(Expected: " + status.code() + ", Actual: " + status.code() + ")");
+                                                 + "(Expected: " + status.code() + ", Actual: " + he.status().code() + ")");
             }
         }
     }

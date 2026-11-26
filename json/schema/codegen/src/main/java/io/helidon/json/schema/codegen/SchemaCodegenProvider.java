@@ -40,7 +40,7 @@ public class SchemaCodegenProvider implements CodegenExtensionProvider {
 
     @Override
     public CodegenExtension create(CodegenContext ctx, TypeName generatorType) {
-        return new SchemaCodegen(ctx);
+        return new SchemaCodegen();
     }
 
     @Override

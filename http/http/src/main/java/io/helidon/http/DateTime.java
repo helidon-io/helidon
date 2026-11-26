@@ -20,6 +20,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
 import io.helidon.common.Api;
+import io.helidon.common.buffers.BufferData;
 
 /**
  * Support for HTTP date formats based on <a href="https://tools.ietf.org/html/rfc2616">RFC2616</a>.
@@ -108,10 +109,20 @@ public final class DateTime {
     /**
      * Formatted date time terminated by carriage return and new line.
      *
-     * @return date bytes for HTTP/1
+     * @return a copy of the date bytes for HTTP/1
      */
     @Api.Internal
     public static byte[] http1Bytes() {
-        return DateTimeHelper.http1Bytes();
+        return DateTimeHelper.http1Bytes().clone();
+    }
+
+    /**
+     * Write the current HTTP/1 date and its terminating CRLF to the target buffer.
+     *
+     * @param target destination buffer
+     */
+    @Api.Internal
+    public static void writeHttp1Bytes(BufferData target) {
+        BufferData.writeFromShared(target, DateTimeHelper.http1Bytes());
     }
 }

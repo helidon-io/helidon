@@ -17,13 +17,14 @@
 package io.helidon.declarative.tests.openapi;
 
 import java.time.LocalDate;
+import java.util.Map;
 
 import io.helidon.json.binding.Json;
 import io.helidon.json.schema.JsonSchema;
 
 @Json.Entity
 @JsonSchema.Schema
-record Item(String name, State state, LocalDate since, EmptyState emptyState) {
+record Item(String name, State state, LocalDate since, EmptyState emptyState, Map<String, String> values) {
     enum State {
         ON,
         OFF
