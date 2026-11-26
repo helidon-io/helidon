@@ -506,8 +506,8 @@ class GeneratedSourceMetadataTest {
         assertCompilationSuccess(result);
         String content = Files.readString(generatedSource(result, "OrderedBean__GeneratedConverter.java"));
         assertThat(content, containsString("parser.tryReadProperty(ID_KEY)"));
-        assertThat(content, containsString("return readDeclaredFields(parser, instance)"));
-        assertThat(content, containsString("private OrderedBean readDeclaredFields(JsonParser parser, OrderedBean instance)"));
+        assertThat(content, containsString("return readExpectedOrder(parser, instance)"));
+        assertThat(content, containsString("private OrderedBean readExpectedOrder(JsonParser parser, OrderedBean instance)"));
         assertThat(content, containsString("parser.tryNextProperty(LABEL_KEY)"));
         assertThat(content, containsString("nextPropertyOrSkipUnknown(parser)) != -1 || !parser.tryNextProperty(LABEL_KEY)"));
         assertThat(content, containsString("pendingProperty == -1 ? parser.nextProperty(PROPERTY_NAMES) : pendingProperty"));
@@ -565,7 +565,7 @@ class GeneratedSourceMetadataTest {
 
         assertCompilationSuccess(result);
         String content = Files.readString(generatedSource(result, "BuilderBacked__GeneratedConverter.java"));
-        assertThat(content, containsString("return readDeclaredFields(parser, builder)"));
+        assertThat(content, containsString("return readExpectedOrder(parser, builder)"));
         assertThat(content.lines().filter(line -> line.contains(" builder = ")).count(), is(1L));
     }
 

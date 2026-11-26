@@ -916,8 +916,8 @@ class JsonConverterGenerator {
                 boolean takesBuilder = hasBuilder && converterInfo.creatorInfo().creatorKind() != ElementKind.METHOD;
                 target = takesBuilder ? ", builder" : ", instance";
             }
-            method.addContentLine("return readDeclaredFields(parser" + target + ");").addContentLine("}");
-            generateDeclaredReader(classBuilder, converterInfo, jsonProperties, readers, hasCreator, hasBuilder, fieldNames);
+            method.addContentLine("return readExpectedOrder(parser" + target + ");").addContentLine("}");
+            generateExpectedOrderReader(classBuilder, converterInfo, jsonProperties, readers, hasCreator, hasBuilder, fieldNames);
         }
         propertyLoop(method, converterInfo, readers, ignored, hasCreator, hasBuilder, "parser.readProperty(PROPERTY_NAMES)");
     }
@@ -953,13 +953,13 @@ class JsonConverterGenerator {
         method.addContentLine("}");
     }
 
-    private static void generateDeclaredReader(ClassBase.Builder<?, ?> classBuilder,
-                                               ConvertedTypeInfo converterInfo,
-                                               List<JsonProperty> properties,
-                                               List<PropertyReader> readers,
-                                               boolean hasCreator,
-                                               boolean hasBuilder,
-                                               GeneratedNames fieldNames) {
+    private static void generateExpectedOrderReader(ClassBase.Builder<?, ?> classBuilder,
+                                                    ConvertedTypeInfo converterInfo,
+                                                    List<JsonProperty> properties,
+                                                    List<PropertyReader> readers,
+                                                    boolean hasCreator,
+                                                    boolean hasBuilder,
+                                                    GeneratedNames fieldNames) {
         CreatorInfo creator = converterInfo.creatorInfo();
         boolean skipUnknown = !converterInfo.failOnUnknown();
         if (skipUnknown) {
@@ -973,7 +973,7 @@ class JsonConverterGenerator {
                     .addContentLine("return property;"));
         }
         classBuilder.addMethod(method -> {
-            method.name("readDeclaredFields").accessModifier(AccessModifier.PRIVATE)
+            method.name("readExpectedOrder").accessModifier(AccessModifier.PRIVATE)
                     .returnType(converterInfo.wildcardsGenerics()).addParameter(JsonTypes.JSON_PARSER, "parser");
             if (hasCreator) {
                 createPreProcessingVariables(method, converterInfo, properties, true, creator.creatorKind(), creator, hasBuilder);
