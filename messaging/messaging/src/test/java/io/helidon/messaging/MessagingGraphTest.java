@@ -18,6 +18,7 @@ package io.helidon.messaging;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -29,12 +30,21 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import io.helidon.common.GenericType;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigException;
+import io.helidon.config.ConfigSources;
+import io.helidon.health.HealthCheck;
+import io.helidon.health.HealthCheckResponse;
+import io.helidon.health.HealthCheckType;
 import io.helidon.messaging.spi.ChannelConnection;
 import io.helidon.messaging.spi.IncomingChannel;
+import io.helidon.messaging.spi.MessagingService;
 import io.helidon.messaging.spi.OutgoingChannel;
+import io.helidon.service.registry.ServiceRegistry;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -51,6 +61,57 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class MessagingGraphTest {
     private static final Duration WAIT = Duration.ofSeconds(5);
     private static final Duration SHUTDOWN_TIMEOUT = Duration.ofSeconds(1);
+
+    @Test
+    void selectingMetricsWithoutItsServiceProviderFailsConfiguration() {
+        Config config = Config.just(ConfigSources.create(Map.of("services.metrics.enabled", "true")));
+        ConfigException failure = assertThrows(ConfigException.class, () -> MessagingGraph.builder().config(config).build());
+        assertThat(failure.getMessage(), containsString("metrics"));
+    }
+
+    @Test
+    void failingServiceCloseStillClosesOtherServicesAndPropagatesToLaterCallers() {
+        AtomicInteger closes = new AtomicInteger();
+        AssertionError failure = new AssertionError("Service close failed");
+        AtomicReference<MessagingGraph> owner = new AtomicReference<>();
+        MessagingGraph graph = MessagingGraph.builder()
+                .addService(new CloseService("first", closes::incrementAndGet))
+                .addService(new CloseService("second", () -> {
+                    owner.get().close();
+                    throw failure;
+                }))
+                .build()
+                .start();
+        owner.set(graph);
+        HealthCheck liveness = graph.healthChecks().stream()
+                .filter(check -> check.type() == HealthCheckType.LIVENESS)
+                .findFirst()
+                .orElseThrow();
+        assertThat(assertThrows(AssertionError.class, graph::close), sameInstance(failure));
+        assertThat(assertThrows(AssertionError.class, graph::close), sameInstance(failure));
+        assertThat(closes.get(), is(1));
+        assertThat(liveness.call().status(), is(HealthCheckResponse.Status.DOWN));
+    }
+
+    @Test
+    void startupFailureRetainsFatalServiceCleanupError() {
+        IllegalStateException startupFailure = new IllegalStateException("Connector startup failed");
+        AssertionError cleanupFailure = new AssertionError("Service close failed");
+        StartupBlockingOutgoing outgoing = new StartupBlockingOutgoing(startupFailure);
+        outgoing.releaseStartup();
+        MessagingChannel<String> channel = MessagingChannel.create("orders", String.class);
+        try (MessagingGraph graph = MessagingGraph.builder()
+                .channel(channel)
+                .outgoingChannel(channel, outgoing)
+                .addService(new CloseService("failing", () -> {
+                    throw cleanupFailure;
+                }))
+                .build()) {
+            assertThat(assertThrows(IllegalStateException.class, graph::start), sameInstance(startupFailure));
+            assertThat(startupFailure.getSuppressed().length, is(1));
+            assertThat(startupFailure.getSuppressed()[0], sameInstance(cleanupFailure));
+        }
+    }
 
     @Test
     void preparesAndWaitsForEveryManagedSourceBeforeAdmission() {
@@ -1487,6 +1548,28 @@ class MessagingGraphTest {
                 ExecutionException.class,
                 () -> task.completion().get(WAIT.toNanos(), TimeUnit.NANOSECONDS));
         return exception.getCause();
+    }
+
+    private record CloseService(String name, Runnable onClose) implements MessagingService, MessagingService.Instance {
+        @Override
+        public String type() {
+            return name;
+        }
+
+        @Override
+        public Instance create(ServiceRegistry registry) {
+            return this;
+        }
+
+        @Override
+        public Consumer<MessageBatch<?>> observe(String channel, Consumer<MessageBatch<?>> dispatch) {
+            return dispatch;
+        }
+
+        @Override
+        public void close() {
+            onClose.run();
+        }
     }
 
     private record AsyncTask(Thread thread, CompletableFuture<Void> completion) {

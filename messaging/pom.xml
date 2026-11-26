@@ -38,6 +38,7 @@
 
     <modules>
         <module>messaging</module>
+        <module>metrics</module>
     </modules>
 
     <build>

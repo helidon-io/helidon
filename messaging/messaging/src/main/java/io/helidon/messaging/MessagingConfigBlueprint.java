@@ -29,6 +29,8 @@ import io.helidon.messaging.spi.MessagingConnector;
 import io.helidon.messaging.spi.MessagingConnectorProvider;
 import io.helidon.messaging.spi.MessagingIncomingConfig;
 import io.helidon.messaging.spi.MessagingOutgoingConfig;
+import io.helidon.messaging.spi.MessagingService;
+import io.helidon.messaging.spi.MessagingServiceProvider;
 
 /**
  * Messaging configuration.
@@ -42,6 +44,27 @@ import io.helidon.messaging.spi.MessagingOutgoingConfig;
 @Prototype.RegistrySupport
 @Api.Preview
 interface MessagingConfigBlueprint extends Prototype.Factory<MessagingGraph> {
+    /**
+     * Services applied to channel dispatch.
+     *
+     * @return selected messaging services
+     */
+    @Option.Configured
+    @Option.Provider(value = MessagingServiceProvider.class,
+                     discoverServices = false,
+                     identity = Option.Provider.Identity.TYPE_ONLY)
+    @Option.Singular
+    List<MessagingService> services();
+
+    /**
+     * Graph readiness and liveness configuration.
+     *
+     * @return health configuration
+     */
+    @Option.Configured
+    @Option.DefaultMethod("create")
+    MessagingHealthConfig health();
+
     /**
      * Maximum number of admitted deliveries waiting for execution. Zero disables buffering.
      *
@@ -87,7 +110,7 @@ interface MessagingConfigBlueprint extends Prototype.Factory<MessagingGraph> {
     Optional<Duration> admissionTimeout();
 
     /**
-     * Positive global maximum shutdown and failed-startup rollback time, representable in nanoseconds.
+     * Positive timeout for graph shutdown and failed-startup rollback, excluding messaging service close callbacks.
      * This does not bound startup or readiness and cannot be overridden by a channel.
      *
      * @return shutdown timeout

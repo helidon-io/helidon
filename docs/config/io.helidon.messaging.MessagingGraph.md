@@ -47,32 +47,6 @@ Messaging configuration
 </tr>
 <tr>
 <td>
-<a id="connector"></a>
-<a href="io.helidon.messaging.spi.MessagingConnector.md">
-<code>connector</code>
-</a>
-</td>
-<td>
-<code>Map&lt;<wbr>String,<wbr> Messaging<wbr>Connector&gt;<wbr> or List&lt;<wbr>Messaging<wbr>Connector&gt;</code>
-</td>
-<td>
-</td>
-<td>Configured messaging connectors</td>
-</tr>
-<tr>
-<td>
-<code>max-<wbr>pending-<wbr>messages</code>
-</td>
-<td>
-<code>Integer</code>
-</td>
-<td>
-<code>1024</code>
-</td>
-<td>Positive maximum number of messages retained by waiting callers and open connector reservations</td>
-</tr>
-<tr>
-<td>
 <code>max-<wbr>in-flight-<wbr>messages</code>
 </td>
 <td>
@@ -109,6 +83,20 @@ Messaging configuration
 </tr>
 <tr>
 <td>
+<a id="health"></a>
+<a href="io.helidon.messaging.MessagingHealthConfig.md">
+<code>health</code>
+</a>
+</td>
+<td>
+<code>Messaging<wbr>Health<wbr>Config</code>
+</td>
+<td>
+</td>
+<td>Graph readiness and liveness configuration</td>
+</tr>
+<tr>
+<td>
 <code>shutdown-<wbr>timeout</code>
 </td>
 <td>
@@ -117,7 +105,7 @@ Messaging configuration
 <td>
 <code>PT10S</code>
 </td>
-<td>Positive global maximum shutdown and failed-startup rollback time, representable in nanoseconds</td>
+<td>Positive timeout for graph shutdown and failed-startup rollback, excluding messaging service close callbacks</td>
 </tr>
 <tr>
 <td>
@@ -132,6 +120,20 @@ Messaging configuration
 </tr>
 <tr>
 <td>
+<a id="services"></a>
+<a href="io.helidon.messaging.spi.MessagingService.md">
+<code>services</code>
+</a>
+</td>
+<td>
+<code>Map&lt;<wbr>String,<wbr> Messaging<wbr>Service&gt;</code>
+</td>
+<td>
+</td>
+<td>Services applied to channel dispatch</td>
+</tr>
+<tr>
+<td>
 <code>queue-<wbr>capacity</code>
 </td>
 <td>
@@ -141,6 +143,44 @@ Messaging configuration
 <code>0</code>
 </td>
 <td>Maximum number of admitted deliveries waiting for execution</td>
+</tr>
+<tr>
+<td>
+<a id="connector"></a>
+<a href="io.helidon.messaging.spi.MessagingConnector.md">
+<code>connector</code>
+</a>
+</td>
+<td>
+<code>Map&lt;<wbr>String,<wbr> Messaging<wbr>Connector&gt;<wbr> or List&lt;<wbr>Messaging<wbr>Connector&gt;</code>
+</td>
+<td>
+</td>
+<td>Configured messaging connectors</td>
+</tr>
+<tr>
+<td>
+<code>services-<wbr>discover-<wbr>services</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>false</code>
+</td>
+<td>Whether to enable automatic service discovery for <code>services</code></td>
+</tr>
+<tr>
+<td>
+<code>max-<wbr>pending-<wbr>messages</code>
+</td>
+<td>
+<code>Integer</code>
+</td>
+<td>
+<code>1024</code>
+</td>
+<td>Positive maximum number of messages retained by waiting callers and open connector reservations</td>
 </tr>
 </tbody>
 </table>

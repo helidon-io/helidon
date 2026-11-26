@@ -8,6 +8,8 @@ navigation:
 This guide describes how to create a sample Helidon project that can be used
 to run some basic examples using both built-in and custom meters with Helidon.
 
+For channel processing counts, durations, and failures, see [Messaging metrics](../modules/messaging.md#channel-metrics).
+
 ## What You Need
 
 For this 30 minute tutorial, you will need the following:

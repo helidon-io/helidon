@@ -47,6 +47,7 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
     private final DeliveryEngine deliveryEngine;
     private final String channelName;
     private final DefaultMessagingGraph graph;
+    private final Consumer<MessageBatch<?>> dispatch;
 
     private DefaultMessagingChannel(GenericType<T> payloadType,
                                     List<Consumer<MessageBatch<?>>> validators,
@@ -60,6 +61,7 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
         this.deliveryEngine = deliveryEngine;
         this.channelName = channelName;
         this.graph = graph;
+        this.dispatch = graph.observe(channelName, this::dispatchBatch);
     }
 
     static Runnable streamSource(Stream<?> stream, Consumer<Object> consumer) {
@@ -109,7 +111,7 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
         Objects.requireNonNull(messages);
         graph.ensureRunning();
         MessageBatch<?> batch = toBatch(messages);
-        deliveryEngine.dispatch(channelName, batch, () -> dispatchBatch(batch));
+        deliveryEngine.dispatch(channelName, batch, () -> dispatch.accept(batch));
     }
 
     void emitRoutedBatchObject(MessageBatch<?> messages) {
