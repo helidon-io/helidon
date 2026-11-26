@@ -41,15 +41,20 @@ import graphql.ExceptionWhileDataFetching;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
+import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.GraphQLException;
 import graphql.ParseAndValidate;
 import graphql.execution.preparsed.PreparsedDocumentEntry;
 import graphql.execution.preparsed.PreparsedDocumentProvider;
+import graphql.introspection.GoodFaithIntrospection;
 import graphql.language.Document;
 import graphql.language.SourceLocation;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.SchemaPrinter;
+import graphql.validation.GoodFaithIntrospectionExceeded;
+import graphql.validation.OperationValidationRule;
+import graphql.validation.QueryComplexityLimits;
 import graphql.validation.ValidationError;
 
 import static io.helidon.graphql.server.GraphQlConstants.COLUMN;
@@ -109,20 +114,27 @@ class InvocationHandlerImpl implements InvocationHandler {
         }
         Object parsedDocument = executionInput.getGraphQLContext().get(PARSED_DOCUMENT);
         if (parsedDocument instanceof Document document) {
-            return CompletableFuture.completedFuture(new PreparsedDocumentEntry(document,
-                                                                               validate(schema, executionInput, document)));
+            return CompletableFuture.completedFuture(validate(schema, executionInput, document));
         }
         return CompletableFuture.completedFuture(parseAndValidate.apply(executionInput));
     }
 
-    @SuppressWarnings("unchecked")
-    private static List<ValidationError> validate(GraphQLSchema schema,
-                                                  ExecutionInput executionInput,
-                                                  Document document) {
-        Object validationPredicate = executionInput.getGraphQLContext()
-                .getOrDefault(ParseAndValidate.INTERNAL_VALIDATION_PREDICATE_HINT, (Predicate<Class<?>>) _ -> true);
+    private static PreparsedDocumentEntry validate(GraphQLSchema schema,
+                                                    ExecutionInput executionInput,
+                                                    Document document) {
+        GraphQLContext context = executionInput.getGraphQLContext();
+        Predicate<OperationValidationRule> validationPredicate =
+                context.getOrDefault(ParseAndValidate.INTERNAL_VALIDATION_PREDICATE_HINT, _ -> true);
+        Predicate<OperationValidationRule> rules = GoodFaithIntrospection.isEnabled(context)
+                ? validationPredicate
+                : rule -> rule != OperationValidationRule.GOOD_FAITH_INTROSPECTION && validationPredicate.test(rule);
         Locale locale = executionInput.getLocale() == null ? Locale.getDefault() : executionInput.getLocale();
-        return ParseAndValidate.validate(schema, document, (Predicate<Class<?>>) validationPredicate, locale);
+        QueryComplexityLimits limits = context.get(QueryComplexityLimits.KEY);
+        try {
+            return new PreparsedDocumentEntry(document, ParseAndValidate.validate(schema, document, rules, locale, limits));
+        } catch (GoodFaithIntrospectionExceeded e) {
+            return new PreparsedDocumentEntry(document, List.of(e.toBadFaithError()));
+        }
     }
 
     @Override
@@ -195,6 +207,8 @@ class InvocationHandlerImpl implements InvocationHandler {
                 .operationName(operationName)
                 .context(context)
                 .graphQLContext(builder -> {
+                    // Keep the limits configured by Helidon's execution instrumentation.
+                    builder.put(QueryComplexityLimits.KEY, QueryComplexityLimits.NONE);
                     builder.of(contextValues);
                     builder.put(ExecutionContext.HELIDON_CONTEXT_KEY, commonContext);
                     builder.put(ExecutionContext.EXECUTION_CONTEXT_KEY, context);
@@ -218,7 +232,9 @@ class InvocationHandlerImpl implements InvocationHandler {
 
     private Map<String, Object> processErrors(ExecutionResult result, List<GraphQLError> errors) {
         Map<String, Object> resultMap = new HashMap<>();
-        resultMap.put(DATA, result.getData());
+        if (result.isDataPresent()) {
+            resultMap.put(DATA, result.getData());
+        }
 
         boolean hasErrors = false;
         for (GraphQLError error : errors) {
@@ -236,11 +252,6 @@ class InvocationHandlerImpl implements InvocationHandler {
                 addError(resultMap, error, cause);
             } else if (error instanceof ValidationError) {
                 addError(resultMap, error);
-                // the spec tests for empty "data" node on validation errors
-                if (result.getData() == null) {
-                    resultMap.put(DATA, null);
-                }
-
                 hasErrors = true;
             }
         }

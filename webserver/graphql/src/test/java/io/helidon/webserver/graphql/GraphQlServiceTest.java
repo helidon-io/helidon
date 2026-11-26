@@ -388,7 +388,7 @@ class GraphQlServiceTest {
     }
 
     @Test
-    void testErrorResponseValues() {
+    void validationErrorOmitsData() {
         try (Http1ClientResponse response = client.post("/graphql")
                 .submit("{\"query\": \"{unknown}\"}")) {
             assertThat(response.status(), is(Status.OK_200));
@@ -406,7 +406,23 @@ class GraphQlServiceTest {
                                .intValue("line")
                                .orElseThrow(),
                        is(1));
+            assertThat("Error data", json.value("data").isEmpty(), is(true));
+        }
+    }
+
+    @Test
+    void nonNullRootFieldErrorReturnsNullData() {
+        try (Http1ClientResponse response = client.post("/graphql")
+                .submit("{\"query\": \"{failingField}\"}")) {
+            assertThat(response.status(), is(Status.OK_200));
+            JsonObject json = response.as(JsonObject.class);
+            JsonArray errors = json.arrayValue("errors").orElseThrow();
+
             assertThat("Error data", json.value("data").orElseThrow() instanceof JsonNull, is(true));
+            assertThat(errors.size(), is(1));
+            JsonObject error = errors.get(0).orElseThrow().asObject();
+            assertThat(error.stringValue("message").orElseThrow(), is("Server Error"));
+            assertThat(error.arrayValue("path").orElseThrow(), is(JsonArray.createStrings(List.of("failingField"))));
         }
     }
 
@@ -443,6 +459,7 @@ class GraphQlServiceTest {
                     numberType(value: ANY): String
                     numbers: [Int]
                     nothing: String
+                    failingField: String!
                     extensionObject: String
                     metadata: Metadata
                     scaled(value: Float): Float
@@ -480,6 +497,9 @@ class GraphQlServiceTest {
                         })
                         .dataFetcher("numbers", _ -> List.of(1, 2, 3))
                         .dataFetcher("nothing", _ -> null)
+                        .dataFetcher("failingField", _ -> {
+                            throw new IllegalStateException("Resolver failed");
+                        })
                         .dataFetcher("extensionObject", _ -> DataFetcherResult.newResult()
                                 .data("ok")
                                 .error(GraphqlErrorBuilder.newError()
