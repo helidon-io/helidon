@@ -17,6 +17,7 @@
 package io.helidon.declarative.tests.openapi;
 
 import java.time.LocalDate;
+import java.util.Map;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.Http;
@@ -31,6 +32,6 @@ class ItemEndpoint {
     @Http.GET
     @Http.Produces(MediaTypes.APPLICATION_JSON_VALUE)
     Item get() {
-        return new Item("item", Item.State.ON, LocalDate.of(2026, 1, 1), null);
+        return new Item("item", Item.State.ON, LocalDate.of(2026, 1, 1), null, Map.of("key", "value"));
     }
 }
