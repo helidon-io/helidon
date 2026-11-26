@@ -196,7 +196,7 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
             AttributesBuilder attrBuilder = Attributes.builder();
 
             attrBuilder.put(AttributeKey.stringKey(HTTP_METHOD), httpMethod(req.prologue().method()))
-                    .put(AttributeKey.stringKey(URL_SCHEME), req.prologue().protocol())
+                    .put(AttributeKey.stringKey(URL_SCHEME), req.requestedUri().scheme())
                     .put(AttributeKey.stringKey(ERROR_TYPE), errorType(resp, exception))
                     .put(AttributeKey.longKey(STATUS_CODE), resp.status().code())
                     .put(AttributeKey.stringKey(SOCKET_NAME), req.listenerContext().config().name());
@@ -221,11 +221,11 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
         }
 
         private String errorType(RoutingResponse resp, Exception exception) {
-            return (exception != null)
-                    ? exception.getClass().getName()
-                    : resp.status().equals(Status.OK_200)
-                            ? ""
-                            : resp.status().codeText();
+            if (exception != null) {
+                return exception.getClass().getName();
+            }
+            Status status = resp.status();
+            return status.family() == Status.Family.SUCCESSFUL ? null : status.codeText();
         }
 
         private String httpMethod(Method method) {
