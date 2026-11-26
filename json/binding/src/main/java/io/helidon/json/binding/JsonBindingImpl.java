@@ -245,26 +245,22 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
 
     @Override
     public <T> T deserialize(InputStream inputStream, Class<T> type) {
-        return deserialize(inputStream, DEFAULT_STREAM_BUFFER_SIZE, type);
+        return deserializeStream(deserializer(type), inputStream, DEFAULT_STREAM_BUFFER_SIZE);
     }
 
     @Override
     public <T> T deserialize(InputStream inputStream, int bufferSize, Class<T> type) {
-        JsonDeserializer<T> deserializer = deserializer(type);
-        JsonParser parser = JsonParserSupport.createStreamParser(inputStream, bufferSize, maxReplayBytes);
-        return Deserializers.deserialize(parser, deserializer);
+        return deserializeStream(deserializer(type), inputStream, bufferSize);
     }
 
     @Override
     public <T> T deserialize(InputStream inputStream, GenericType<T> type) {
-        return deserialize(inputStream, DEFAULT_STREAM_BUFFER_SIZE, type);
+        return deserializeStream(deserializer(type), inputStream, DEFAULT_STREAM_BUFFER_SIZE);
     }
 
     @Override
     public <T> T deserialize(InputStream inputStream, int bufferSize, GenericType<T> type) {
-        JsonDeserializer<T> deserializer = deserializer(type);
-        JsonParser parser = JsonParserSupport.createStreamParser(inputStream, bufferSize, maxReplayBytes);
-        return Deserializers.deserialize(parser, deserializer);
+        return deserializeStream(deserializer(type), inputStream, bufferSize);
     }
 
     @Override
@@ -541,6 +537,11 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
         } finally {
             serializerLock.writeLock().unlock();
         }
+    }
+
+    private <T> T deserializeStream(JsonDeserializer<T> deserializer, InputStream source, int bufferSize) {
+        JsonParser parser = JsonParserSupport.createStreamParser(source, bufferSize, maxReplayBytes);
+        return Deserializers.deserialize(parser, deserializer);
     }
 
     private <T> void serialize(Writer writer, T obj, JsonSerializer<T> serializer) {
