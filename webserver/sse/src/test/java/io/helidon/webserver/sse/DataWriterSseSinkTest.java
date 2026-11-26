@@ -22,6 +22,7 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -72,6 +73,22 @@ class DataWriterSseSinkTest {
             sink.emit(event);
             assertThat(output.toString(StandardCharsets.UTF_8),
                        equalTo(":first\n:second\nid:event1\nretry:2000\nevent:update\ndata:hello\ndata:world\n\n"));
+        }
+    }
+
+    @Test
+    void shouldPreserveTrailingNewlinesInCommentsAndData() {
+        for (String lineEnding : List.of("\r", "\n", "\r\n")) {
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            SseEvent event = SseEvent.builder()
+                    .comment("comment" + lineEnding)
+                    .data(("data" + lineEnding + lineEnding).getBytes(StandardCharsets.UTF_8))
+                    .build();
+
+            try (DataWriterSseSink sink = createSink(output)) {
+                sink.emit(event);
+                assertThat(output.toString(StandardCharsets.UTF_8), equalTo(":comment\n:\ndata:data\ndata:\ndata:\n\n"));
+            }
         }
     }
 

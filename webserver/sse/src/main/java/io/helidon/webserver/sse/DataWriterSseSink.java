@@ -301,25 +301,21 @@ class DataWriterSseSink implements SseSink {
 
     private void writeSseMultiLineField(byte[] field, byte[] value) throws IOException {
         int start = 0;
-        boolean lineWritten = false;
         for (int i = 0; i < value.length; i++) {
             byte b = value[i];
             if (b == '\r' || b == '\n') {
                 outputStream.write(field);
                 outputStream.write(value, start, i - start);
                 outputStream.write(SSE_NL);
-                lineWritten = true;
                 if (b == '\r' && i + 1 < value.length && value[i + 1] == '\n') {
                     i++;
                 }
                 start = i + 1;
             }
         }
-        if (!lineWritten || start < value.length) {
-            outputStream.write(field);
-            outputStream.write(value, start, value.length - start);
-            outputStream.write(SSE_NL);
-        }
+        outputStream.write(field);
+        outputStream.write(value, start, value.length - start);
+        outputStream.write(SSE_NL);
     }
 
     private static final class EventBufferedOutputStream extends OutputStream {
