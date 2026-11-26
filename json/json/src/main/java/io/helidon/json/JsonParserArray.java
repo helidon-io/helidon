@@ -567,7 +567,8 @@ class JsonParserArray extends JsonParserBase {
         skipNumber();
         int length = currentIndex - start + 1;
         try {
-            BigInteger bigInteger = new BigInteger(new String(buffer, start, length, StandardCharsets.US_ASCII));
+            BigInteger bigInteger = JsonParserSupport.toBigInteger(this,
+                                                                  new String(buffer, start, length, StandardCharsets.US_ASCII));
             if (inString) {
                 ensure(1);
                 if (buffer[++currentIndex] != '"') {

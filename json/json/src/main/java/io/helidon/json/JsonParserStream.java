@@ -1193,7 +1193,9 @@ final class JsonParserStream extends JsonParserBase {
             length++;
         }
         try {
-            BigInteger bigInteger = new BigInteger(new String(buffer, jsonValueStart, length, StandardCharsets.US_ASCII));
+            BigInteger bigInteger = JsonParserSupport.toBigInteger(this,
+                                                                  new String(buffer, jsonValueStart, length,
+                                                                             StandardCharsets.US_ASCII));
             bufferingJsonValue = false;
             if (inString) {
                 ensure(1);

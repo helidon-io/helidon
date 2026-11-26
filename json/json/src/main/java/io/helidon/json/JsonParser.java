@@ -403,13 +403,18 @@ public interface JsonParser {
     /**
      * Reads a numeric value as {@link BigInteger}.
      * <p>
+     * Decimal and exponent forms are accepted, and any fractional part is discarded toward zero.
+     * Binary floating-point values use the decimal representation of {@link BigDecimal#valueOf(double)},
+     * consistent with {@link JsonNumber#create(double)}. Non-finite values cannot be converted.
+     * </p>
+     * <p>
      * For a nonzero value with a negative scale, a conversion may introduce at most 4,096 trailing decimal digits.
      * Built-in parsers permit at most 65,536 such digits cumulatively over the parser lifetime. This aggregate budget
      * is monotonic; marking, clearing a mark, or resetting to a mark does not restore it.
      * </p>
      *
      * @return the big integer value
-     * @throws JsonException if parsing fails or the conversion exceeds either expansion budget
+     * @throws JsonException if parsing fails, the value is not finite, or the conversion exceeds either expansion budget
      */
     BigInteger readBigInteger();
 
