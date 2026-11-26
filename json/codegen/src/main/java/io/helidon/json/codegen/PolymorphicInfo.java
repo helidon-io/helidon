@@ -16,6 +16,7 @@
 
 package io.helidon.json.codegen;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -24,5 +25,6 @@ import io.helidon.common.types.TypeName;
 record PolymorphicInfo(String property,
                        Optional<TypeName> defaultSubtype,
                        Map<String, TypeName> aliases,
+                       List<TypeName> serializationTypes,
                        boolean classConverterMethods) {
 }

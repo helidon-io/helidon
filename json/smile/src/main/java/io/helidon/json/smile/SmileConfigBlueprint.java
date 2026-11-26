@@ -16,16 +16,34 @@
 
 package io.helidon.json.smile;
 
+import java.util.Optional;
+
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.Api;
+import io.helidon.common.Size;
 
 /**
  * Configuration of Smile encoding and decoding.
+ * Generators use the encoding options to write the header. Parsers obtain the encoding features from the input header.
  */
 @Api.Preview
-@Prototype.Blueprint
+@Prototype.Blueprint(decorator = SmileConfigSupport.class)
+@Prototype.Configured
+@Prototype.IncludeDefaultMethods
 interface SmileConfigBlueprint {
+
+    /**
+     * Maximum capacity to which a marked Smile stream input buffer may grow (unlimited when absent).
+     * Existing buffer capacity remains usable. Zero prevents marked growth.
+     * The parser fixes this limit at construction. The supported range is 0 through {@link Integer#MAX_VALUE} bytes.
+     *
+     * @return optional replay buffer size limit
+     */
+    @Option.Configured
+    default Optional<Size> maxReplaySize() {
+        return Optional.empty();
+    }
 
     /**
      * Whether to enable shared key string references.
@@ -33,6 +51,7 @@ interface SmileConfigBlueprint {
      * @return {@code true} to enable shared key string references, defaults to {@code true}
      */
     @Option.DefaultBoolean(true)
+    @Option.Configured
     boolean sharedKeyStrings();
 
     /**
@@ -40,6 +59,7 @@ interface SmileConfigBlueprint {
      *
      * @return {@code true} to enable shared value string references
      */
+    @Option.Configured
     boolean sharedValueStrings();
 
     /**
@@ -47,6 +67,7 @@ interface SmileConfigBlueprint {
      *
      * @return {@code true} to allow raw binary values
      */
+    @Option.Configured
     boolean rawBinaryEnabled();
 
     /**
@@ -54,5 +75,6 @@ interface SmileConfigBlueprint {
      *
      * @return {@code true} to emit the end marker
      */
+    @Option.Configured
     boolean emitEndMark();
 }

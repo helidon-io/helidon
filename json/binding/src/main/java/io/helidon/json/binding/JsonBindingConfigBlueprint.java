@@ -17,17 +17,20 @@
 package io.helidon.json.binding;
 
 import java.util.List;
+import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.Api;
+import io.helidon.common.Size;
 
 /**
  * Configuration for JSON binding.
  */
 @Api.Preview
-@Prototype.Blueprint
+@Prototype.Blueprint(decorator = JsonBindingConfigCustomMethods.ReplaySizeValidator.class)
 @Prototype.Configured
+@Prototype.IncludeDefaultMethods
 @Prototype.RegistrySupport
 @Prototype.CustomMethods(JsonBindingConfigCustomMethods.class)
 interface JsonBindingConfigBlueprint extends Prototype.Factory<JsonBinding> {
@@ -39,6 +42,18 @@ interface JsonBindingConfigBlueprint extends Prototype.Factory<JsonBinding> {
      */
     @Option.DefaultBoolean(false)
     boolean prettyPrint();
+
+    /**
+     * Maximum capacity to which a marked JSON stream buffer created by this binding may grow (unlimited when absent).
+     * Existing buffer capacity remains usable. Zero prevents marked growth.
+     * The supported range is 0 through {@link Integer#MAX_VALUE} bytes. A caller-supplied parser uses its own limit.
+     *
+     * @return optional replay buffer size limit
+     */
+    @Option.Configured
+    default Optional<Size> maxReplaySize() {
+        return Optional.empty();
+    }
 
     /**
      * Registered type serializers.

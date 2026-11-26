@@ -47,6 +47,8 @@ class JsonCodegen implements CodegenExtension {
         for (TypeInfo typeInfo : typeInfos) {
             try {
                 process(typeInfo, roundContext);
+            } catch (CodegenException ex) {
+                throw ex;
             } catch (Throwable ex) {
                 throw new CodegenException("Failed to generate JSON code for the type: " + typeInfo, ex, typeInfo);
             }

@@ -21,6 +21,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import io.helidon.json.JsonArray;
@@ -1593,6 +1594,47 @@ abstract class SmileParserTestBase {
         byte[] smileData = new byte[] {0x3A, 0x29, 0x0A, 0x03, (byte) 0xFA, 0x30, (byte) 0xFE};
         JsonParser parser = createParser(smileData);
         assertThrows(JsonException.class, parser::readJsonObject);
+    }
+
+    @Test
+    void skipBinaryPreservesReplayAndFollowingValue() throws Exception {
+        for (boolean raw : List.of(false, true)) {
+            SmileConfig config = SmileConfig.builder().rawBinaryEnabled(raw).build();
+            for (int size : List.of(0, 1, 6, 7, 8, 128, 8192)) {
+                byte[] expected = new byte[size];
+                for (int i = 0; i < size; i++) {
+                    expected[i] = (byte) i;
+                }
+                byte[] bytes = generateSmileBytes(config, generator -> generator.writeArrayStart()
+                        .writeBinary(expected)
+                        .write(42)
+                        .writeArrayEnd());
+                JsonParser parser = createParser(bytes);
+                parser.nextToken();
+                parser.mark();
+                parser.skip();
+                assertThat(parser.nextToken(), is((byte) ','));
+                parser.nextToken();
+                assertThat(parser.readInt(), is(42));
+                parser.resetToMark();
+                assertThat(parser.readBinary(), is(expected));
+                assertThat(parser.nextToken(), is((byte) ','));
+            }
+        }
+    }
+
+    @Test
+    void skipBinaryRejectsTruncationAndDisabledRawEncoding() throws Exception {
+        for (boolean raw : List.of(false, true)) {
+            SmileConfig config = SmileConfig.builder().rawBinaryEnabled(raw).build();
+            byte[] bytes = generateSmileBytes(config, generator -> generator.writeBinary(new byte[16]));
+            byte[] truncated = Arrays.copyOf(bytes, bytes.length - 1);
+            assertThrows(JsonException.class, () -> createParser(truncated).skip());
+            if (raw) {
+                bytes[3] &= (byte) ~SmileConstants.HEADER_FEATURE_RAW_BINARY;
+                assertThrows(JsonException.class, () -> createParser(bytes).skip());
+            }
+        }
     }
 
     private static byte[] nestedArrays(int depth) {

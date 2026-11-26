@@ -26,6 +26,7 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Objects;
 
 import io.helidon.common.buffers.Bytes;
 import io.helidon.json.JsonArray;
@@ -38,10 +39,12 @@ import io.helidon.json.JsonObject;
 import io.helidon.json.JsonParser;
 import io.helidon.json.JsonParserBase;
 import io.helidon.json.JsonString;
+import io.helidon.json.JsonStringMatcher;
 import io.helidon.json.JsonValue;
 import io.helidon.json.Parsers;
 
 import static io.helidon.json.JsonParserSupport.createJsonNumber;
+import static io.helidon.json.JsonParserSupport.growStreamBuffer;
 import static io.helidon.json.JsonParserSupport.toBigInteger;
 import static io.helidon.json.Parsers.translateHex;
 
@@ -155,8 +158,9 @@ final class SmileInputStreamParser extends JsonParserBase {
     // Buffer / stream state
     // -----------------------------------------------------------------------
 
-    private final int configuredBufferSize;
     private final InputStream inputStream;
+    private final int maxReplayBytes;
+
     private byte[] buffer;
     /** Index of the last byte that was *consumed* (i.e. handed to the caller or used internally).
      *  Starts at {@code -1} so that the first {@link #readNextByte()} call returns {@code buffer[0]}. */
@@ -228,8 +232,16 @@ final class SmileInputStreamParser extends JsonParserBase {
     // -----------------------------------------------------------------------
 
     SmileInputStreamParser(InputStream inputStream, int bufferSize) {
-        this.configuredBufferSize = bufferSize;
+        this(inputStream, bufferSize, Integer.MAX_VALUE);
+    }
+
+    SmileInputStreamParser(InputStream inputStream, SmileConfig config) {
+        this(inputStream, DEFAULT_BUFFER_SIZE, SmileConfigSupport.maxReplayBytes(config));
+    }
+
+    private SmileInputStreamParser(InputStream inputStream, int bufferSize, int maxReplayBytes) {
         this.inputStream = inputStream;
+        this.maxReplayBytes = maxReplayBytes;
         this.buffer = new byte[bufferSize];
         this.currentIndex = 0;
         try {
@@ -239,65 +251,7 @@ final class SmileInputStreamParser extends JsonParserBase {
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to read initial Smile data into buffer", e);
         }
-    }
-
-    // -----------------------------------------------------------------------
-    // Header initialization (identical logic to SmileParser.initializeFromHeaderOrDefaults)
-    // -----------------------------------------------------------------------
-
-    /**
-     * Reads and validates the 4-byte Smile header, extracts feature flags, and primes
-     * the parser by calling {@link #nextToken()} so that the caller can immediately
-     * inspect the first token.
-     *
-     * <pre>
-     *   Byte 0: 0x3A (':')
-     *   Byte 1: 0x29 (')')
-     *   Byte 2: 0x0A (LF)
-     *   Byte 3: feature flags
-     *             bits 7-4 : version  (must be 0x0)
-     *             bit  3   : reserved
-     *             bit  2   : raw binary present
-     *             bit  1   : shared value strings
-     *             bit  0   : shared key names
-     * </pre>
-     */
-    void initializeFromHeaderOrDefaults() {
-        if (bufferLength == 0) {
-            throw createException("Unexpected end of the binary JSON found");
-        }
-
-        int b0 = buffer[currentIndex] & 0xFF;
-        if (b0 != (SmileConstants.HEADER_0 & 0xFF)) {
-            initializeHeaderlessDefaults();
-            currentIndex = -1;
-            nextToken();
-            return;
-        }
-
-        ensureHeaderBytes(3);
-        if (bufferLength < 3) {
-            throw createException("Unexpected end of Smile header");
-        }
-
-        int b1 = buffer[1] & 0xFF;
-        int b2 = buffer[2] & 0xFF;
-        if (b1 != (SmileConstants.HEADER_1 & 0xFF)
-                || b2 != (SmileConstants.HEADER_2 & 0xFF)) {
-            throw createException("Invalid Smile header: expected 0x3A 0x29 0x0A, got"
-                                          + " 0x" + Integer.toHexString(b0)
-                                          + " 0x" + Integer.toHexString(b1)
-                                          + " 0x" + Integer.toHexString(b2));
-        }
-
-        ensureHeaderBytes(4);
-        if (bufferLength < 4) {
-            throw createException("Unexpected end of Smile header");
-        }
-
-        currentIndex = 3;
-        applyHeaderFeatures(buffer[currentIndex] & 0xFF);
-        nextToken();
+        initializeFromHeaderOrDefaults();
     }
 
     // -----------------------------------------------------------------------
@@ -338,7 +292,7 @@ final class SmileInputStreamParser extends JsonParserBase {
      * @param count number of bytes required after the current position
      */
     private void ensureBytes(int count) {
-        if (currentIndex + count < bufferLength) {
+        if (currentIndex < bufferLength - count) {
             return; // already satisfied
         } else if (finished) {
             throw createException("Unexpected end of the binary JSON found");
@@ -365,20 +319,13 @@ final class SmileInputStreamParser extends JsonParserBase {
             }
 
             // 2. Grow the backing array if it still cannot hold currentIndex + count + 1 bytes.
-            int required = currentIndex + count + 1;
-            if (required > bufferLength) {
-                // Round up to the nearest configuredBufferSize multiple to avoid many small grows.
-                int newSize = buffer.length;
-                while (newSize < required) {
-                    newSize += configuredBufferSize;
-                }
-                byte[] newBuffer = new byte[newSize];
-                System.arraycopy(buffer, 0, newBuffer, 0, kept);
-                buffer = newBuffer;
+            long required = (long) currentIndex + count + 1;
+            if (required > buffer.length) {
+                growBuffer(kept, required);
             }
 
             // 3. Read from the stream until we have enough bytes or EOF.
-            while (currentIndex + count >= bufferLength) {
+            while (bufferLength < required) {
                 int lastRead = inputStream.read(buffer, bufferLength, buffer.length - bufferLength);
                 if (lastRead == -1) {
                     finished = true;
@@ -397,13 +344,7 @@ final class SmileInputStreamParser extends JsonParserBase {
      */
     @Override
     public boolean hasNext() {
-        if (endOfContent) {
-            return false;
-        }
-        if (currentIndex + 1 >= bufferLength && !finished) {
-            readMoreData();
-        }
-        return currentIndex + 1 < bufferLength;
+        return forcedEvent != -1 || hasNextByte();
     }
 
     /**
@@ -412,41 +353,39 @@ final class SmileInputStreamParser extends JsonParserBase {
      * space. Expands the buffer array if the remaining / needed data does not fit.
      */
     private void readMoreData() {
+        // Determine the earliest position we still need to keep.
+        int preserveFrom;
+        if (replayMarked && mark >= 0 && mark <= currentIndex) {
+            preserveFrom = mark;
+        } else {
+            preserveFrom = currentIndex;
+        }
+
+        int shift = preserveFrom;
+        int kept = bufferLength - preserveFrom;
+
+        if (shift > 0 && kept > 0) {
+            System.arraycopy(buffer, preserveFrom, buffer, 0, kept);
+        }
+
+        // Adjust tracked indices.
+        currentIndex -= shift;
+        if (mark >= 0) {
+            mark = Math.max(0, mark - shift);
+        }
+
+        // Expand the backing array if there is no room to read into.
         try {
-            // Determine the earliest position we still need to keep.
-            int preserveFrom;
-            if (replayMarked && mark >= 0 && mark <= currentIndex) {
-                preserveFrom = mark;
-            } else {
-                preserveFrom = currentIndex;
-            }
-
-            int shift = preserveFrom;
-            int kept = bufferLength - preserveFrom;
-
-            if (shift > 0 && kept > 0) {
-                System.arraycopy(buffer, preserveFrom, buffer, 0, kept);
-            }
-
-            // Adjust tracked indices.
-            currentIndex -= shift;
-            if (mark >= 0) {
-                mark = Math.max(0, mark - shift);
-            }
-
-            // Expand the backing array if there is no room to read into.
-            if (kept >= buffer.length) {
-                byte[] newBuffer = new byte[buffer.length + configuredBufferSize];
-                System.arraycopy(buffer, 0, newBuffer, 0, kept);
-                buffer = newBuffer;
+            bufferLength = kept;
+            if (kept == buffer.length) {
+                growBuffer(kept, (long) kept + 1);
             }
 
             int lastRead = inputStream.read(buffer, kept, buffer.length - kept);
             if (lastRead == -1) {
                 finished = true;
-                bufferLength = kept;
             } else {
-                bufferLength = kept + lastRead;
+                bufferLength += lastRead;
                 finished = false;
             }
         } catch (IOException e) {
@@ -495,7 +434,7 @@ final class SmileInputStreamParser extends JsonParserBase {
                 inObject = structureStack[--stackDepth];
                 // If there is more content after the closing bracket, signal a comma so
                 // that the base-class object/array readers see the expected separator.
-                if (hasNext()) {
+                if (hasNextByte()) {
                     int next = buffer[currentIndex + 1] & 0xFF;
                     if (next != (SmileConstants.TOKEN_END_OBJECT & 0xFF)
                             && next != (SmileConstants.TOKEN_END_ARRAY & 0xFF)
@@ -673,6 +612,47 @@ final class SmileInputStreamParser extends JsonParserBase {
             checkNextAfterValue();
         }
         return result;
+    }
+
+    @Override
+    public int readString(JsonStringMatcher matcher) {
+        Objects.requireNonNull(matcher);
+        if (currentToken == '"' && keyExpected && !sharedKeysEnabled
+                && currentByte >= SmileConstants.KEY_SHORT_ASCII_MIN && currentByte <= SmileConstants.KEY_SHORT_ASCII_MAX) {
+            int length = (currentByte & SmileConstants.KEY_STRING_LENGTH_MASK) + SmileConstants.KEY_SHORT_ASCII_LENGTH_ADD;
+            ensureBytes(length);
+            int ordinal = SmileParser.matchAsciiKey(this, matcher, buffer, currentIndex + 1, length);
+            currentIndex += length;
+            keyExpected = false;
+            forcedEvent = Bytes.COLON_BYTE;
+            return ordinal;
+        }
+        return super.readString(matcher);
+    }
+
+    @Override
+    public int readProperty(JsonStringMatcher matcher) {
+        if (currentToken != '"' || !keyExpected) {
+            return super.readProperty(matcher);
+        }
+        Objects.requireNonNull(matcher);
+        int ordinal;
+        if (sharedKeysEnabled
+                && currentByte >= SmileConstants.KEY_SHARED_SHORT_MIN && currentByte <= SmileConstants.KEY_SHARED_SHORT_MAX) {
+            int reference = currentByte - SmileConstants.KEY_SHARED_SHORT_MIN;
+            String key = resolveSharedReference(sharedKeyStrings, reference, nextSharedKeyIndex - 1, "key");
+            keyExpected = false;
+            forcedEvent = Bytes.COLON_BYTE;
+            ordinal = matcher.match(key);
+        } else {
+            ordinal = readString(matcher);
+        }
+        // Smile keys imply a colon. Advance directly to the value in the same state as after that synthetic token.
+        forcedEvent = -1;
+        currentToken = Bytes.COLON_BYTE;
+        currentByte = Bytes.COLON_BYTE;
+        nextToken();
+        return Math.max(-1, ordinal);
     }
 
     @Override
@@ -1167,6 +1147,9 @@ final class SmileInputStreamParser extends JsonParserBase {
         case '1':
             skipNumber();
             break;
+        case 'B':
+            skipBinary();
+            break;
         case 't':
         case 'n':
         case 'f':
@@ -1312,6 +1295,29 @@ final class SmileInputStreamParser extends JsonParserBase {
         }
     }
 
+    private void skipBinary() {
+        boolean raw = currentByte == (SmileConstants.TOKEN_BINARY_RAW & 0xFF);
+        if (raw && !rawBinaryEnabled) {
+            throw createException("Raw binary not enabled in Smile header");
+        }
+        long length = readUnsignedVInt();
+        if (length < 0 || length > Integer.MAX_VALUE) {
+            throw createException("Invalid binary value length");
+        }
+        if (!raw) {
+            length = (length * 8 + 6) / 7;
+        }
+        while (length > 0) {
+            if (!hasNextByte()) {
+                throw createException("Unexpected end of binary value");
+            }
+            int count = (int) Math.min(length, bufferLength - currentIndex - 1);
+            currentIndex += count;
+            length -= count;
+        }
+        checkNextAfterValue();
+    }
+
     /**
      * Skips a numeric value at the current position.
      * Uses {@link #readNextByte()} for VInt scanning so that buffer boundaries are
@@ -1449,7 +1455,7 @@ final class SmileInputStreamParser extends JsonParserBase {
      * a synthetic comma event should be scheduled (mirrors {@code SmileParser.checkNextAfterValue}).
      */
     private void checkNextAfterValue() {
-        if (hasNext()) {
+        if (hasNextByte()) {
             keyExpected = inObject;
             int next = buffer[currentIndex + 1] & 0xFF;
             if (next == (SmileConstants.TOKEN_END_OBJECT & 0xFF)
@@ -1464,6 +1470,75 @@ final class SmileInputStreamParser extends JsonParserBase {
             }
             forcedEvent = Bytes.COMMA_BYTE;
         }
+    }
+
+    private void growBuffer(int kept, long required) {
+        buffer = growStreamBuffer(this, buffer, kept, required, replayMarked ? maxReplayBytes : Integer.MAX_VALUE);
+    }
+
+    private boolean hasNextByte() {
+        if (endOfContent) {
+            return false;
+        }
+        if (currentIndex + 1 >= bufferLength && !finished) {
+            readMoreData();
+        }
+        return currentIndex + 1 < bufferLength;
+    }
+
+    /**
+     * Reads and validates the 4-byte Smile header, extracts feature flags, and primes
+     * the parser by calling {@link #nextToken()} so that the caller can immediately
+     * inspect the first token.
+     *
+     * <pre>
+     *   Byte 0: 0x3A (':')
+     *   Byte 1: 0x29 (')')
+     *   Byte 2: 0x0A (LF)
+     *   Byte 3: feature flags
+     *             bits 7-4 : version  (must be 0x0)
+     *             bit  3   : reserved
+     *             bit  2   : raw binary present
+     *             bit  1   : shared value strings
+     *             bit  0   : shared key names
+     * </pre>
+     */
+    private void initializeFromHeaderOrDefaults() {
+        if (bufferLength == 0) {
+            throw createException("Unexpected end of the binary JSON found");
+        }
+
+        int b0 = buffer[currentIndex] & 0xFF;
+        if (b0 != (SmileConstants.HEADER_0 & 0xFF)) {
+            initializeHeaderlessDefaults();
+            currentIndex = -1;
+            nextToken();
+            return;
+        }
+
+        ensureHeaderBytes(3);
+        if (bufferLength < 3) {
+            throw createException("Unexpected end of Smile header");
+        }
+
+        int b1 = buffer[1] & 0xFF;
+        int b2 = buffer[2] & 0xFF;
+        if (b1 != (SmileConstants.HEADER_1 & 0xFF)
+                || b2 != (SmileConstants.HEADER_2 & 0xFF)) {
+            throw createException("Invalid Smile header: expected 0x3A 0x29 0x0A, got"
+                                          + " 0x" + Integer.toHexString(b0)
+                                          + " 0x" + Integer.toHexString(b1)
+                                          + " 0x" + Integer.toHexString(b2));
+        }
+
+        ensureHeaderBytes(4);
+        if (bufferLength < 4) {
+            throw createException("Unexpected end of Smile header");
+        }
+
+        currentIndex = 3;
+        applyHeaderFeatures(buffer[currentIndex] & 0xFF);
+        nextToken();
     }
 
     private void ensureHeaderBytes(int totalBytes) {
@@ -1640,32 +1715,29 @@ final class SmileInputStreamParser extends JsonParserBase {
             if (finished) {
                 throw createException("Could not find END_OF_STRING terminator: stream ended prematurely");
             }
-            // Compact the buffer, keeping everything from startIndex onward.
-            int shift = startIndex;
-            int kept = bufferLength - startIndex;
+            // An enclosing object mark also owns the prefix before this string.
+            int shift = replayMarked ? Math.min(mark, startIndex) : startIndex;
+            int kept = bufferLength - shift;
             if (shift > 0 && kept > 0) {
-                System.arraycopy(buffer, startIndex, buffer, 0, kept);
+                System.arraycopy(buffer, shift, buffer, 0, kept);
             }
             this.currentIndex -= shift;
             if (mark >= 0) {
                 mark = Math.max(0, mark - shift);
             }
             i -= shift;
-            startIndex = 0;
+            startIndex -= shift;
 
-            if (kept >= buffer.length) {
-                byte[] newBuffer = new byte[buffer.length + configuredBufferSize];
-                System.arraycopy(buffer, 0, newBuffer, 0, kept);
-                buffer = newBuffer;
+            bufferLength = kept;
+            if (kept == buffer.length) {
+                growBuffer(kept, (long) kept + 1);
             }
-
             try {
                 int lastRead = inputStream.read(buffer, kept, buffer.length - kept);
                 if (lastRead == -1) {
                     finished = true;
-                    bufferLength = kept;
                 } else {
-                    bufferLength = kept + lastRead;
+                    bufferLength += lastRead;
                 }
             } catch (IOException e) {
                 throw new UncheckedIOException(e);

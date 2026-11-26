@@ -21,6 +21,7 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.function.LongToIntFunction;
 
 import io.helidon.common.Api;
 
@@ -47,6 +48,19 @@ public final class Parsers {
     }
 
     private Parsers() {
+    }
+
+    /**
+     * Build a generated ASCII matcher whose selector reads the first eight input bytes.
+     * The matcher checks the entire selected spelling and closing quote before accepting a match.
+     *
+     * @param decoded matcher for decoded input
+     * @param selector possible ordinal from the first little-endian word
+     * @param names registered names in ordinal order
+     * @return matcher with a raw ASCII fast path
+     */
+    public static JsonStringMatcher asciiPrefixMatcher(JsonStringMatcher decoded, LongToIntFunction selector, String... names) {
+        return AsciiStringMatcher.withAsciiPrefix(decoded, selector, names);
     }
 
     /**
@@ -101,6 +115,30 @@ public final class Parsers {
             throw new JsonDecodingException("Invalid hex digit found");
         }
         return val;
+    }
+
+    static int nextProperty(JsonParser parser, JsonStringMatcher matcher) {
+        byte token = parser.nextToken();
+        if (token == '}') {
+            return JsonParser.END_OBJECT;
+        }
+        if (token != ',') {
+            throw parser.createException("Expected ',' or '}'", token);
+        }
+        parser.nextToken();
+        return parser.readProperty(matcher);
+    }
+
+    static void propertyValue(JsonParser parser) {
+        byte token = parser.nextToken();
+        if (token != ':') {
+            throw parser.createException("Expected ':' to separate key and value", token);
+        }
+        parser.nextToken();
+    }
+
+    static int hexPair(byte high, byte low) {
+        return (HEX_DIGITS[high & 0xff] << 4) | HEX_DIGITS[low & 0xff];
     }
 
     static boolean isControlCharacter(byte b) {

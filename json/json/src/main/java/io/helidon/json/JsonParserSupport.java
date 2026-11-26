@@ -21,6 +21,7 @@ import java.math.BigInteger;
 import java.util.Objects;
 
 import io.helidon.common.Api;
+import io.helidon.common.Size;
 
 /**
  * Internal cross-module support for built-in JSON parser implementations.
@@ -28,6 +29,52 @@ import io.helidon.common.Api;
 @Api.Internal
 public final class JsonParserSupport {
     private JsonParserSupport() {
+    }
+
+    /**
+     * Converts a configured replay buffer capacity to bytes.
+     *
+     * @param size configured maximum capacity
+     * @return maximum capacity in bytes
+     * @throws IllegalArgumentException if the size does not fit a non-negative array length
+     */
+    public static int replayBufferBytes(Size size) {
+        try {
+            int bytes = Math.toIntExact(Objects.requireNonNull(size).toBytes());
+            if (bytes >= 0) {
+                return bytes;
+            }
+        } catch (ArithmeticException e) {
+            throw new IllegalArgumentException("max-replay-size must be between 0 and " + Integer.MAX_VALUE + " bytes", e);
+        }
+        throw new IllegalArgumentException("max-replay-size must be non-negative");
+    }
+
+    /**
+     * Grows a compacted stream input buffer up to its maximum capacity.
+     *
+     * @param parser stream parser
+     * @param buffer current buffer
+     * @param kept number of retained bytes at the beginning of the buffer
+     * @param required minimum required capacity
+     * @param maximum maximum capacity in bytes for this growth
+     * @return buffer for the next read
+     * @throws JsonException if the minimum required capacity exceeds the maximum
+     */
+    public static byte[] growStreamBuffer(JsonParser parser, byte[] buffer,
+                                          int kept, long required, int maximum) {
+        Objects.requireNonNull(buffer);
+        Objects.requireNonNull(parser);
+        if (required > maximum) {
+            if (maximum < Integer.MAX_VALUE) {
+                throw parser.createException("Marked stream buffer exceeds max-replay-size of " + maximum + " bytes");
+            }
+            throw parser.createException("Stream input buffer exceeds the maximum array length");
+        }
+        int capacity = (int) Math.min(maximum, Math.max(required, (long) buffer.length * 2));
+        byte[] result = new byte[capacity];
+        System.arraycopy(buffer, 0, result, 0, kept);
+        return result;
     }
 
     /**

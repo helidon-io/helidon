@@ -17,10 +17,15 @@
 package io.helidon.json.tests;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
+import io.helidon.common.GenericType;
+import io.helidon.json.JsonParser;
 import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
+import io.helidon.json.binding.JsonDeserializer;
 import io.helidon.testing.junit5.Testing;
 
 import org.junit.jupiter.params.ParameterizedTest;
@@ -29,6 +34,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 @Testing.Test
 public class CreatorTest {
@@ -37,6 +43,54 @@ public class CreatorTest {
 
     CreatorTest(JsonBinding jsonBinding) {
         this.jsonBinding = jsonBinding;
+    }
+
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    void wideCreatorCallsTheConfiguredIntegerDeserializerOnlyForKnownFields(BindingMethod method) {
+        List<Integer> reads = new ArrayList<>();
+        JsonBinding binding = JsonBinding.builder()
+                .addDeserializer(new JsonDeserializer<Integer>() {
+                    @Override
+                    public GenericType<Integer> type() {
+                        return GenericType.create(int.class);
+                    }
+
+                    @Override
+                    public Integer deserialize(JsonParser parser) {
+                        int value = parser.readInt();
+                        reads.add(value);
+                        return 100 + value;
+                    }
+
+                    @Override
+                    public Integer deserializeNull() {
+                        reads.add(-1);
+                        return -1;
+                    }
+                })
+                .build();
+
+        WideCounters counters = method.deserialize(binding, """
+                {"last":7,"unknown":{"first":99},"first":null,"last":11,"p32":23}
+                """, WideCounters.class);
+
+        assertAll(
+                () -> assertThat(reads, is(List.of(7, -1, 11, 23))),
+                () -> assertThat(counters.first(), is(-1)),
+                () -> assertThat(counters.p31(), is(0)),
+                () -> assertThat(counters.p32(), is(123)),
+                () -> assertThat(counters.last(), is(111)));
+    }
+
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    void wideCreatorRetainsDefaultsWhenEveryMemberIsUnknown(BindingMethod method) {
+        WideCounters counters = method.deserialize(jsonBinding, "{\"unknown\":[1,{}]}", WideCounters.class);
+
+        assertAll(
+                () -> assertThat(counters.first(), is(0)),
+                () -> assertThat(counters.last(), is(0)));
     }
 
     @ParameterizedTest
@@ -288,5 +342,16 @@ public class CreatorTest {
         static IgnoredFactoryCreatorParameter create(String included, @Json.Ignore int ignoredCount) {
             return new IgnoredFactoryCreatorParameter(included, ignoredCount);
         }
+    }
+
+    @Json.Entity
+    record WideCounters(int first, int p01, int p02, int p03, int p04, int p05, int p06, int p07,
+                        int p08, int p09, int p10, int p11, int p12, int p13, int p14, int p15,
+                        int p16, int p17, int p18, int p19, int p20, int p21, int p22, int p23,
+                        int p24, int p25, int p26, int p27, int p28, int p29, int p30, int p31,
+                        int p32, int p33, int p34, int p35, int p36, int p37, int p38, int p39,
+                        int p40, int p41, int p42, int p43, int p44, int p45, int p46, int p47,
+                        int p48, int p49, int p50, int p51, int p52, int p53, int p54, int p55,
+                        int p56, int p57, int p58, int p59, int p60, int p61, int p62, int last) {
     }
 }

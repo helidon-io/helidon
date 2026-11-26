@@ -136,6 +136,30 @@ Person person = binding.deserialize("{\"name\":\"John\",\"age\":30}", Person.cla
 String json = binding.serialize(person);
 ```
 
+When a stream parser takes a mark, it retains input so it can return to that position.
+For example, a polymorphic converter marks the start of an object while looking for its discriminator.
+The optional `max-replay-size` binding setting caps the capacity of **new** input buffers allocated
+while a mark is active. The parser can reuse its existing buffer even if it is larger than the limit.
+If normal buffer growth would overshoot the limit, the parser grows to the limit when the required bytes still fit.
+If a refill needs more capacity than the limit allows, it throws `JsonException` before reading from the stream,
+even when checking for a following token or end of input.
+Omitting the setting allows unlimited replay growth. A value of `0 B` permits only reuse of existing capacity.
+Supported sizes range from `0 B` to `2147483647 B`.
+
+```java
+JsonBinding binding = JsonBinding.builder().maxReplaySize(Size.create(1, Size.Unit.MIB)).build();
+```
+
+The binding sets the limit when it creates a JSON parser from an `InputStream` or `Reader`.
+When creating a parser directly, use `JsonParser.create(inputStream, bufferSize, maxReplayBytes)`
+or `JsonParser.create(reader, maxReplayBytes)` to set the limit in bytes.
+A parser supplied to `JsonBinding.deserialize(parser, type)` keeps the limit chosen by its creator
+for its entire lifetime. Byte-array and materialized `JsonValue` inputs already hold their replay data.
+For Smile, set `maxReplaySize` on the `SmileConfig` passed to `SmileParser.create(inputStream, smileConfig)`.
+HTTP JSON binding uses `json-binding.max-replay-size`. The HTTP Smile reader uses `smile-config.max-replay-size`
+when present, including `0 B`. When it is absent, the reader uses `json-binding.max-replay-size`.
+When both are absent, marked buffer growth is unlimited.
+
 When the item type of a list is known, use the list helpers instead of creating
 a `GenericType` descriptor explicitly:
 

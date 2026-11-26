@@ -26,6 +26,7 @@ import io.helidon.common.types.TypeName;
 
 final class GeneratedNames {
     private final Set<String> names;
+    private final Map<String, String> keys = new HashMap<>();
     private final Map<TypeName, String> serializers = new HashMap<>();
     private final Map<TypeName, String> deserializers = new HashMap<>();
 
@@ -70,6 +71,14 @@ final class GeneratedNames {
 
     String deserializer(TypeName type, String preferredName) {
         return deserializers.computeIfAbsent(type, _ -> unique(preferredName));
+    }
+
+    void registerJsonKey(String name, String fieldName) {
+        keys.put(name, fieldName);
+    }
+
+    String jsonKey(String name) {
+        return keys.get(name);
     }
 
     String unique(String preferredName) {

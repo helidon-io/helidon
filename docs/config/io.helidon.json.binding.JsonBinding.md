@@ -7,7 +7,28 @@ Configuration for JSON binding
 ## Configuration options
 
 
-This config type has no options.
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>max-<wbr>replay-<wbr>size</code>
+</td>
+<td>
+<code>Size</code>
+</td>
+<td>Maximum capacity to which a marked JSON stream buffer created by this binding may grow (unlimited when absent)</td>
+</tr>
+</tbody>
+</table>
+
+
 
 ---
 

@@ -29,6 +29,7 @@ import io.helidon.common.types.TypeName;
 import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonKey;
 import io.helidon.json.JsonParser;
+import io.helidon.json.JsonStringMatcher;
 import io.helidon.json.ObjectStartParser;
 import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBindingConfigurator;
@@ -80,6 +81,7 @@ class JsonTypesTest {
             fields.put(name, declaredField);
         }
 
+        checkField(toCheck, checked, fields, "JSON_STRING_MATCHER", JsonStringMatcher.class);
         checkField(toCheck, checked, fields, "JSON_ENTITY", Json.Entity.class);
         checkField(toCheck, checked, fields, "JSON_DESERIALIZER", Json.Deserializer.class);
         checkField(toCheck, checked, fields, "JSON_SERIALIZER", Json.Serializer.class);

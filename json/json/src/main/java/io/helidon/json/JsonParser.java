@@ -43,6 +43,11 @@ public interface JsonParser {
     int MAX_NESTING_DEPTH = 1_000;
 
     /**
+     * Result of {@link #nextProperty(JsonStringMatcher)} at the closing brace of an object.
+     */
+    int END_OBJECT = -2;
+
+    /**
      * Create a new JSON parser from a JSON string.
      * <p>
      * This method creates an in-memory parser that processes the entire JSON string
@@ -118,12 +123,7 @@ public interface JsonParser {
      * @return a new JsonParser instance
      */
     static JsonParser create(InputStream inputStream) {
-        Objects.requireNonNull(inputStream);
-        JsonParserStream parser = new JsonParserStream(inputStream);
-        if (WHITESPACE_CHARS[parser.currentByte() & 0xff]) {
-            parser.nextToken();
-        }
-        return parser;
+        return create(inputStream, JsonParserStream.DEFAULT_BUFFER_SIZE);
     }
 
     /**
@@ -139,11 +139,28 @@ public interface JsonParser {
      * @return a new JsonParser instance
      */
     static JsonParser create(InputStream inputStream, int bufferSize) {
+        return create(inputStream, bufferSize, Integer.MAX_VALUE);
+    }
+
+    /**
+     * Create a streaming parser with a limit on buffer growth while a {@linkplain #mark() mark} is active.
+     * The parser can use its existing buffer at any size. A limit of zero prevents growth while marked.
+     *
+     * @param inputStream the input stream containing JSON data
+     * @param bufferSize initial buffer size in bytes, at least 6
+     * @param maxReplayBytes maximum capacity in bytes for a buffer grown while marked
+     * @return a new parser positioned at the first token
+     * @throws IllegalArgumentException if the buffer size is less than 6 or the replay limit is negative
+     */
+    static JsonParser create(InputStream inputStream, int bufferSize, int maxReplayBytes) {
         Objects.requireNonNull(inputStream);
         if (bufferSize <= 5) {
             throw new IllegalArgumentException("Buffer size must be greater than 5");
         }
-        JsonParserStream parser = new JsonParserStream(inputStream, bufferSize);
+        if (maxReplayBytes < 0) {
+            throw new IllegalArgumentException("max-replay-size must be non-negative");
+        }
+        JsonParserStream parser = new JsonParserStream(inputStream, bufferSize, maxReplayBytes);
         if (WHITESPACE_CHARS[parser.currentByte() & 0xff]) {
             parser.nextToken();
         }
@@ -177,8 +194,22 @@ public interface JsonParser {
      * @return a new JsonParser instance
      */
     static JsonParser create(Reader reader) {
-        Objects.requireNonNull(reader);
-        return create(new ReaderInputStream(reader));
+        return create(reader, Integer.MAX_VALUE);
+    }
+
+    /**
+     * Create a parser from a reader using the default buffer size and the replay limit described by
+     * {@link #create(InputStream, int, int)}.
+     *
+     * @param reader the reader containing JSON data
+     * @param maxReplayBytes maximum capacity in bytes for a buffer grown while marked
+     * @return a new parser positioned at the first token
+     * @throws IllegalArgumentException if the replay limit is negative
+     */
+    static JsonParser create(Reader reader, int maxReplayBytes) {
+        return create(new ReaderInputStream(Objects.requireNonNull(reader)),
+                      JsonParserStream.DEFAULT_BUFFER_SIZE,
+                      maxReplayBytes);
     }
 
     /**
@@ -295,15 +326,93 @@ public interface JsonParser {
     String readString();
 
     /**
+     * Read a string and match its complete decoded value against the registered names.
+     * Implementations may match directly against input bytes without allocating a string.
+     * The parser advances exactly as for {@link #readString()}, including for an unknown value.
+     *
+     * @param matcher recognizer for the expected decoded strings
+     * @return zero-based position among the registered names, or {@code -1} if the string is absent
+     * @throws JsonException if the current token is not a string or parsing fails
+     */
+    default int readString(JsonStringMatcher matcher) {
+        Objects.requireNonNull(matcher);
+        if (currentByte() != '"') {
+            throw createException("Start of a string expected", currentByte());
+        }
+        return matcher.match(readString());
+    }
+
+    /**
+     * Read a property name and advance past its colon to the next token.
+     * The parser must be on the opening quote of the name.
+     *
+     * @param matcher recognizer for the expected decoded property names
+     * @return the matching ordinal, or {@code -1} for an unknown name
+     * @throws JsonException if the name or colon is malformed, or the input ends before the value token
+     */
+    default int readProperty(JsonStringMatcher matcher) {
+        Objects.requireNonNull(matcher);
+        byte token = currentByte();
+        if (token != '"') {
+            throw createException("Expected a quoted property name", token);
+        }
+        int ordinal = readString(matcher);
+        Parsers.propertyValue(this);
+        return Math.max(-1, ordinal);
+    }
+
+    /**
+     * Advance from a completed property value to the next property or the closing brace.
+     * A comma must be followed by a quoted name and a colon. At the end of the object the cursor stays on its closing brace.
+     *
+     * @param matcher recognizer for the expected decoded property names
+     * @return the matching ordinal, {@code -1} for an unknown property, or {@link #END_OBJECT} at the end of the object
+     * @throws JsonException if the name or its surrounding delimiters are malformed, or the input ends prematurely
+     */
+    default int nextProperty(JsonStringMatcher matcher) {
+        return Parsers.nextProperty(this, Objects.requireNonNull(matcher));
+    }
+
+    /**
+     * Try to consume the expected property from its opening quote through its colon.
+     * On success the parser is positioned on the first token of the value. A parser may decline
+     * the probe without changing its position, including when the header crosses an input refill.
+     *
+     * @param key expected property name
+     * @return whether the complete header was consumed
+     */
+    default boolean tryReadProperty(JsonKey key) {
+        Objects.requireNonNull(key);
+        return false;
+    }
+
+    /**
+     * Try to advance from the end of an object member's value to the value of the expected next property.
+     * A successful probe consumes the comma, the complete property name and its colon, and positions the
+     * parser on the first token of the value. A parser can decline the probe, including when it needs
+     * to refill its input. On a failed probe the current position is preserved.
+     *
+     * @param key expected property name
+     * @return whether the parser advanced to the value
+     */
+    default boolean tryNextProperty(JsonKey key) {
+        Objects.requireNonNull(key);
+        return false;
+    }
+
+    /**
      * Reads a string value and returns its FNV-1a hash.
      * <p>
-     * This method is optimized for performance when only string comparison
-     * is needed, avoiding string object allocation.
+     * This method avoids string object allocation. Hashes are not unique and must not be used alone
+     * to identify a string. Use {@link #readString(JsonStringMatcher)} to match complete decoded names
+     * using a string matcher.
      * </p>
      *
      * @return the hash of the string value
      * @throws JsonException if the next token is not a string or parsing fails
+     * @deprecated use {@link #readString(JsonStringMatcher)} to match complete string values
      */
+    @Deprecated(since = "28.0.0", forRemoval = true)
     int readStringAsHash();
 
     /**
@@ -489,6 +598,9 @@ public interface JsonParser {
      * This method saves the current parser position so it can be returned to later
      * using {@link #resetToMark()}. Useful for backtracking during parsing operations.
      * </p>
+     * A native stream parser retains marked input in its buffer. Its replay size limit is fixed at creation. When growing
+     * the buffer would exceed that limit, the parser throws a {@link JsonException} before reading further from the stream.
+     * Existing capacity remains available for replay until the mark is cleared or reset.
      */
     void mark();
 

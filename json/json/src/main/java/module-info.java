@@ -27,7 +27,8 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.json {
     requires static io.helidon.common.features.api;
 
-    requires io.helidon.common;
+    requires transitive io.helidon.common;
+
     requires io.helidon.common.buffers;
 
     exports io.helidon.json;

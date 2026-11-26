@@ -17,10 +17,7 @@
 package io.helidon.json.binding.factories;
 
 import java.lang.reflect.Type;
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Arrays;
 import java.util.Set;
 
 import io.helidon.common.GenericType;
@@ -28,6 +25,7 @@ import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonParser;
+import io.helidon.json.JsonStringMatcher;
 import io.helidon.json.binding.JsonBindingFactory;
 import io.helidon.json.binding.JsonConverter;
 import io.helidon.json.binding.JsonDeserializer;
@@ -65,41 +63,31 @@ class EnumBindingFactory implements JsonBindingFactory<Enum<?>> {
 
     private static final class EnumConverter implements JsonConverter<Enum<?>> {
 
-        private static final int FNV_OFFSET_BASIS = 0x811c9dc5;
-        private static final int FNV_PRIME = 0x01000193;
-
         private final Type type;
-        private final Map<Integer, Enum<?>> enumConstants;
-        private final Map<String, Integer> names;
+        private final Enum<?>[] enumConstants;
+        private final String[] names;
+        private final JsonStringMatcher matcher;
 
         private EnumConverter(Class<?> type) {
             this.type = type;
             if (!type.isEnum()) {
                 throw new IllegalStateException("Type \"" + type + "\" is not an enum");
             }
-            HashMap<Integer, Enum<?>> map = new HashMap<>();
-            Map<String, Integer> names = new HashMap<>();
-            Object[] constants = type.getEnumConstants();
-            for (Object o : constants) {
-                Enum<?> constant = (Enum<?>) o;
-                String costName = constant.name();
-                int nameHash = calculateNameHash(costName);
-                names.put(costName, nameHash);
-                map.put(nameHash, constant);
+            this.enumConstants = (Enum<?>[]) type.getEnumConstants();
+            this.names = new String[enumConstants.length];
+            for (int i = 0; i < enumConstants.length; i++) {
+                names[i] = enumConstants[i].name();
             }
-            this.enumConstants = Collections.unmodifiableMap(map);
-            this.names = Collections.unmodifiableMap(names);
+            this.matcher = JsonStringMatcher.create(names);
         }
 
         @Override
         public Enum<?> deserialize(JsonParser parser) {
-            int enumNameHash = parser.readStringAsHash();
-            Enum<?> enumValue = enumConstants.get(enumNameHash);
-            if (enumValue == null) {
-                throw parser.createException("Invalid enum name hash \"" + enumNameHash + "\". Valid names and hashes are: "
-                                                     + names);
+            int index = parser.readString(matcher);
+            if (index < 0) {
+                throw parser.createException("Invalid enum name. Valid names are: " + Arrays.toString(names));
             }
-            return enumValue;
+            return enumConstants[index];
         }
 
         @Override
@@ -112,14 +100,6 @@ class EnumBindingFactory implements JsonBindingFactory<Enum<?>> {
             return GenericType.create(type);
         }
 
-        private static int calculateNameHash(String name) {
-            int fnvHash = FNV_OFFSET_BASIS;
-            for (byte b : name.getBytes(StandardCharsets.UTF_8)) {
-                fnvHash ^= (b & 0xFF);
-                fnvHash *= FNV_PRIME;
-            }
-            return fnvHash;
-        }
-
     }
+
 }

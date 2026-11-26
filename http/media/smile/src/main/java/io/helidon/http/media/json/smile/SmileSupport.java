@@ -48,7 +48,7 @@ public class SmileSupport extends MediaSupportBase<SmileSupportConfig> implement
 
         JsonBinding jsonBinding = supportConfig.jsonBinding();
 
-        this.reader = new SmileReader(jsonBinding);
+        this.reader = new SmileReader(jsonBinding, supportConfig.smileConfig());
         this.writer = new SmileWriter(supportConfig, jsonBinding);
     }
 

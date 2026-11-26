@@ -23,6 +23,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Objects;
 
 import io.helidon.common.buffers.BufferData;
 
@@ -38,25 +39,26 @@ import static io.helidon.json.JsonParserArray.SHORT_SIZE_BORDER;
 import static io.helidon.json.JsonParserArray.VALID_NUMBER_PARTS;
 import static io.helidon.json.JsonParserArray.WHITESPACE_CHARS;
 import static io.helidon.json.JsonParserArray.WHOLE_NUMBER_PARTS;
+import static io.helidon.json.JsonParserSupport.growStreamBuffer;
 
 /*
 This class is having mostly the same method implementations as ArrayJsonParser does.
 I will need to think carefully about how to do the abstraction right, but for the first version,
 I have decided to leave it like this and with a duplicit code.
  */
-final class JsonParserStream extends JsonParserBase {
+final class JsonParserStream extends JsonTextParser {
 
-    private static final int DEFAULT_BUFFER_SIZE = 512;
+    static final int DEFAULT_BUFFER_SIZE = 512;
 
-    private final int configuredBufferSize;
     private final InputStream inputStream;
+    private final int maxReplayBytes;
+
     private boolean finished;
     private boolean bufferingJsonValue;
     private int jsonValueStart;
 
     private int stringBufferLength = 64;
     private char[] stringBuffer = new char[stringBufferLength];
-    private boolean expectLowSurrogate = false;
 
     private byte[] buffer;
     private int currentIndex = 0;
@@ -65,9 +67,9 @@ final class JsonParserStream extends JsonParserBase {
     private int mark = -1;
     private boolean replayMarked = false;
 
-    JsonParserStream(InputStream inputStream, int bufferSize) {
-        this.configuredBufferSize = bufferSize;
+    JsonParserStream(InputStream inputStream, int bufferSize, int maxReplayBytes) {
         this.inputStream = inputStream;
+        this.maxReplayBytes = maxReplayBytes;
         currentIndex = 0;
         buffer = new byte[bufferSize];
         try {
@@ -82,13 +84,94 @@ final class JsonParserStream extends JsonParserBase {
         }
     }
 
-    JsonParserStream(InputStream inputStream) {
-        this(inputStream, DEFAULT_BUFFER_SIZE);
-    }
-
     @Override
     public byte currentByte() {
         return buffer[currentIndex];
+    }
+
+    @Override
+    public int readString(JsonStringMatcher matcher) {
+        if (matcher instanceof AsciiStringMatcher ascii && buffer[currentIndex] == '"') {
+            int start = currentIndex + 1;
+            long hit = ascii.recognize(buffer, start, bufferLength);
+            if (hit >= 0) {
+                currentIndex = start + (int) (hit >>> Integer.SIZE);
+                return (int) hit;
+            }
+            matcher = ascii.decoded();
+        }
+        return readString(matcher, buffer, currentIndex, bufferLength);
+    }
+
+    @Override
+    public boolean tryReadProperty(JsonKey key) {
+        int value = Objects.requireNonNull(key).firstPropertyValue(buffer, currentIndex, bufferLength);
+        if (value < 0) {
+            return false;
+        }
+        currentIndex = value;
+        return true;
+    }
+
+    @Override
+    public boolean tryNextProperty(JsonKey key) {
+        int value = Objects.requireNonNull(key).nextPropertyValue(buffer, currentIndex + 1, bufferLength);
+        if (value < 0) {
+            return false;
+        }
+        currentIndex = value;
+        return true;
+    }
+
+    @Override
+    public int readProperty(JsonStringMatcher matcher) {
+        return readProperty(matcher, buffer, currentIndex, bufferLength);
+    }
+
+    @Override
+    public int nextProperty(JsonStringMatcher matcher) {
+        return nextProperty(matcher, buffer, currentIndex, bufferLength);
+    }
+
+    @Override
+    void stringPosition(int position) {
+        currentIndex = position;
+    }
+
+    @Override
+    byte nextStringEvent() {
+        do {
+            int position = nextStringEvent(buffer, currentIndex + 1, bufferLength);
+            if (position < bufferLength) {
+                currentIndex = position;
+                return buffer[position];
+            }
+            currentIndex = bufferLength - 1;
+        } while (hasNext());
+        throw createException("Unexpected end of string. Incomplete JSON or incorrect use of the skip method");
+    }
+
+    @Override
+    int readUtf8CodePoint(byte currentByte) {
+        int value = currentByte & 0xFF;
+        if ((value & 0xE0) == 0xC0) {
+            ensure(1);
+            return Parsers.decodeUtf8TwoByte(currentByte, readNextByte(), this);
+        }
+        if ((value & 0xF0) == 0xE0) {
+            ensure(2);
+            byte second = buffer[++currentIndex];
+            byte third = buffer[++currentIndex];
+            return Parsers.decodeUtf8ThreeByte(currentByte, second, third, this);
+        }
+        if ((value & 0xF8) == 0xF0) {
+            ensure(3);
+            byte second = buffer[++currentIndex];
+            byte third = buffer[++currentIndex];
+            byte fourth = buffer[++currentIndex];
+            return Parsers.decodeUtf8FourByte(currentByte, second, third, fourth, this);
+        }
+        throw createException("Invalid UTF-8 byte", currentByte);
     }
 
     @Override
@@ -99,6 +182,7 @@ final class JsonParserStream extends JsonParserBase {
         return currentIndex + 1 < bufferLength;
     }
 
+    @Override
     byte readNextByte() {
         if (currentIndex + 1 >= bufferLength) {
             if (finished) {
@@ -113,7 +197,7 @@ final class JsonParserStream extends JsonParserBase {
     }
 
     void ensure(int amount) {
-        if (currentIndex + amount >= bufferLength) {
+        if (currentIndex >= bufferLength - amount) {
             try {
                 // 1. Compact: shift unneeded prefix out so the required bytes can fit.
                 int preserveFrom;
@@ -141,20 +225,13 @@ final class JsonParserStream extends JsonParserBase {
                 }
 
                 // 2. Grow the backing array if it still cannot hold currentIndex + amount + 1 bytes.
-                int required = currentIndex + amount + 1;
-                if (required > bufferLength) {
-                    // Round up to the nearest configuredBufferSize multiple to avoid many small grows.
-                    int newSize = buffer.length;
-                    while (newSize < required) {
-                        newSize += configuredBufferSize;
-                    }
-                    byte[] newBuffer = new byte[newSize];
-                    System.arraycopy(buffer, 0, newBuffer, 0, kept);
-                    buffer = newBuffer;
+                long required = (long) currentIndex + amount + 1;
+                if (required > buffer.length) {
+                    growBuffer(kept, required);
                 }
 
                 // 3. Read from the stream until we have enough bytes or EOF.
-                while (currentIndex + amount >= bufferLength) {
+                while (bufferLength < required) {
                     int lastRead = inputStream.read(buffer, bufferLength, buffer.length - bufferLength);
                     if (lastRead == -1) {
                         finished = true;
@@ -180,7 +257,7 @@ final class JsonParserStream extends JsonParserBase {
         if (currentByte() != '\"') {
             throw createException("Start of a string expected", currentByte());
         }
-        expectLowSurrogate = false;
+        expectLowSurrogate(false);
         ensure(1);
         byte b = this.buffer[++currentIndex];
         char c;
@@ -194,7 +271,7 @@ final class JsonParserStream extends JsonParserBase {
         } else {
             c = decodeUtf8ToChar(b);
         }
-        if (expectLowSurrogate) {
+        if (expectsLowSurrogate()) {
             throw createException("Low surrogate must follow the high surrogate.");
         }
         if (nextToken() != '\"') {
@@ -332,6 +409,8 @@ final class JsonParserStream extends JsonParserBase {
             replayMarked = false;
             finished = false;
             currentIndex = mark;
+            bufferingJsonValue = false;
+            jsonValueStart = 0;
         } else {
             throw new IllegalStateException("Parser tried to reset to the marked place, but no mark was found");
         }
@@ -341,7 +420,7 @@ final class JsonParserStream extends JsonParserBase {
     public void skip() {
         switch (currentByte()) {
         case '"':
-            skipString();
+            skipStringValue();
             break;
         case '{':
             skipObject();
@@ -380,12 +459,13 @@ final class JsonParserStream extends JsonParserBase {
         }
     }
 
+    @Override
     char processEscapedSequence() {
         if (!hasNext()) {
             throw createException("Error while processing an escaped string sequence. Incomplete JSON");
         }
         byte b = buffer[++currentIndex];
-        if (expectLowSurrogate && b != 'u') {
+        if (expectsLowSurrogate() && b != 'u') {
             throw createException("Low surrogate must follow the high surrogate.", b);
         }
         switch (b) {
@@ -413,19 +493,19 @@ final class JsonParserStream extends JsonParserBase {
             // Handle JSON's UTF-16 surrogate pair encoding (\\uXXXX\\uYYYY for code points > U+FFFF)
             if (Character.isHighSurrogate(tmp)) {
                 // High surrogate: must be followed by a low surrogate
-                if (expectLowSurrogate) {
+                if (expectsLowSurrogate()) {
                     throw createException("A high surrogate must always be followed by a low surrogate");
                 } else {
-                    expectLowSurrogate = true; // Expect low surrogate next
+                    expectLowSurrogate(true); // Expect low surrogate next
                 }
             } else if (Character.isLowSurrogate(tmp)) {
                 // Low surrogate: must follow a high surrogate
-                if (expectLowSurrogate) {
-                    expectLowSurrogate = false; // Pair complete
+                if (expectsLowSurrogate()) {
+                    expectLowSurrogate(false); // Pair complete
                 } else {
                     throw createException("A low surrogate must always follow a high surrogate");
                 }
-            } else if (expectLowSurrogate) {
+            } else if (expectsLowSurrogate()) {
                 // Expected low surrogate but got neither high nor low
                 throw createException("Low surrogate was expected to follow the high surrogate, "
                                               + "but found " + Parsers.toPrintableForm(tmp));
@@ -470,28 +550,6 @@ final class JsonParserStream extends JsonParserBase {
             stringBuffer[position++] = (char) codePoint;
         }
         return position;
-    }
-
-    private int readUtf8CodePoint(byte currentByte) {
-        int value = currentByte & 0xFF;
-        if ((value & 0xE0) == 0xC0) {
-            ensure(1);
-            return Parsers.decodeUtf8TwoByte(currentByte, readNextByte(), this);
-        }
-        if ((value & 0xF0) == 0xE0) {
-            ensure(2);
-            byte second = buffer[++currentIndex];
-            byte third = buffer[++currentIndex];
-            return Parsers.decodeUtf8ThreeByte(currentByte, second, third, this);
-        }
-        if ((value & 0xF8) == 0xF0) {
-            ensure(3);
-            byte second = buffer[++currentIndex];
-            byte third = buffer[++currentIndex];
-            byte fourth = buffer[++currentIndex];
-            return Parsers.decodeUtf8FourByte(currentByte, second, third, fourth, this);
-        }
-        throw createException("Invalid UTF-8 byte", currentByte);
     }
 
     void increaseStringBuffer() {
@@ -1270,7 +1328,7 @@ final class JsonParserStream extends JsonParserBase {
         } else if (currentByte() != '"') {
             throw createException("Expected start of string", currentByte());
         }
-        expectLowSurrogate = false;
+        expectLowSurrogate(false);
         int index = ++currentIndex;
         int readableBytes = bufferLength - currentIndex;
         int firstRun = Math.min(stringBufferLength, readableBytes);
@@ -1316,7 +1374,7 @@ final class JsonParserStream extends JsonParserBase {
                 b = buffer[currentIndex];
                 if (b == '\\') {
                     stringBuffer[stringBuffIndex++] = processEscapedSequence();
-                } else if (expectLowSurrogate) {
+                } else if (expectsLowSurrogate()) {
                     throw createException("Low surrogate must follow the high surrogate.", b);
                 } else if (b == '"') {
                     return new String(stringBuffer, 0, stringBuffIndex);
@@ -2398,7 +2456,7 @@ final class JsonParserStream extends JsonParserBase {
                 return;
             }
             if (b == '"') {
-                skipString();
+                skipStringValue();
                 b = nextToken();
             } else {
                 throw createException("Key name start expected", b);
@@ -2412,7 +2470,7 @@ final class JsonParserStream extends JsonParserBase {
             while (b == ',') {
                 b = nextToken();
                 if (b == '"') {
-                    skipString();
+                    skipStringValue();
                     b = nextToken();
                 } else {
                     throw createException("Key name start expected", b);
@@ -2454,6 +2512,10 @@ final class JsonParserStream extends JsonParserBase {
         } finally {
             exitStructure();
         }
+    }
+
+    private void growBuffer(int kept, long required) {
+        buffer = growStreamBuffer(this, buffer, kept, required, replayMarked ? maxReplayBytes : Integer.MAX_VALUE);
     }
 
     private boolean expectedNext(char c) {
@@ -2539,10 +2601,7 @@ final class JsonParserStream extends JsonParserBase {
         } else {
             // Short reads can leave room in the buffer; expand only when it is full.
             if (bufferLength == buffer.length) {
-                int newCap = buffer.length + configuredBufferSize;
-                byte[] tmp = new byte[newCap];
-                System.arraycopy(buffer, 0, tmp, 0, bufferLength);
-                buffer = tmp;
+                growBuffer(bufferLength, (long) bufferLength + 1);
             }
             int lastRead = inputStream.read(buffer, bufferLength, buffer.length - bufferLength);
             if (lastRead == -1) {

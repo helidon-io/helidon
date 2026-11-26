@@ -43,6 +43,15 @@ Configuration for Helidon JSON Binding media support
 </td>
 <td>Content type to use if not configured (in response headers for server, and in request headers for client)</td>
 </tr>
+<tr>
+<td>
+<code>json-<wbr>binding</code>
+</td>
+<td>
+<code>Json<wbr>Binding<wbr>Config</code>
+</td>
+<td>JSON binding instance to use for serialization and deserialization</td>
+</tr>
 </tbody>
 </table>
 

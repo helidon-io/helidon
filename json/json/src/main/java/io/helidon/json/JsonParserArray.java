@@ -21,11 +21,12 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Objects;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.Bytes;
 
-class JsonParserArray extends JsonParserBase {
+class JsonParserArray extends JsonTextParser {
 
     private static final int FAST_ASCII_STRING_LIMIT = 64;
 
@@ -86,7 +87,6 @@ class JsonParserArray extends JsonParserBase {
 
     private int stringBufferLength = 64;
     private char[] stringBuffer;
-    private boolean expectLowSurrogate = false;
 
     private final byte[] buffer;
     private int currentIndex = 0;
@@ -140,10 +140,93 @@ class JsonParserArray extends JsonParserBase {
     }
 
     @Override
+    public int readString(JsonStringMatcher matcher) {
+        if (matcher instanceof AsciiStringMatcher ascii && buffer[currentIndex] == '"') {
+            int start = currentIndex + 1;
+            long hit = ascii.recognize(buffer, start, bufferLength);
+            if (hit >= 0) {
+                currentIndex = start + (int) (hit >>> Integer.SIZE);
+                return (int) hit;
+            }
+            matcher = ascii.decoded();
+        }
+        return readString(matcher, buffer, currentIndex, bufferLength);
+    }
+
+    @Override
+    public boolean tryReadProperty(JsonKey key) {
+        int value = Objects.requireNonNull(key).firstPropertyValue(buffer, currentIndex, bufferLength);
+        if (value < 0) {
+            return false;
+        }
+        currentIndex = value;
+        return true;
+    }
+
+    @Override
+    public boolean tryNextProperty(JsonKey key) {
+        int value = Objects.requireNonNull(key).nextPropertyValue(buffer, currentIndex + 1, bufferLength);
+        if (value < 0) {
+            return false;
+        }
+        currentIndex = value;
+        return true;
+    }
+
+    @Override
+    public int readProperty(JsonStringMatcher matcher) {
+        return readProperty(matcher, buffer, currentIndex, bufferLength);
+    }
+
+    @Override
+    public int nextProperty(JsonStringMatcher matcher) {
+        return nextProperty(matcher, buffer, currentIndex, bufferLength);
+    }
+
+    @Override
+    void stringPosition(int position) {
+        currentIndex = position;
+    }
+
+    @Override
+    byte nextStringEvent() {
+        int position = nextStringEvent(buffer, currentIndex + 1, bufferLength);
+        if (position == bufferLength) {
+            throw createException("Unexpected end of string. Incomplete JSON or incorrect use of the skip method");
+        }
+        currentIndex = position;
+        return buffer[position];
+    }
+
+    @Override
+    int readUtf8CodePoint(byte currentByte) {
+        int value = currentByte & 0xFF;
+        if ((value & 0xE0) == 0xC0) {
+            ensure(1);
+            return Parsers.decodeUtf8TwoByte(currentByte, readNextByte(), this);
+        }
+        if ((value & 0xF0) == 0xE0) {
+            ensure(2);
+            byte second = buffer[++currentIndex];
+            byte third = buffer[++currentIndex];
+            return Parsers.decodeUtf8ThreeByte(currentByte, second, third, this);
+        }
+        if ((value & 0xF8) == 0xF0) {
+            ensure(3);
+            byte second = buffer[++currentIndex];
+            byte third = buffer[++currentIndex];
+            byte fourth = buffer[++currentIndex];
+            return Parsers.decodeUtf8FourByte(currentByte, second, third, fourth, this);
+        }
+        throw createException("Invalid UTF-8 byte", currentByte);
+    }
+
+    @Override
     public boolean hasNext() {
         return currentIndex + 1 < bufferLength;
     }
 
+    @Override
     byte readNextByte() {
         return buffer[++currentIndex];
     }
@@ -171,7 +254,7 @@ class JsonParserArray extends JsonParserBase {
             throw createException("Expected start of string", currentByte());
         }
         ensureStringBuffer();
-        expectLowSurrogate = false;
+        expectLowSurrogate(false);
         int index = ++currentIndex;
         int readableBytes = bufferLength - currentIndex;
         int firstRun = Math.min(stringBufferLength, readableBytes);
@@ -204,7 +287,7 @@ class JsonParserArray extends JsonParserBase {
             b = buffer[currentIndex];
             if (b == '\\') {
                 stringBuffer[stringBuffIndex++] = processEscapedSequence();
-            } else if (expectLowSurrogate) {
+            } else if (expectsLowSurrogate()) {
                 throw createException("Low surrogate must follow the high surrogate.", b);
             } else if (b == '"') {
                 return new String(stringBuffer, 0, stringBuffIndex);
@@ -243,7 +326,7 @@ class JsonParserArray extends JsonParserBase {
         } else {
             c = decodeUtf8ToChar(b);
         }
-        if (expectLowSurrogate) {
+        if (expectsLowSurrogate()) {
             throw createException("Low surrogate must follow the high surrogate.");
         }
         if (nextToken() != '\"') {
@@ -1033,7 +1116,7 @@ class JsonParserArray extends JsonParserBase {
     public void skip() {
         switch (currentByte()) {
         case '"':
-            skipString();
+            skipStringValue();
             break;
         case '{':
             skipObject();
@@ -1104,12 +1187,13 @@ class JsonParserArray extends JsonParserBase {
         this.currentIndex = this.bufferLength - 1;
     }
 
+    @Override
     char processEscapedSequence() {
         if (!hasNext()) {
             throw createException("Error while processing an escaped string sequence. Incomplete JSON");
         }
         byte b = buffer[++currentIndex];
-        if (expectLowSurrogate && b != 'u') {
+        if (expectsLowSurrogate() && b != 'u') {
             throw createException("Low surrogate must follow the high surrogate.", b);
         }
         switch (b) {
@@ -1137,19 +1221,19 @@ class JsonParserArray extends JsonParserBase {
             // Handle JSON's UTF-16 surrogate pair encoding (\\uXXXX\\uYYYY for code points > U+FFFF)
             if (Character.isHighSurrogate(tmp)) {
                 // High surrogate: must be followed by a low surrogate
-                if (expectLowSurrogate) {
+                if (expectsLowSurrogate()) {
                     throw createException("A high surrogate must always be followed by a low surrogate");
                 } else {
-                    expectLowSurrogate = true; // Expect low surrogate next
+                    expectLowSurrogate(true); // Expect low surrogate next
                 }
             } else if (Character.isLowSurrogate(tmp)) {
                 // Low surrogate: must follow a high surrogate
-                if (expectLowSurrogate) {
-                    expectLowSurrogate = false; // Pair complete
+                if (expectsLowSurrogate()) {
+                    expectLowSurrogate(false); // Pair complete
                 } else {
                     throw createException("A low surrogate must always follow a high surrogate");
                 }
-            } else if (expectLowSurrogate) {
+            } else if (expectsLowSurrogate()) {
                 // Expected low surrogate but got neither high nor low
                 throw createException("Low surrogate was expected to follow the high surrogate, "
                                               + "but found " + Parsers.toPrintableForm(tmp));
@@ -1194,28 +1278,6 @@ class JsonParserArray extends JsonParserBase {
             stringBuffer[position++] = (char) codePoint;
         }
         return position;
-    }
-
-    private int readUtf8CodePoint(byte currentByte) {
-        int value = currentByte & 0xFF;
-        if ((value & 0xE0) == 0xC0) {
-            ensure(1);
-            return Parsers.decodeUtf8TwoByte(currentByte, readNextByte(), this);
-        }
-        if ((value & 0xF0) == 0xE0) {
-            ensure(2);
-            byte second = buffer[++currentIndex];
-            byte third = buffer[++currentIndex];
-            return Parsers.decodeUtf8ThreeByte(currentByte, second, third, this);
-        }
-        if ((value & 0xF8) == 0xF0) {
-            ensure(3);
-            byte second = buffer[++currentIndex];
-            byte third = buffer[++currentIndex];
-            byte fourth = buffer[++currentIndex];
-            return Parsers.decodeUtf8FourByte(currentByte, second, third, fourth, this);
-        }
-        throw createException("Invalid UTF-8 byte", currentByte);
     }
 
     void increaseStringBuffer() {
@@ -2240,7 +2302,7 @@ class JsonParserArray extends JsonParserBase {
                 return;
             }
             if (b == '"') {
-                skipString();
+                skipStringValue();
                 b = nextToken();
             } else {
                 throw createException("Key name start expected", b);
@@ -2254,7 +2316,7 @@ class JsonParserArray extends JsonParserBase {
             while (b == ',') {
                 b = nextToken();
                 if (b == '"') {
-                    skipString();
+                    skipStringValue();
                     b = nextToken();
                 } else {
                     throw createException("Key name start expected", b);
