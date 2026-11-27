@@ -102,6 +102,82 @@ public final class GeneratedJdbcData {
     }
 
     /**
+     * Prepares ordinary generated SQL without the callable exception to mixed marker validation.
+     *
+     * @param client The client owns the prepared statement.
+     * @param sql The SQL supplies the input markers.
+     * @param inputNames The names identify the inputs in declaration order.
+     * @param namedOnly Whether the repository requires named markers.
+     * @return The supplier creates fresh statements.
+     * @throws NullPointerException The client, SQL, list, or a list entry is null.
+     * @throws IllegalArgumentException The SQL does not satisfy the compiled input contract.
+     * @throws UnsupportedOperationException Named preparation requires the native client.
+     */
+    @Api.Since("28.0.0")
+    public static Supplier<Statement> prepareStatement(JdbcClient client, String sql, List<String> inputNames,
+                                                       boolean namedOnly) {
+        Objects.requireNonNull(client, "The JDBC client must not be null.");
+        Objects.requireNonNull(sql, "The SQL statement must not be null.");
+        Objects.requireNonNull(inputNames, "The input names must not be null.");
+        inputNames.forEach(name -> Objects.requireNonNull(name, "The input name must not be null."));
+        List<String> names = List.copyOf(inputNames);
+        if (client instanceof JdbcClientImpl clientImpl) {
+            return clientImpl.prepareStatement(sql, names, namedOnly);
+        }
+        if (namedOnly) {
+            throw new UnsupportedOperationException(
+                    "Named preparation for generated repositories requires the native Helidon JDBC client.");
+        }
+        JdbcConfiguredStatement.createStatement(sql, names, false);
+        return client.prepare(sql, names);
+    }
+
+    /**
+     * Prepares callable SQL against the requirements of a generated repository method.
+     * The leading return must be present exactly when leadingReturn is true.
+     * A true namedOnly flag requires named argument markers. Logical names include
+     * every input and output once, with return first when a leading return is required.
+     * The names are defensively copied. Validation performs no JDBC work.
+     * <p>
+     * The native provider scans once and retains an immutable definition. Each supplier
+     * invocation creates an independent stage without rescanning SQL or retaining a
+     * transaction context. The supplier is safe to share, but its stages are not safe
+     * for concurrent mutation. Alternate clients receive general preparation after
+     * validation when namedOnly is false. Named-only preparation requires the native client.
+     *
+     * @param client The client owns execution of the prepared call.
+     * @param sql The SQL defines one callable statement.
+     * @param logicalNames The names identify parameters in the compiled binding order.
+     * @param namedOnly The flag requires named argument markers when true.
+     * @param leadingReturn The flag requires a leading return when true and excludes it when false.
+     * @return The supplier creates fresh statement stages.
+     * @throws NullPointerException The client, SQL, list, or a list entry is null.
+     * @throws IllegalArgumentException The SQL or logical parameters do not satisfy the compiled contract.
+     * @throws UnsupportedOperationException The client does not support the required preparation.
+     */
+    @Api.Since("28.0.0")
+    public static Supplier<Statement> prepareCall(JdbcClient client,
+                                                  String sql,
+                                                  List<String> logicalNames,
+                                                  boolean namedOnly,
+                                                  boolean leadingReturn) {
+        Objects.requireNonNull(client, "The JDBC client must not be null.");
+        Objects.requireNonNull(sql, "The SQL statement must not be null.");
+        Objects.requireNonNull(logicalNames, "The logical names must not be null.");
+        logicalNames.forEach(name -> Objects.requireNonNull(name, "The logical name must not be null."));
+        List<String> names = List.copyOf(logicalNames);
+        if (client instanceof JdbcClientImpl clientImpl) {
+            return clientImpl.prepareCall(sql, names, namedOnly, leadingReturn);
+        }
+        if (namedOnly) {
+            throw new UnsupportedOperationException(
+                    "Named preparation for generated repositories requires the native Helidon JDBC client.");
+        }
+        JdbcConfiguredStatement.createCall(sql, names, false, leadingReturn);
+        return client.prepare(sql, names);
+    }
+
+    /**
      * Binds SQL {@code NULL} for a generated declarative repository.
      * <p>
      * This method accepts only a statement created by Helidon's JDBC provider.

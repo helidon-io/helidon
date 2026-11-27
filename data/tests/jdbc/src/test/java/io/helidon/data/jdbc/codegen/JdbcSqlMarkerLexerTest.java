@@ -24,6 +24,7 @@ import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class JdbcSqlMarkerLexerTest {
@@ -87,6 +88,38 @@ class JdbcSqlMarkerLexerTest {
         assertThat(one.markers(), is(List.of("")));
         assertThat(one.style(), is(JdbcSqlMarkerLexer.MarkerStyle.POSITIONAL));
         assertThat(several.markers(), is(List.of("", "")));
+    }
+
+    @Test
+    void distinguishesEscapeFormsWithoutClassifyingRoutineNames() {
+        for (String routine : List.of("procedure", "function")) {
+            for (String prefix : List.of("{call ", "{?=call ", "{ ? = CALL ")) {
+                boolean leading = prefix.contains("?");
+                for (String arguments : List.of("", "?", "?, ?", ":first", ":first, :second")) {
+                    String sql = prefix + routine + "(" + arguments + ")}";
+                    JdbcSqlMarkerLexer.Result result;
+                    try {
+                        result = JdbcSqlMarkerLexer.parse(sql, true);
+                    } catch (IllegalArgumentException e) {
+                        throw new AssertionError("Failed to parse the SQL case " + sql + ".", e);
+                    }
+                    String expectedSql = sql.replace(":first", "?").replace(":second", "?");
+                    int inputs = arguments.isEmpty() ? 0 : arguments.contains(",") ? 2 : 1;
+                    JdbcSqlMarkerLexer.MarkerStyle expectedStyle;
+                    if (arguments.contains(":")) {
+                        expectedStyle = JdbcSqlMarkerLexer.MarkerStyle.NAMED;
+                    } else {
+                        expectedStyle = inputs > 0 || leading
+                                ? JdbcSqlMarkerLexer.MarkerStyle.POSITIONAL : JdbcSqlMarkerLexer.MarkerStyle.NONE;
+                    }
+                    assertAll(sql,
+                              () -> assertThat("Leading return", result.leadingReturn(), is(leading)),
+                              () -> assertThat("Rewritten SQL", result.sql(), is(expectedSql)),
+                              () -> assertThat("Marker count", result.markers().size(), is(inputs + (leading ? 1 : 0))),
+                              () -> assertThat("Marker style", result.style(), is(expectedStyle)));
+                }
+            }
+        }
     }
 
     /**

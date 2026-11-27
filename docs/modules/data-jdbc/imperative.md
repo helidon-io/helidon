@@ -6,7 +6,7 @@ description: "Use Helidon Data JDBC with the imperative programming model"
 ## Overview
 
 The Data JDBC imperative programming model builds each database operation
-through `JdbcClient`. An operation combines SQL, positional parameters, and a
+through `JdbcClient`. An operation combines SQL, bound parameters, and a
 result mapping, then executes when the application invokes a terminal method.
 Helidon materializes the complete result before that method returns.
 
@@ -175,9 +175,11 @@ and portable marker syntax.
 
 ## Parameter Binding
 
-Imperative statements use positional `?` markers. Positions begin at one and
-follow the order of the markers in the SQL. Execution can begin after every
-position has been bound exactly once:
+Statements created with `create(...)` use positional `?` markers. Positions
+begin at one and follow the order of the markers in the SQL. Use `prepare(...)`
+to bind named markers with `bind(name, value)` or to reuse positional SQL. For
+queries and updates, bind every input position exactly once before execution.
+The following query binds two positional inputs:
 
 ```java
 List<String> names = jdbcClient.create("""

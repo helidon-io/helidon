@@ -37,6 +37,8 @@ record JdbcPreparationPlan(ResultKind resultKind, List<String> generatedColumns)
     // Ordinary update preparation has no generated column selection, so one immutable plan can serve every update.
     private static final JdbcPreparationPlan UPDATE = new JdbcPreparationPlan(ResultKind.UPDATE, NO_COLUMNS);
 
+    private static final JdbcPreparationPlan CALL = new JdbcPreparationPlan(ResultKind.CALL, NO_COLUMNS);
+
     /**
      * Creates a preparation plan with an immutable generated column snapshot.
      *
@@ -63,6 +65,10 @@ record JdbcPreparationPlan(ResultKind resultKind, List<String> generatedColumns)
      */
     static JdbcPreparationPlan update() {
         return UPDATE;
+    }
+
+    static JdbcPreparationPlan call() {
+        return CALL;
     }
 
     /**
@@ -102,6 +108,7 @@ record JdbcPreparationPlan(ResultKind resultKind, List<String> generatedColumns)
     enum ResultKind {
         QUERY,
         UPDATE,
-        GENERATED_KEYS
+        GENERATED_KEYS,
+        CALL
     }
 }

@@ -15,7 +15,10 @@
  */
 package io.helidon.data.jdbc.codegen;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Stream;
 
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenException;
@@ -28,8 +31,10 @@ import io.helidon.common.Api;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
+import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
+import io.helidon.common.types.TypedElementInfo;
 import io.helidon.data.codegen.common.RepositoryInfo;
 
 /**
@@ -78,10 +83,15 @@ final class JdbcRepositoryClassGenerator {
                         .isFinal(true)
                         .type(JdbcCodegenTypes.JDBC_CLIENT));
 
+        Set<String> memberNames = new HashSet<>();
+        collectMemberNames(repositoryInfo.interfaceInfo(), new HashSet<>(), memberNames);
+        memberNames.forEach(classModel::reserveTypeName);
         JdbcMethodGenerator.generate(codegenContext,
                                      roundContext,
                                      repositoryInfo,
-                                     classModel);
+                                     classModel,
+                                     className,
+                                     memberNames);
     }
 
     /**
@@ -185,25 +195,54 @@ final class JdbcRepositoryClassGenerator {
                         .addContentLine("}")
                         .addContent("this.").addContent(plan.sqlFieldName()).addContent(" = ");
                 // Any parameter alias requires named SQL for the whole method input contract.
-                if (plan.method().parameterArguments().stream()
-                        .anyMatch(parameter -> parameter.hasAnnotation(JdbcCodegenTypes.DATA_PARAM))) {
-                    constructor.addContent(JdbcCodegenTypes.GENERATED_JDBC_DATA).addContent(".prepareNamed(")
+                if (plan.callable() != null) {
+                    constructor.addContent(JdbcCodegenTypes.GENERATED_JDBC_DATA).addContent(".prepareCall(")
                             .addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME).addContent(", ");
                 } else {
-                    constructor.addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME).addContent(".prepare(");
+                    constructor.addContent(JdbcCodegenTypes.GENERATED_JDBC_DATA).addContent(".prepareStatement(")
+                            .addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME).addContent(", ");
                 }
                 constructor.addContent(sqlName).addContent(", ").addContent(List.class).addContent(".of(");
+                List<String> parameterNames = plan.callable() == null
+                        ? plan.parameterPlan().binds().stream()
+                                .map(bind -> JdbcSqlParameterPlan.effectiveName(bind.parameter())).toList()
+                        : plan.callable().names();
                 boolean first = true;
-                for (JdbcSqlParameterPlan.Bind bind : plan.parameterPlan().binds()) {
+                for (String parameterName : parameterNames) {
                     if (!first) {
                         constructor.addContent(", ");
                     }
-                    constructor.addContentLiteral(JdbcSqlParameterPlan.effectiveName(bind.parameter()));
+                    constructor.addContentLiteral(parameterName);
                     first = false;
                 }
-                constructor.addContentLine("));").addContentLine("}");
+                constructor.addContent(")");
+                if (plan.callable() != null) {
+                    constructor.addContent(", ").addContent(String.valueOf(plan.callable().namedOnly()))
+                            .addContent(", ").addContent(String.valueOf(plan.callable().outputs().stream()
+                                    .anyMatch(output -> output.marker().isEmpty())));
+                } else {
+                    constructor.addContent(", ").addContent(String.valueOf(plan.method().parameterArguments().stream()
+                            .anyMatch(parameter -> parameter.hasAnnotation(JdbcCodegenTypes.DATA_PARAM))));
+                }
+                constructor.addContentLine(");").addContentLine("}");
             }
         }
         classModel.addConstructor(constructor);
+    }
+
+    private static void collectMemberNames(TypeInfo type, Set<TypeName> visited, Set<String> names) {
+        if (!visited.add(type.typeName().genericTypeName())) {
+            return;
+        }
+        Stream.concat(type.elementInfo().stream(), type.otherElementInfo().stream())
+                .filter(element -> switch (element.kind()) {
+                case CLASS, INTERFACE, ENUM, ANNOTATION_TYPE, RECORD, FIELD -> true;
+                default -> false;
+                })
+                .map(TypedElementInfo::elementName)
+                .forEach(names::add);
+        for (TypeInfo parent : type.interfaceTypeInfo()) {
+            collectMemberNames(parent, visited, names);
+        }
     }
 }

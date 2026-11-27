@@ -16,6 +16,7 @@
 package io.helidon.tests.integration.data.jdbc.imperative.mysql;
 
 import java.sql.Connection;
+import java.sql.JDBCType;
 import java.sql.SQLException;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -319,11 +320,95 @@ class JdbcTransactionPoolTest {
     }
 
     /**
-     * Registers two public lifecycle observers which throw one shared failure,
-     * then proves real completion, connection release, and same-thread reuse.
+     * A single connection pool must recover after success, early return, and a caught callback processing failure.
+     */
+    @Test
+    void reusesPoolAfterCall() {
+        try (HikariDataSource pool = dataSource("callable_pool")) {
+            JdbcClient setup = JdbcClient.builder().dataSource(pool).build();
+            setup.create("CREATE TABLE ITEMS (ID INTEGER)").execute();
+            setup.create("CREATE PROCEDURE sp_write(IN p_value INTEGER, OUT p_result INTEGER) "
+                                 + "BEGIN INSERT INTO ITEMS VALUES (p_value); SET p_result = NULL; SELECT p_value; END")
+                    .execute();
+            setup.create("{call sp_write(?, ?)}").bind(1, 1).call().out("result", 2, JDBCType.INTEGER)
+                    .consume(_ -> { });
+            assertThat(pool.getHikariPoolMXBean().getActiveConnections(), is(0));
+            try (MySqlTransactionRegistry registry = new MySqlTransactionRegistry(pool)) {
+                JdbcClient client = registry.client();
+                assertThrows(TxException.class, () -> registry.support().transaction(Tx.Type.REQUIRED, () -> {
+                    assertThrows(IllegalArgumentException.class, () -> client.create("{call sp_write(?, ?)}").bind(1, 2)
+                            .call().out("result", 2, JDBCType.INTEGER).consume(result -> {
+                                assertThat(result.rows(row -> row.get(1, Integer.class)).one(), is(2));
+                                assertThrows(IllegalStateException.class,
+                                             () -> client.create("SELECT 1").map(Integer.class).one());
+                                result.skipRemainingResults();
+                                assertThrows(IllegalArgumentException.class, () -> result.get("result", Integer.class));
+                            }));
+                    return null;
+                }));
+                assertThat(pool.getHikariPoolMXBean().getActiveConnections(), is(0));
+                assertThat(client.create("SELECT COUNT(*) FROM ITEMS").map(Integer.class).one(), is(1));
+                Error first = new AssertionError("The callable mapper failed.");
+                Error later = new AssertionError("The callable callback failed later.");
+                assertThrows(TxException.class, () -> registry.support().transaction(Tx.Type.REQUIRED, () -> {
+                    Error observed = assertThrows(Error.class, () -> client.create("{call sp_write(?, ?)}").bind(1, 4)
+                            .call().out("result", 2, JDBCType.INTEGER).consume(result -> {
+                                Objects.requireNonNull(result, "The callable result must not be null.");
+                                assertThat(assertThrows(Error.class, () -> result.rows(row -> {
+                                    Objects.requireNonNull(row, "The current row must not be null.");
+                                    row.get(1, Integer.class);
+                                    throw first;
+                                }).list()), sameInstance(first));
+                                throw later;
+                            }));
+                    assertThat(observed, sameInstance(first));
+                    assertThat(observed.getSuppressed().length, is(1));
+                    assertThat(observed.getSuppressed()[0], sameInstance(later));
+                    return null;
+                }));
+                assertThat(pool.getHikariPoolMXBean().getActiveConnections(), is(0));
+                assertThat(client.create("SELECT COUNT(*) FROM ITEMS").map(Integer.class).one(), is(1));
+                client.create("{call sp_write(?, ?)}").bind(1, 3).call().out("result", 2, JDBCType.INTEGER).execute();
+                assertThat(pool.getHikariPoolMXBean().getActiveConnections(), is(0));
+                assertThat(client.create("SELECT COUNT(*) FROM ITEMS").map(Integer.class).one(), is(2));
+                client.create("{call sp_write(?, ?)}").bind(1, 5).call().out("result", 2, JDBCType.INTEGER)
+                        .consume(result -> {
+                            Objects.requireNonNull(result, "The callable result must not be null.");
+                            assertThat(result.rows(row -> {
+                                Objects.requireNonNull(row, "The current row must not be null.");
+                                return row.get(1, Integer.class);
+                            }).one(), is(5));
+                            assertThat(pool.getHikariPoolMXBean().getActiveConnections(), is(1));
+                        });
+                assertThat(pool.getHikariPoolMXBean().getActiveConnections(), is(0));
+                IllegalArgumentException mappingFailure = new IllegalArgumentException("The callable mapper failed.");
+                assertThrows(TxException.class, () -> registry.support().transaction(Tx.Type.REQUIRED, () -> {
+                    assertThat(assertThrows(IllegalArgumentException.class, () -> client.create("{call sp_write(?, ?)}")
+                            .bind(1, 6).call().out("result", 2, JDBCType.INTEGER).consume(result -> {
+                                Objects.requireNonNull(result, "The callable result must not be null.");
+                                assertThat(assertThrows(IllegalArgumentException.class, () -> result.rows(row -> {
+                                    Objects.requireNonNull(row, "The current row must not be null.");
+                                    row.get(1, Integer.class);
+                                    throw mappingFailure;
+                                }).list()), sameInstance(mappingFailure));
+                                assertThrows(IllegalStateException.class,
+                                             () -> client.create("SELECT 1").map(Integer.class).one());
+                            })), sameInstance(mappingFailure));
+                    return null;
+                }));
+                assertThat(pool.getHikariPoolMXBean().getActiveConnections(), is(0));
+                assertThat(client.create("SELECT COUNT(*) FROM ITEMS").map(Integer.class).one(), is(3));
+            }
+            assertThat(pool.isClosed(), is(false));
+        }
+    }
+
+    /**
+     * Verifies that the transaction completes and releases its connection when two lifecycle observers throw the same
+     * exception. A subsequent transaction on the same thread checks that the connection can be reused.
      *
-     * @param databaseName isolated MySQL database name
-     * @param commit whether to exercise commit rather than rollback
+     * @param databaseName The name identifies the isolated MySQL database.
+     * @param commit Use {@code true} to exercise commit and {@code false} to exercise rollback.
      */
     private static void assertSharedCompletionFailureReleasesConnection(String databaseName, boolean commit) {
         try (HikariDataSource dataSource = dataSource(databaseName)) {

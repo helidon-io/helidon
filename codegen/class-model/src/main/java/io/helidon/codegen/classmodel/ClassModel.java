@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -256,6 +257,19 @@ public final class ClassModel extends ClassBase {
         public Builder type(TypeName type) {
             packageName(type.packageName());
             name(type.className());
+            return this;
+        }
+
+        /**
+         * Qualifies references whose simple type name is already in scope in the generated class.
+         *
+         * @param name The name identifies a type or member that would capture a generated reference.
+         * @return The updated builder.
+         * @throws NullPointerException The name is null.
+         */
+        public Builder reserveTypeName(String name) {
+            Objects.requireNonNull(name, "The reserved type name must not be null.");
+            importOrganizer().reserveTypeName(name);
             return this;
         }
 

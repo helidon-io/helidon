@@ -15,6 +15,7 @@
  */
 package io.helidon.data.jdbc;
 
+import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -22,6 +23,7 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.sql.DataSource;
@@ -88,7 +90,7 @@ final class JdbcRunner {
         return switch (operation.preparationPlan().resultKind()) {
         case QUERY -> run(operation, SINGULAR_QUERY, scope -> queryHandler.one(scope, mapper));
         case GENERATED_KEYS -> run(operation, UNBOUNDED, scope -> updateHandler.one(scope, mapper));
-        case UPDATE -> throw incompatibleTerminal(operation, "one");
+        case UPDATE, CALL -> throw incompatibleTerminal(operation, "one");
         };
     }
 
@@ -104,7 +106,7 @@ final class JdbcRunner {
         return switch (operation.preparationPlan().resultKind()) {
         case QUERY -> run(operation, SINGULAR_QUERY, scope -> queryHandler.optional(scope, mapper));
         case GENERATED_KEYS -> run(operation, UNBOUNDED, scope -> updateHandler.optional(scope, mapper));
-        case UPDATE -> throw incompatibleTerminal(operation, "optional");
+        case UPDATE, CALL -> throw incompatibleTerminal(operation, "optional");
         };
     }
 
@@ -137,8 +139,85 @@ final class JdbcRunner {
         return switch (operation.preparationPlan().resultKind()) {
         case QUERY -> run(operation, UNBOUNDED, scope -> queryHandler.list(scope, mapper));
         case GENERATED_KEYS -> run(operation, UNBOUNDED, scope -> updateHandler.list(scope, mapper));
-        case UPDATE -> throw incompatibleTerminal(operation, "list");
+        case UPDATE, CALL -> throw incompatibleTerminal(operation, "list");
         };
+    }
+
+    <T> T call(JdbcOperation operation, Map<String, JdbcCallOutput> outputs, JdbcClient.CallMapper<T> mapper) {
+        JdbcConnectionLease lease = null;
+        CallableStatement statement = null;
+        JdbcCallResult result = null;
+        T value = null;
+        Throwable failure = null;
+        try {
+            lease = leaseProvider.acquire(dataSource);
+            lease.reserve();
+            Connection connection = lease.connection();
+            statement = JdbcExceptionTranslator.invoke("preparing a callable JDBC statement",
+                                                        () -> connection.prepareCall(operation.sql()));
+            CallableStatement callable = statement;
+            for (JdbcCallOutput output : outputs.values()) {
+                JdbcExceptionTranslator.invokeVoid("registering a callable JDBC output", () -> {
+                    if (!output.typeName().isEmpty()) {
+                        callable.registerOutParameter(output.index(), output.type().getVendorTypeNumber(), output.typeName());
+                    } else if (output.scale() >= 0) {
+                        callable.registerOutParameter(output.index(), output.type().getVendorTypeNumber(), output.scale());
+                    } else {
+                        callable.registerOutParameter(output.index(), output.type().getVendorTypeNumber());
+                    }
+                });
+            }
+            bind(statement, operation.binds());
+            result = new JdbcCallResult(operation, statement, outputs, lease);
+            result.start();
+            value = mapper.map(result);
+            if (value == null) {
+                throw new DataException("The callable mapper returned null.");
+            }
+        } catch (SQLException caught) {
+            try {
+                failure = JdbcExceptionTranslator.translate(operation, caught);
+            } catch (RuntimeException | Error translationFailure) {
+                failure = translationFailure;
+            }
+        } catch (Throwable caught) {
+            failure = caught;
+        }
+        try {
+            try {
+                if (result != null) {
+                    failure = result.finish(failure);
+                }
+            } catch (RuntimeException | Error finishingFailure) {
+                failure = JdbcExceptionTranslator.mergeOperationCleanup(failure, "finishing callable results", finishingFailure);
+            } finally {
+                failure = closeCallable(statement, "closing a callable statement", failure);
+            }
+        } finally {
+            try {
+                if (failure != null && lease != null) {
+                    lease.processingFailed();
+                }
+            } finally {
+                failure = closeCallable(lease, "closing a callable connection lease", failure);
+            }
+        }
+        if (failure != null) {
+            rethrow(operation, failure);
+        }
+        return value;
+    }
+
+    private static Throwable closeCallable(AutoCloseable resource, String operation, Throwable failure) {
+        if (resource == null) {
+            return failure;
+        }
+        try {
+            resource.close();
+        } catch (Throwable caught) {
+            return JdbcExceptionTranslator.mergeOperationCleanup(failure, operation, caught);
+        }
+        return failure;
     }
 
     /**
@@ -201,6 +280,9 @@ final class JdbcRunner {
         for (int index = 0; index < binds.length; index++) {
             int position = index + 1;
             JdbcOperation.Bind bind = binds[index];
+            if (bind == null) {
+                continue;
+            }
             if (bind.typed()) {
                 JdbcExceptionTranslator.invokeVoid("binding a typed null JDBC parameter",
                                                    () -> statement.setNull(position,
@@ -440,6 +522,24 @@ final class JdbcRunner {
     }
 
     /**
+     * Operation-specific work performed inside the resource boundary.
+     *
+     * @param <T> terminal result type
+     */
+    @FunctionalInterface
+    private interface HandlerAction<T> {
+
+        /**
+         * Executes against a prepared and bound statement.
+         *
+         * @param scope runner-owned execution scope
+         * @return terminal result
+         * @throws SQLException when JDBC work fails
+         */
+        T execute(ExecutionScope scope) throws SQLException;
+    }
+
+    /**
      * Runner-owned view of one prepared operation.
      */
     static final class ExecutionScope {
@@ -619,22 +719,5 @@ final class JdbcRunner {
         }
     }
 
-    /**
-     * Operation-specific work performed inside the resource boundary.
-     *
-     * @param <T> terminal result type
-     */
-    @FunctionalInterface
-    private interface HandlerAction<T> {
-
-        /**
-         * Executes against a prepared and bound statement.
-         *
-         * @param scope runner-owned execution scope
-         * @return terminal result
-         * @throws SQLException when JDBC work fails
-         */
-        T execute(ExecutionScope scope) throws SQLException;
-    }
 
 }

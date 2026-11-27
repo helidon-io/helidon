@@ -396,7 +396,7 @@ final class JdbcTxSupport implements TxSupport {
             throw e;
         }
 
-        if (transaction.rollbackOnly()) {
+        if (transaction.rollbackOnly() || connectionManager.rollbackOnly(transaction.identity)) {
             TxException failure = new TxException("The local JDBC transaction was marked for rollback.");
             rollback(transaction, failure, completion);
             throw failure;
@@ -519,6 +519,7 @@ final class JdbcTxSupport implements TxSupport {
         if (transaction == null) {
             return null;
         }
+        connectionManager.requireSuspensionAllowed();
         transaction.suspend();
         try {
             notifyListeners(listeners,

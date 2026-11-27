@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -45,6 +46,15 @@ import io.helidon.data.codegen.common.RepositoryInfo;
  */
 final class JdbcMethodGenerator {
 
+    private static final List<TypeName> GENERATED_TYPES = List.of(JdbcCodegenTypes.JDBC_CLIENT,
+                                                                  JdbcCodegenTypes.JDBC_CLIENT_STATEMENT,
+                                                                  JdbcCodegenTypes.CALL,
+                                                                  JdbcCodegenTypes.GENERATED_JDBC_DATA,
+                                                                  JdbcCodegenTypes.JDBC_TYPE,
+                                                                  JdbcCodegenTypes.DATA_EXCEPTION,
+                                                                  TypeName.create(Objects.class),
+                                                                  TypeName.create(Override.class));
+
     /**
      * Prevents construction of the generator utility.
      */
@@ -58,29 +68,59 @@ final class JdbcMethodGenerator {
      * @param roundContext current generation round
      * @param repositoryInfo repository metadata
      * @param classModel generated implementation
+     * @param className The name identifies the generated implementation.
+     * @param memberNames The names identify repository members visible to the implementation.
      */
     static void generate(CodegenContext codegenContext,
                          RoundContext roundContext,
                          RepositoryInfo repositoryInfo,
-                         ClassModel.Builder classModel) {
+                         ClassModel.Builder classModel,
+                         TypeName className,
+                         Set<String> memberNames) {
         // Validate and name every method first so constructor dependencies and fields are complete before emission.
         List<TypedElementInfo> methods = JdbcTypeHierarchy.abstractMethods(repositoryInfo.interfaceInfo(), roundContext);
         Set<String> generatedNames = new HashSet<>();
+        Set<String> mapperFieldNames = new HashSet<>();
         List<JdbcMethodPlan> plans = new ArrayList<>(methods.size());
         for (TypedElementInfo method : methods) {
             JdbcMethodPlan plan = JdbcMethodPlan.create(method, roundContext);
             String baseSuffix = CodegenUtil.toConstantName(
                     codegenContext.uniqueName(repositoryInfo.interfaceInfo(), method));
-            String suffix = baseSuffix;
             // Constant conversion is lossy: distinct Java names such as findValue and find_Value normalize to the
             // same suffix. Reserve the final identifier as well as relying on signature-aware overload naming.
-            for (int index = 2; !generatedNames.add(suffix); index++) {
-                suffix = baseSuffix + "_" + index;
-            }
+            String suffix = uniqueName(baseSuffix, generatedNames);
             plan.sqlFieldName(JdbcCodegenConstants.SQL_FIELD_PREFIX + suffix);
             plan.mapperFieldName(JdbcCodegenConstants.MAPPER_FIELD_PREFIX + suffix);
+            mapperFieldNames.add(plan.mapperFieldName());
             plans.add(plan);
         }
+
+        TypeName updateCountOwner = JdbcCodegenTypes.MATH;
+        if (memberNames.contains("Math") && memberNames.contains("java") && plans.stream().anyMatch(
+                plan -> plan.operation() == JdbcMethodPlan.Operation.UPDATE
+                        && plan.method().typeName().equals(TypeNames.PRIMITIVE_INT))) {
+            String baseName = className.className() + "UpdateCount";
+            updateCountOwner = TypeName.builder(className).className(baseName).build();
+            for (int index = 2; memberNames.contains(updateCountOwner.className())
+                    || roundContext.typeInfo(updateCountOwner).isPresent(); index++) {
+                updateCountOwner = TypeName.builder(className).className(baseName + index).build();
+            }
+            // A peer class can use Math when inherited names hide both Math and its package prefix here.
+            TypeName repositoryType = repositoryInfo.interfaceInfo().typeName();
+            ClassModel.Builder support = ClassModel.builder()
+                    .type(updateCountOwner)
+                    .copyright(CodegenUtil.copyright(JdbcRepositoryGenerator.GENERATOR, repositoryType, updateCountOwner))
+                    .accessModifier(AccessModifier.PACKAGE_PRIVATE)
+                    .addMethod(method -> method.name("toIntExact")
+                            .isStatic(true)
+                            .accessModifier(AccessModifier.PACKAGE_PRIVATE)
+                            .returnType(TypeNames.PRIMITIVE_INT)
+                            .addParameter(Parameter.builder().name("count").type(TypeNames.PRIMITIVE_LONG).build())
+                            .addContent("return ").addContent(JdbcCodegenTypes.MATH).addContentLine(".toIntExact(count);"));
+            roundContext.addGeneratedType(updateCountOwner, support, repositoryType,
+                                          repositoryInfo.interfaceInfo().originatingElementValue());
+        }
+        TypeName countOwner = updateCountOwner;
 
         int nullableBindCount = 0;
         for (JdbcMethodPlan plan : plans) {
@@ -106,9 +146,33 @@ final class JdbcMethodGenerator {
             bindParameterMethodName = null;
         }
 
-        List<MapperDependency> mapperDependencies = mapperDependencies(plans, classModel);
+        List<JdbcMethodPlan> mappingPlans = new ArrayList<>();
+        for (JdbcMethodPlan plan : plans) {
+            mappingPlans.add(plan);
+            if (plan.callable() != null && plan.callable().aggregate()) {
+                int index = 0;
+                for (JdbcCallablePlan.Output output : plan.callable().components()) {
+                    if (output.mapping() != null) {
+                        output.mapping().mapperFieldName(uniqueName(plan.mapperFieldName() + "_OUTPUT_" + index++,
+                                                                    mapperFieldNames));
+                        mappingPlans.add(output.mapping());
+                    }
+                }
+            }
+        }
+        List<MapperDependency> mapperDependencies = mapperDependencies(mappingPlans, classModel);
         JdbcRepositoryClassGenerator.generateConstructor(classModel, repositoryInfo, mapperDependencies, plans);
         Map<ResolvedType, JdbcMethodPlan> recordMappers = new LinkedHashMap<>();
+        for (JdbcMethodPlan mappingPlan : mappingPlans) {
+            if (mappingPlan.mappingKind() == JdbcMethodPlan.MappingKind.RECORD) {
+                JdbcMethodPlan first = recordMappers.putIfAbsent(ResolvedType.create(mappingPlan.mappedType()), mappingPlan);
+                if (first == null) {
+                    JdbcRecordMapperGenerator.generate(mappingPlan, mappingPlan.mapperFieldName(), classModel);
+                } else {
+                    mappingPlan.mapperFieldName(first.mapperFieldName());
+                }
+            }
+        }
         for (JdbcMethodPlan plan : plans) {
             if (plan.reference() == null) {
                 classModel.addField(field -> field.name(plan.sqlFieldName())
@@ -122,22 +186,19 @@ final class JdbcMethodGenerator {
                                       .addTypeArgument(JdbcCodegenTypes.JDBC_CLIENT_STATEMENT).build())
                         .isFinal(true));
             }
-            if (plan.mappingKind() == JdbcMethodPlan.MappingKind.RECORD) {
-                // Avoid duplicate record mappers by reusing the first mapper planned for each exact mapped type.
-                // The shared field keeps the variable name derived from that first repository method. ResolvedType
-                // retains nested generic arguments that TypeName equality deliberately omits.
-                JdbcMethodPlan firstPlan = recordMappers.putIfAbsent(ResolvedType.create(plan.mappedType()), plan);
-                if (firstPlan == null) {
-                    JdbcRecordMapperGenerator.generate(plan, plan.mapperFieldName(), classModel);
-                } else {
-                    plan.mapperFieldName(firstPlan.mapperFieldName());
-                }
-            }
-            classModel.addMethod(method -> generateMethod(plan, method, bindParameterMethodName));
+            classModel.addMethod(method -> generateMethod(plan, method, bindParameterMethodName, countOwner));
         }
         if (bindParameterMethodName != null) {
             classModel.addMethod(method -> generateBindParameter(method, bindParameterMethodName));
         }
+    }
+
+    private static String uniqueName(String base, Set<String> names) {
+        String candidate = base;
+        for (int index = 2; !names.add(candidate); index++) {
+            candidate = base + "_" + index;
+        }
+        return candidate;
     }
 
     /**
@@ -215,16 +276,52 @@ final class JdbcMethodGenerator {
      * @param plan method plan
      * @param method generated method
      * @param bindParameterMethodName shared nullable-bind helper, or {@code null} to emit the branch inline
+     * @param countOwner The type provides exact update count conversion.
      */
     private static void generateMethod(JdbcMethodPlan plan,
                                        Method.Builder method,
-                                       String bindParameterMethodName) {
-        method.name(plan.method().elementName())
-                .returnType(plan.method().typeName())
+                                       String bindParameterMethodName,
+                                       TypeName countOwner) {
+        TypedElementInfo declaration = plan.method();
+        boolean intUpdate = plan.operation() == JdbcMethodPlan.Operation.UPDATE
+                && declaration.typeName().equals(TypeNames.PRIMITIVE_INT);
+        Map<String, String> typeNames = new LinkedHashMap<>();
+        if (!declaration.typeParameters().isEmpty()) {
+            Set<String> referencedNames = new HashSet<>();
+            GENERATED_TYPES.forEach(type -> addTypeNames(type, referencedNames));
+            addTypeNames(declaration.typeName(), referencedNames);
+            declaration.parameterArguments().forEach(parameter -> addTypeNames(parameter.typeName(), referencedNames));
+            declaration.throwsChecked().forEach(type -> addTypeNames(type, referencedNames));
+            declaration.typeParameters().forEach(type -> addTypeNames(type, referencedNames));
+            if (intUpdate) {
+                addTypeNames(countOwner, referencedNames);
+            }
+            if (plan.callable() != null) {
+                // Aggregate mapping uses component types and their boxed class literals only in the method body.
+                for (JdbcCallablePlan.Output output : plan.callable().components()) {
+                    addTypeNames(output.valueType(), referencedNames);
+                }
+            }
+            Set<String> occupied = new HashSet<>(referencedNames);
+            declaration.typeParameters().forEach(type -> occupied.add(type.className()));
+            // Rename declarations and uses together so concrete types and package prefixes remain visible in the override.
+            for (TypeName type : declaration.typeParameters()) {
+                String name = type.className();
+                if (referencedNames.contains(name)) {
+                    String replacement = JdbcCodegenConstants.GENERATED_VARIABLE_PREFIX + name;
+                    while (!occupied.add(replacement)) {
+                        replacement = JdbcCodegenConstants.GENERATED_VARIABLE_PREFIX + replacement;
+                    }
+                    typeNames.put(name, replacement);
+                }
+            }
+        }
+        method.name(declaration.elementName())
+                .returnType(renameTypeVariables(declaration.typeName(), typeNames))
                 .addAnnotation(Annotation.create(Override.class));
-        plan.method().typeParameters()
-                .forEach(typeParameter -> method.addGenericArgument(TypeArgument.create(typeParameter)));
-        // Repository parameters can shadow unqualified generated fields. Override parameter names are not part of
+        declaration.typeParameters().forEach(type ->
+                method.addGenericArgument(TypeArgument.create(renameTypeVariables(type, typeNames))));
+        // Repository parameters can shadow fields and type names used in generated code. Override parameter names are not part of
         // the Java method signature, so rename only colliding implementation parameters and retain their bind mapping.
         Set<String> generatedFieldNames = new HashSet<>();
         generatedFieldNames.add(JdbcCodegenConstants.JDBC_CLIENT_NAME);
@@ -233,6 +330,28 @@ final class JdbcMethodGenerator {
         generatedFieldNames.add(JdbcCodegenConstants.ROW_PARAMETER_NAME);
         if (plan.mappingKind() != JdbcMethodPlan.MappingKind.SCALAR) {
             generatedFieldNames.add(plan.mapperFieldName());
+        }
+        // The class model can qualify a type to resolve an import collision. Reserve the package prefix as well.
+        for (TypeName qualifier : List.of(JdbcCodegenTypes.JDBC_TYPE, JdbcCodegenTypes.GENERATED_JDBC_DATA)) {
+            generatedFieldNames.add(qualifier.className());
+            String packageName = qualifier.packageName();
+            int separator = packageName.indexOf('.');
+            generatedFieldNames.add(separator < 0 ? packageName : packageName.substring(0, separator));
+        }
+        // Reserve Objects across execution types so generated null checks resolve to java.util.Objects.
+        generatedFieldNames.add(Objects.class.getSimpleName());
+        if (intUpdate) {
+            generatedFieldNames.add(JdbcCodegenTypes.MATH.className());
+            generatedFieldNames.add(countOwner.className());
+        }
+        if (plan.callable() != null) {
+            generatedFieldNames.add(JdbcCodegenTypes.JDBC_CLIENT.className());
+            // Component mapper names are final after service resolution and record mapper reuse.
+            for (JdbcCallablePlan.Output output : plan.callable().components()) {
+                if (output.mapping() != null) {
+                    generatedFieldNames.add(output.mapping().mapperFieldName());
+                }
+            }
         }
         Map<String, String> parameterNames = new LinkedHashMap<>();
         Set<String> generatedParameterNames = new HashSet<>();
@@ -246,15 +365,20 @@ final class JdbcMethodGenerator {
             parameterNames.put(parameter.elementName(), parameterName);
             method.addParameter(Parameter.builder()
                                         .name(parameterName)
-                                        .type(parameter.typeName())
+                                        .type(renameTypeVariables(parameter.typeName(), typeNames))
                                         .build());
         }
-        plan.method().throwsChecked().forEach(method::addThrows);
+        declaration.throwsChecked().forEach(type -> method.addThrows(renameTypeVariables(type, typeNames)));
         String statementName = JdbcCodegenConstants.JDBC_STATEMENT_NAME;
         int statementNameSuffix = 2;
         // Repository parameter names are in method scope, so the generated statement variable must avoid them.
         while (generatedParameterNames.contains(statementName)) {
             statementName = JdbcCodegenConstants.JDBC_STATEMENT_NAME + statementNameSuffix++;
+        }
+        if (plan.callable() != null && plan.callable().control() != null) {
+            method.addContent(Objects.class).addContent(".requireNonNull(")
+                    .addContent(parameterNames.get(plan.callable().control().elementName()))
+                    .addContentLine(", \"The callable callback must not be null.\");");
         }
         method.addContent(JdbcCodegenTypes.JDBC_CLIENT_STATEMENT)
                 .addContent(" ")
@@ -275,7 +399,46 @@ final class JdbcMethodGenerator {
         for (JdbcSqlParameterPlan.Bind bind : plan.parameterPlan().binds()) {
             addBind(method, statementName, parameterNames, bind, plan.configured() ? null : bindParameterMethodName);
         }
-        addTerminal(plan, method, statementName);
+        if (plan.callable() == null) {
+            addTerminal(plan, method, statementName, countOwner);
+        } else {
+            JdbcCallableGenerator.terminal(plan, method, statementName, parameterNames,
+                                           type -> renameTypeVariables(type, typeNames));
+        }
+    }
+
+    private static void addTypeNames(TypeName type, Set<String> names) {
+        if (!type.generic() && !type.wildcard()) {
+            TypeName boxed = type.boxed();
+            names.add(boxed.className());
+            names.addAll(boxed.enclosingNames());
+            String packageName = boxed.packageName();
+            if (!packageName.isEmpty()) {
+                int separator = packageName.indexOf('.');
+                names.add(separator < 0 ? packageName : packageName.substring(0, separator));
+            }
+        }
+        type.typeArguments().forEach(argument -> addTypeNames(argument, names));
+        type.upperBounds().forEach(bound -> addTypeNames(bound, names));
+        type.lowerBounds().forEach(bound -> addTypeNames(bound, names));
+        type.componentType().ifPresent(component -> addTypeNames(component, names));
+        type.enclosingType().ifPresent(owner -> addTypeNames(owner, names));
+    }
+
+    private static TypeName renameTypeVariables(TypeName type, Map<String, String> names) {
+        if (names.isEmpty()) {
+            return type;
+        }
+        TypeName.Builder result = TypeName.builder(type);
+        if (type.generic() && !type.wildcard() && type.packageName().isEmpty()) {
+            result.className(names.getOrDefault(type.className(), type.className()));
+        }
+        result.typeArguments(type.typeArguments().stream().map(argument -> renameTypeVariables(argument, names)).toList())
+                .upperBounds(type.upperBounds().stream().map(bound -> renameTypeVariables(bound, names)).toList())
+                .lowerBounds(type.lowerBounds().stream().map(bound -> renameTypeVariables(bound, names)).toList());
+        type.componentType().ifPresent(component -> result.componentType(renameTypeVariables(component, names)));
+        type.enclosingType().ifPresent(owner -> result.enclosingType(renameTypeVariables(owner, names)));
+        return result.build();
     }
 
     /**
@@ -385,17 +548,19 @@ final class JdbcMethodGenerator {
      * @param plan method plan
      * @param method generated method
      * @param statementName local statement variable
+     * @param countOwner The type provides exact update count conversion.
      */
     private static void addTerminal(JdbcMethodPlan plan,
                                     Method.Builder method,
-                                    String statementName) {
-        // Use only terminals that finish JDBC work and materialize results before the repository method returns.
+                                    String statementName,
+                                    TypeName countOwner) {
+        // Use terminals that finish JDBC work before the repository method returns.
         if (plan.operation() == JdbcMethodPlan.Operation.UPDATE) {
             if (plan.method().typeName().equals(TypeNames.PRIMITIVE_VOID)) {
                 method.addContent(statementName).addContentLine(".execute();");
             } else if (plan.method().typeName().equals(TypeNames.PRIMITIVE_INT)) {
                 method.addContent("return ")
-                        .addContent(Math.class)
+                        .addContent(countOwner)
                         .addContent(".toIntExact(")
                         .addContent(statementName)
                         .addContentLine(".execute());");
@@ -405,7 +570,8 @@ final class JdbcMethodGenerator {
             return;
         }
 
-        method.addContent("return ").addContent(statementName);
+        method.addContent("return ")
+                .addContent(statementName);
         addMapping(plan, method);
         switch (plan.returnShape()) {
         case ITEM -> method.addContentLine(".one();");

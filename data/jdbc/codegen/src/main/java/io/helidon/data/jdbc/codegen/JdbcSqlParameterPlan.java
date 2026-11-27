@@ -30,16 +30,21 @@ import io.helidon.common.types.TypedElementInfo;
 /**
  * Compile-time correspondence between repository parameters and JDBC positions.
  */
-record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
+record JdbcSqlParameterPlan(String sql, List<Bind> binds, int parameterCount) {
 
     /**
      * Creates an immutable parameter plan.
      *
      * @param sql positional SQL
      * @param binds ordered bindings
+     * @param parameterCount The count includes all physical markers and callable outputs.
      */
     JdbcSqlParameterPlan {
         binds = List.copyOf(binds);
+    }
+
+    JdbcSqlParameterPlan(String sql, List<Bind> binds) {
+        this(sql, binds, binds.size());
     }
 
     /**
@@ -87,6 +92,13 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
                                             TypedElementInfo method,
                                             TypeHierarchyResolver resolver) {
         validateParameters(parameters, method);
+        validateParameterNames(parameters, method, resolver);
+        return new JdbcSqlParameterPlan(name, parameters.stream().map(parameter -> binding(0, parameter)).toList());
+    }
+
+    static void validateParameterNames(List<TypedElementInfo> parameters,
+                                       TypedElementInfo method,
+                                       TypeHierarchyResolver resolver) {
         for (int index = 0; index < parameters.size(); index++) {
             TypedElementInfo parameter = parameters.get(index);
             if (!parameter.hasAnnotation(JdbcCodegenTypes.DATA_PARAM) && !resolver.parameterNameAvailable(parameter)) {
@@ -95,7 +107,21 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
                         + "or redeclare the method in this repository with an explicit parameter name.");
             }
         }
-        return new JdbcSqlParameterPlan(name, parameters.stream().map(parameter -> binding(0, parameter)).toList());
+    }
+
+    /**
+     * Creates one bind and records how a nullable reference is bound.
+     *
+     * @param position one-based JDBC position
+     * @param parameter repository parameter
+     * @return binding
+     */
+    static Bind binding(int position, TypedElementInfo parameter) {
+        boolean nullable = !parameter.typeName().primitive() || parameter.typeName().array();
+        return new Bind(position,
+                        parameter,
+                        nullable,
+                        JdbcScalarTypes.nullJdbcTypeConstant(parameter.typeName()));
     }
 
     /**
@@ -111,22 +137,12 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
     }
 
     /**
-     * Returns the number of binding entries. For literal SQL, each entry represents
-     * a physical marker position. For configured SQL, each entry represents a logical input.
-     *
-     * @return The count includes every binding entry.
-     */
-    int parameterCount() {
-        return binds.size();
-    }
-
-    /**
      * Validates the fixed declarative scalar input boundary.
      *
      * @param parameters repository parameters
      * @param method enclosing method
      */
-    private static void validateParameters(List<TypedElementInfo> parameters, TypedElementInfo method) {
+    static void validateParameters(List<TypedElementInfo> parameters, TypedElementInfo method) {
         Set<String> names = new HashSet<>();
         for (TypedElementInfo parameter : parameters) {
             String name = effectiveName(parameter);
@@ -239,21 +255,6 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
      */
     private static String countNoun(int count, String noun) {
         return count == 1 ? noun : noun + "s";
-    }
-
-    /**
-     * Creates one bind and records how a nullable reference is bound.
-     *
-     * @param position one-based JDBC position
-     * @param parameter repository parameter
-     * @return binding
-     */
-    private static Bind binding(int position, TypedElementInfo parameter) {
-        boolean nullable = !parameter.typeName().primitive() || parameter.typeName().array();
-        return new Bind(position,
-                        parameter,
-                        nullable,
-                        JdbcScalarTypes.nullJdbcTypeConstant(parameter.typeName()));
     }
 
     /**

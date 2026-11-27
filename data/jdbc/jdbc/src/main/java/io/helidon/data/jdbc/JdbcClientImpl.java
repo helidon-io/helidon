@@ -137,11 +137,17 @@ final class JdbcClientImpl implements JdbcClient {
     }
 
     Supplier<Statement> prepareNamed(String sql, List<String> inputNames) {
-        JdbcConfiguredStatement definition = JdbcConfiguredStatement.create(sql, List.copyOf(inputNames));
-        if (!definition.namedMarkers()) {
-            throw new IllegalArgumentException("A repository with parameter aliases requires named SQL markers.");
-        }
-        return new JdbcStatementFactory(runner, definition);
+        // Older generated repositories use this bridge for ordinary named statements.
+        return prepareStatement(sql, List.copyOf(inputNames), true);
+    }
+
+    Supplier<Statement> prepareCall(String sql, List<String> logicalNames, boolean namedOnly, boolean leadingReturn) {
+        return new JdbcStatementFactory(runner,
+                JdbcConfiguredStatement.createCall(sql, logicalNames, namedOnly, leadingReturn));
+    }
+
+    Supplier<Statement> prepareStatement(String sql, List<String> inputNames, boolean namedOnly) {
+        return new JdbcStatementFactory(runner, JdbcConfiguredStatement.createStatement(sql, inputNames, namedOnly));
     }
 
     /**

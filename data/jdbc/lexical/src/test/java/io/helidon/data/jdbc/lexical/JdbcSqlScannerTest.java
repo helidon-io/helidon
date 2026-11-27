@@ -29,6 +29,23 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class JdbcSqlScannerTest {
 
+    @Test
+    void recognizesCallableReturnPrefix() {
+        for (String sql : List.of("{?=call routine()}", " \t\n{ \f ? \r= CaLl routine(:input)}")) {
+            int marker = sql.indexOf('?');
+            assertThat(sql, JdbcSqlScanner.hasCallableReturn(sql), is(true));
+            assertThat(sql, JdbcSqlScanner.callableReturnMarker(sql, marker, marker + 1), is(true));
+        }
+        String named = "  {:output = call routine(?)}";
+        assertThat(named, JdbcSqlScanner.hasCallableReturn(named), is(false));
+        int namedMarker = named.indexOf(':');
+        assertThat(named, JdbcSqlScanner.callableReturnMarker(named, namedMarker, namedMarker + ":output".length()), is(true));
+        for (String sql : List.of("   SELECT ?", "/* comment */ {? = call routine()}", "{? = caller(?)}",
+                                  "\u2003{? = call routine()}", "{   ", "   ")) {
+            assertThat(sql, JdbcSqlScanner.hasCallableReturn(sql), is(false));
+        }
+    }
+
     /**
      * Verifies that the scanner reports each marker while preserving every
      * source character through ordinary and protected regions.

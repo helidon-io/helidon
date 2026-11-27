@@ -37,12 +37,20 @@ final class JdbcCodegenTypes {
     static final TypeName JDBC_GENERATED_KEYS = TypeName.create("io.helidon.data.jdbc.Jdbc.GeneratedKeys");
     static final TypeName JDBC_ROW_MAPPER = TypeName.create("io.helidon.data.jdbc.Jdbc.RowMapper");
     static final TypeName DATA_PARAM = TypeName.create("io.helidon.data.Data.Param");
+    static final TypeName JDBC_OUT = TypeName.create("io.helidon.data.jdbc.Jdbc.OutParameter");
+    static final TypeName JDBC_OUTS = TypeName.create("io.helidon.data.jdbc.Jdbc.OutParameterDeclarations");
+    static final TypeName CALL = TypeName.create("io.helidon.data.jdbc.JdbcClient.Call");
+    static final TypeName CALL_RESULT = TypeName.create("io.helidon.data.jdbc.JdbcClient.CallResult");
+    static final TypeName CALL_MAPPER = TypeName.create("io.helidon.data.jdbc.JdbcClient.CallMapper");
+    static final TypeName OUT_PARAMETERS = TypeName.create("io.helidon.data.jdbc.JdbcClient.OutParameters");
+
     static final TypeName DATA_GENERIC_REPOSITORY = TypeName.create("io.helidon.data.Data.GenericRepository");
     static final TypeName DATA_PERSISTENCE_UNIT = TypeName.create("io.helidon.data.Data.PersistenceUnit");
     static final TypeName DATA_PROVIDER_TYPE = TypeName.create("io.helidon.data.Data.ProviderType");
     static final TypeName SERVICE_SINGLETON = TypeName.create("io.helidon.service.registry.Service.Singleton");
     static final TypeName SERVICE_NAMED = TypeName.create("io.helidon.service.registry.Service.Named");
     static final TypeName JDBC_TYPE = TypeName.create("java.sql.JDBCType");
+    static final TypeName MATH = TypeName.create(Math.class);
     static final TypeName TX_MANDATORY = TypeName.create("io.helidon.transaction.Tx.Mandatory");
     static final TypeName TX_NEW = TypeName.create("io.helidon.transaction.Tx.New");
     static final TypeName TX_NEVER = TypeName.create("io.helidon.transaction.Tx.Never");

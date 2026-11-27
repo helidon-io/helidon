@@ -28,6 +28,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.util.Elements;
 
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.AnnotationProperty;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 
@@ -86,7 +87,7 @@ final class AptAnnotationFactory {
 
         builder.typeName(val)
                 .originatingElement(am);
-        extractAnnotationValues(am, elements).forEach(builder::property);
+        extractAnnotationValues(am, elements).forEach(builder::putProperty);
         return Optional.of(builder.build());
     }
 
@@ -97,25 +98,29 @@ final class AptAnnotationFactory {
      * @param elements the elements
      * @return the extracted values
      */
-    private static Map<String, Object> extractAnnotationValues(AnnotationMirror am,
-                                                               Elements elements) {
-        return extractAnnotationValues(elements, elements.getElementValuesWithDefaults(am));
+    private static Map<String, AnnotationProperty> extractAnnotationValues(AnnotationMirror am,
+                                                                          Elements elements) {
+        return extractAnnotationValues(elements, elements.getElementValuesWithDefaults(am), am.getElementValues().keySet());
     }
 
     /**
      * Extracts values from the annotation element values.
      *
-     * @param values the element values
-     * @return the extracted values
+     * @param elements The elements provide annotation value conversion.
+     * @param values The element values include annotation defaults.
+     * @param explicitElements These elements have explicitly declared values.
+     * @return The extracted properties retain their declaration provenance.
      */
-    private static Map<String, Object>
-    extractAnnotationValues(Elements elements, Map<? extends ExecutableElement, ? extends AnnotationValue> values) {
-        Map<String, Object> result = new LinkedHashMap<>();
+    private static Map<String, AnnotationProperty>
+    extractAnnotationValues(Elements elements,
+                            Map<? extends ExecutableElement, ? extends AnnotationValue> values,
+                            Set<? extends ExecutableElement> explicitElements) {
+        Map<String, AnnotationProperty> result = new LinkedHashMap<>();
         values.forEach((el, val) -> {
             String name = el.getSimpleName().toString();
             Object value = val.accept(new ToAnnotationValueVisitor(elements), null);
             if (value != null) {
-                result.put(name, value);
+                result.put(name, AnnotationProperty.create(value, explicitElements.contains(el)));
             }
         });
         return result;

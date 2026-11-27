@@ -17,6 +17,7 @@
 package io.helidon.codegen.classmodel;
 
 import java.io.StringWriter;
+import java.util.List;
 import java.util.Set;
 
 import io.helidon.common.types.AccessModifier;
@@ -36,6 +37,41 @@ Test that annotations are correctly written.
  */
 class AnnotationTest {
     private static final TypeName ANNOTATION_TYPE = TypeName.create(Test.class);
+
+    @Test
+    void omitsDefaultedPropertiesWhenCopyingAnnotations() {
+        Annotation annotation = Annotation.builder().type(Deprecated.class)
+                .putProperty("since", AnnotationProperty.create("", false))
+                .putProperty("forRemoval", AnnotationProperty.create(false, true)).build();
+        Field field = Field.builder().accessModifier(AccessModifier.PACKAGE_PRIVATE)
+                .type(String.class).name("value").addAnnotation(annotation).build();
+        assertThat(write(field), is("@java.lang.Deprecated(forRemoval = false)\nString value;"));
+        Annotation restored = io.helidon.codegen.classmodel.Annotation.create(annotation).toTypesAnnotation();
+        assertThat(restored.property("since").orElseThrow().explicit(), is(false));
+        assertThat(restored.property("forRemoval").orElseThrow().explicit(), is(true));
+        Annotation rebuilt = io.helidon.codegen.classmodel.Annotation.builder().type(Deprecated.class)
+                .addParameter("since", annotation.property("since").orElseThrow()).build().toTypesAnnotation();
+        assertThat(rebuilt.stringValue("since").orElseThrow(), is(""));
+        assertThat(rebuilt.property("since").orElseThrow().explicit(), is(false));
+    }
+
+    @Test
+    void retainsDefaultedNestedParameter() {
+        Annotation nested = Annotation.builder().type(Deprecated.class).property("since", "27").build();
+        AnnotationProperty defaulted = AnnotationProperty.create(nested, false);
+        var parameter = AnnotationParameter.builder().name("value").value(defaulted);
+        var model = io.helidon.codegen.classmodel.Annotation.builder().type(Test.class).addParameter(parameter).build();
+        assertThat(model.parameters(), is(List.of()));
+        AnnotationProperty restored = model.toTypesAnnotation().property("value").orElseThrow();
+        assertThat(restored, is(defaulted));
+        assertThat(restored.explicit(), is(false));
+
+        var explicit = io.helidon.codegen.classmodel.Annotation.builder().type(Test.class)
+                .addParameter(parameter.value(nested)).build();
+        AnnotationProperty override = explicit.toTypesAnnotation().property("value").orElseThrow();
+        assertThat(override.value(), is(nested));
+        assertThat(override.explicit(), is(true));
+    }
 
     @Test
     void testAnnotationStringControlCharacters() {
@@ -146,7 +182,8 @@ class AnnotationTest {
         String expected = """
                 private Annotation annotation = Annotation.builder()
                 .typeName(TypeName.create("org.junit.jupiter.api.Test"))
-                .property("enumValue", EnumValue.create(TypeName.create("io.helidon.codegen.classmodel.AnnotationTest.TestEnum"),"ONE"))
+                .property("enumValue", EnumValue.create(TypeName.create("io.helidon.codegen.classmodel.AnnotationTest.TestEnum"),\
+                "ONE"))
                 .build();""";
 
         assertThat(text, is(expected));

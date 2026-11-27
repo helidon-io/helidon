@@ -36,10 +36,12 @@ public final class AnnotationParameter extends CommonComponent {
 
     private final Set<TypeName> importedTypes;
     private final Object objectValue;
+    private final boolean explicit;
 
     private AnnotationParameter(Builder builder) {
         super(builder);
         this.objectValue = value(builder.value);
+        this.explicit = builder.explicit;
         this.importedTypes = resolveImports(this);
     }
 
@@ -77,6 +79,10 @@ public final class AnnotationParameter extends CommonComponent {
 
     Object value() {
         return objectValue;
+    }
+
+    boolean explicit() {
+        return explicit;
     }
 
     void writeValue(ModelWriter writer, boolean multiline, ImportOrganizer imports) {
@@ -163,7 +169,7 @@ public final class AnnotationParameter extends CommonComponent {
             case Enum<?> e -> imports.add(TypeName.create(e.getClass()));
             case ConstantValue cv -> imports.add(cv.type());
             case TypeName tn -> imports.add(tn);
-            case io.helidon.codegen.classmodel.Annotation an -> {
+            case Annotation an -> {
                 imports.add(an.typeName());
                 for (var e : an.parameters()) {
                     resolveImports(imports, e);
@@ -207,6 +213,9 @@ public final class AnnotationParameter extends CommonComponent {
     private static Annotation annotation(io.helidon.common.types.Annotation a) {
         var builder = Annotation.builder().from(a);
         for (var entry : a.properties().entrySet()) {
+            if (!entry.getValue().explicit()) {
+                continue;
+            }
             var name = entry.getKey();
             var value = value(entry.getValue().value());
             builder.addParameter(AnnotationParameter.builder()
@@ -220,12 +229,12 @@ public final class AnnotationParameter extends CommonComponent {
 
     private static boolean isValueType(Object o) {
         return switch (o) {
-            case TypeName ignored -> true;
-            case Class<?> ignored -> true;
-            case EnumValue ignored -> true;
-            case Character ignored -> true;
-            case String ignored -> true;
-            case Number ignored -> true;
+            case TypeName _ -> true;
+            case Class<?> _ -> true;
+            case EnumValue _ -> true;
+            case Character _ -> true;
+            case String _ -> true;
+            case Number _ -> true;
             default -> false;
         };
     }
@@ -236,6 +245,7 @@ public final class AnnotationParameter extends CommonComponent {
     public static final class Builder extends CommonComponent.Builder<Builder, AnnotationParameter> {
 
         private Object value;
+        private boolean explicit = true;
 
         private Builder() {
         }
@@ -254,16 +264,20 @@ public final class AnnotationParameter extends CommonComponent {
         }
 
         /**
-         * Set annotation parameter value.
+         * Sets the annotation parameter value and preserves whether a supplied property was explicit.
          *
-         * @param value annotation parameter value
-         * @return updated builder instance
+         * @param value The annotation value or property.
+         * @return The updated builder.
+         * @throws NullPointerException The value is null.
          */
         public Builder value(Object value) {
+            Objects.requireNonNull(value, "The annotation parameter value must not be null.");
             if (value instanceof AnnotationProperty p) {
                 this.value = p.value();
+                this.explicit = p.explicit();
             } else {
-                this.value = Objects.requireNonNull(value);
+                this.value = value;
+                this.explicit = true;
             }
             return this;
         }

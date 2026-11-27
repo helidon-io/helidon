@@ -74,6 +74,9 @@ class JdbcPrecompiledParentGenerationTest {
 
                             @Jdbc.Statement("SELECT VALUE FROM TEST_VALUE")
                             Projection<T> projection();
+
+                            record Objects(int value) {
+                            }
                         }
                         """)
                 .addSource("Key.java", """
@@ -146,7 +149,8 @@ class JdbcPrecompiledParentGenerationTest {
         assertThat(source, containsString(".map(int.class).one()"));
         assertThat(source, containsString(".generatedKeys().addColumn(\"ID\").map(keyMapper).one()"));
         assertThat(source, containsString("JdbcClient.RowMapper<Projection<String>>"));
-        assertThat(source, containsString("new Projection<String>(row.get(\"value\", String.class))"));
+        assertThat(source, containsString("java.util.Objects.requireNonNull(row,"));
+        assertThat(source, containsString("new Projection<>(row.get(\"value\", String.class))"));
     }
 
     /**
@@ -385,7 +389,7 @@ class JdbcPrecompiledParentGenerationTest {
         assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
         String source = Files.readString(result.sourceOutput().resolve("example/Child__Jdbc.java"));
         assertThat(source, containsString("List.of(\"lookup\")"));
-        assertThat(source, containsString("GeneratedJdbcData.prepareNamed("));
+        assertThat(source, containsString("GeneratedJdbcData.prepareStatement("));
         assertThat(source, containsString("\"lookup\", JDBCType.VARCHAR"));
         assertThat(Files.exists(result.classOutput().resolve("example/Child__Jdbc.class")), is(true));
     }
@@ -422,7 +426,8 @@ class JdbcPrecompiledParentGenerationTest {
         assertThat(String.join("\n", parent.diagnostics()), parent.success(), is(true));
         return TestCompiler.builder().currentRelease().printDiagnostics(false)
                 .addProcessor(AptProcessor::new)
-                .addClasspath(List.of(Config.class, OptionalValue.class, RuntimeType.class, Data.class, JdbcClient.class, Service.class, Tx.class,
+                .addClasspath(List.of(Config.class, OptionalValue.class, RuntimeType.class, Data.class, JdbcClient.class,
+                        Service.class, Tx.class,
                         Generated.class, TypeName.class, DataGeneratorProvider.class, RepositoryCodegenProvider.class,
                         JdbcRepositoryGeneratorProvider.class))
                 .addClasspathEntry(parent.classOutput())

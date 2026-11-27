@@ -38,10 +38,9 @@ import io.helidon.data.DataException;
  * <p>
  * Runtime exceptions are sanitized only when the caller has established that
  * they came directly from a JDBC invocation. Application and row mapper
- * failures retain their original type and identity. Fatal {@link Error}
- * instances also propagate unchanged because translating them could conceal a
- * JVM failure or require allocation while the JVM is reporting resource
- * exhaustion.
+ * failures retain their original type and identity. A primary fatal {@link Error}
+ * propagates unchanged. Callable cleanup sanitizes secondary JDBC failures before
+ * attachment, including errors whose diagnostics could expose driver details.
  */
 final class JdbcExceptionTranslator {
 
@@ -249,6 +248,96 @@ final class JdbcExceptionTranslator {
     }
 
     /**
+     * Combines JDBC cleanup with an earlier application or translated operation failure.
+     * Only the additional cleanup failure enters infrastructure sanitization.
+     *
+     * @param primary The earlier failure, or {@code null}.
+     * @param operation The stable cleanup operation label.
+     * @param failure The additional JDBC cleanup failure.
+     * @return The combined failure preserves application identity and fatal precedence.
+     */
+    static Throwable mergeOperationCleanup(Throwable primary, String operation, Throwable failure) {
+        if (primary == failure) {
+            return primary;
+        }
+        Throwable cleanup;
+        try {
+            if (primary instanceof Error) {
+                return suppress(primary, operation, failure);
+            }
+            cleanup = mergeInfrastructure(null, operation, failure);
+        } catch (RuntimeException | Error diagnosticFailure) {
+            // A broken driver diagnostic must not interrupt cleanup of the remaining resources.
+            if (primary instanceof Error) {
+                return suppress(primary, operation, diagnostic(operation, diagnosticFailure));
+            }
+            cleanup = diagnosticFailure instanceof Error ? diagnosticFailure : diagnostic(operation, diagnosticFailure);
+        }
+        return mergeProcessingFailures(primary, cleanup);
+    }
+
+    /**
+     * Retains the first processing failure while preserving fatal precedence and suppression identity.
+     *
+     * @param primary The earlier failure, or null.
+     * @param secondary The later failure, or null.
+     * @return The combined failure, or null when neither failure is present.
+     */
+    static Throwable mergeProcessingFailures(Throwable primary, Throwable secondary) {
+        if (primary == null) {
+            return secondary;
+        }
+        if (secondary == null || secondary == primary) {
+            return primary;
+        }
+        if (secondary instanceof Error && !(primary instanceof Error)) {
+            Throwable earlier = primary;
+            primary = secondary;
+            secondary = earlier;
+        }
+        // Nested processing boundaries can observe the same secondary failure more than once.
+        for (Throwable suppressed : primary.getSuppressed()) {
+            if (suppressed == secondary) {
+                return primary;
+            }
+        }
+        // The callback may already wrap the retained failure or link it as suppressed evidence.
+        ArrayDeque<Throwable> pending = new ArrayDeque<>();
+        Map<Throwable, Boolean> seen = new IdentityHashMap<>();
+        seen.put(secondary, Boolean.TRUE);
+        pending.add(secondary);
+        while (!pending.isEmpty()) {
+            Throwable candidate = pending.removeFirst();
+            if (candidate == primary) {
+                return primary;
+            }
+            Throwable cause;
+            try {
+                cause = candidate.getCause();
+            } catch (RuntimeException | Error _) {
+                // Keep the selected failure when an accessor prevents us from ruling out a cycle.
+                return primary;
+            }
+            if (cause != null && seen.putIfAbsent(cause, Boolean.TRUE) == null) {
+                pending.addLast(cause);
+            }
+            for (Throwable suppressed : candidate.getSuppressed()) {
+                if (seen.putIfAbsent(suppressed, Boolean.TRUE) == null) {
+                    if (seen.size() > MAX_EXCEPTION_GRAPH_NODES) {
+                        return primary;
+                    }
+                    pending.addLast(suppressed);
+                }
+            }
+            if (seen.size() > MAX_EXCEPTION_GRAPH_NODES) {
+                return primary;
+            }
+        }
+        primary.addSuppressed(secondary);
+        return primary;
+    }
+
+    /**
      * Creates a provider-owned SQLException whose message contains no SQL or
      * connection configuration and may therefore remain visible.
      *
@@ -330,6 +419,7 @@ final class JdbcExceptionTranslator {
         case QUERY -> "query";
         case UPDATE -> "update";
         case GENERATED_KEYS -> "generated keys operation";
+        case CALL -> "callable operation";
         };
     }
 
