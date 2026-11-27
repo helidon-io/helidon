@@ -19,14 +19,12 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 import javax.sql.DataSource;
 
 import io.helidon.common.LruCache;
 import io.helidon.data.DataException;
-import io.helidon.data.sql.datasource.DataSourceHealthCheck;
 import io.helidon.health.HealthCheckResponse;
 import io.helidon.service.registry.ServiceRegistryException;
 import io.helidon.service.registry.Services;
@@ -43,8 +41,6 @@ final class JdbcClientImpl implements JdbcClient {
 
     private final JdbcClientConfig prototype;
     private final JdbcRunner runner;
-    private final DataSource dataSource;
-    private final JdbcConnectionLease.Provider leaseProvider;
     private final CachePolicy cachePolicy;
     private final LruCache<String, Integer> parameterCounts;
 
@@ -61,8 +57,6 @@ final class JdbcClientImpl implements JdbcClient {
                    JdbcConnectionLease.Provider leaseProvider,
                    CachePolicy cachePolicy) {
         this.prototype = prototype;
-        this.dataSource = dataSource;
-        this.leaseProvider = leaseProvider;
         this.runner = new JdbcRunner(dataSource, leaseProvider);
         this.cachePolicy = cachePolicy;
         this.parameterCounts = cachePolicy.capacity() == 0 ? null : LruCache.create(cachePolicy.capacity());
@@ -169,22 +163,10 @@ final class JdbcClientImpl implements JdbcClient {
      *
      * @param sql The trusted SELECT is validated during check construction.
      * @param timeout The query timeout is validated before acquisition.
-     * @return Each invocation owns a fresh independent acquisition.
+     * @return The probe returns the response from an independent check on each invocation.
      */
-    BooleanSupplier createProbe(String sql, Duration timeout) {
-        DataSourceHealthCheck check = DataSourceHealthCheck.builder()
-                .dataSource(dataSource)
-                .query(sql)
-                .queryTimeout(timeout)
-                .build();
-        return () -> {
-            try {
-                leaseProvider.checkProbeContext();
-            } catch (RuntimeException _) {
-                return false;
-            }
-            return check.call().status() == HealthCheckResponse.Status.UP;
-        };
+    Supplier<HealthCheckResponse> createProbe(String sql, Duration timeout) {
+        return runner.createProbe(sql, timeout);
     }
 
     /**

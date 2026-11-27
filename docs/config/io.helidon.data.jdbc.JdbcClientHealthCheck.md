@@ -38,7 +38,7 @@ Configures a health check over an existing client without duplicating connection
 </td>
 <td>
 </td>
-<td>Specifies a nonblank name for responses and individual check routes</td>
+<td>Specifies a nonblank name, which must fit in a single decoded path segment to be used in an individual HTTP route</td>
 </tr>
 <tr>
 <td>

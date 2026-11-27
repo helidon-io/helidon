@@ -16,8 +16,8 @@
 package io.helidon.data.jdbc;
 
 import java.util.Objects;
-import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.Api;
@@ -33,7 +33,7 @@ import io.helidon.health.HealthCheckType;
 @Api.Incubating
 public final class JdbcClientHealthCheck implements HealthCheck, RuntimeType.Api<JdbcClientHealthCheckConfig> {
     private final JdbcClientHealthCheckConfig config;
-    private final BooleanSupplier probe;
+    private final Supplier<HealthCheckResponse> probe;
     private final String name;
 
     private JdbcClientHealthCheck(JdbcClientHealthCheckConfig config) {
@@ -99,6 +99,6 @@ public final class JdbcClientHealthCheck implements HealthCheck, RuntimeType.Api
 
     @Override
     public HealthCheckResponse call() {
-        return HealthCheckResponse.builder().status(probe.getAsBoolean()).build();
+        return probe.get();
     }
 }

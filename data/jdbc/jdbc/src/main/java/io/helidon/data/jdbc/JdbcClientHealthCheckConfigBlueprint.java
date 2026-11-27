@@ -67,7 +67,7 @@ interface JdbcClientHealthCheckConfigBlueprint extends Prototype.Factory<JdbcCli
     HealthCheckType type();
 
     /**
-     * Specifies a nonblank name for responses and individual check routes.
+     * Specifies a nonblank name, which must fit in a single decoded path segment to be used in an individual HTTP route.
      *
      * @return An empty value uses the logical name of the client.
      */

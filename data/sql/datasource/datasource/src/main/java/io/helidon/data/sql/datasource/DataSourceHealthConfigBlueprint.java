@@ -30,7 +30,7 @@ import io.helidon.health.HealthCheckType;
 @Prototype.Configured
 interface DataSourceHealthConfigBlueprint {
     /**
-     * Enables health discovery for this data source definition.
+     * Enables health discovery, with individual HTTP routes available only for names that fit in a single decoded path segment.
      *
      * @return Discovery is disabled by default.
      */

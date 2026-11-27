@@ -224,13 +224,13 @@ public abstract class AbstractJdbcApplicationContract {
                 long id = contacts.insert(name, name + "@example.test");
                 ContactView pending = contacts.oneByName(name);
                 assertThat(pending.id(), is(id));
-                // The adapter establishes pending work before either independent health check runs.
                 var up = healthy.call();
                 assertThat(up.status(), is(HealthCheckResponse.Status.UP));
                 assertThat(up.details(), is(Map.of()));
                 var down = failing.call();
                 assertThat(down.status(), is(HealthCheckResponse.Status.DOWN));
                 assertThat(down.details(), is(Map.of()));
+                // The caller must still see its pending insert before choosing to commit or roll back.
                 assertThat(contacts.findByName(name), is(Optional.of(pending)));
                 if (rollBack) {
                     throw expectedRollback;

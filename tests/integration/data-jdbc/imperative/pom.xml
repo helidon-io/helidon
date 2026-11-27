@@ -181,6 +181,7 @@
                         <configuration>
                             <sources>
                                 <source>${project.basedir}/../../common/application/src/main/java</source>
+                                <source>${project.basedir}/../src/test/java</source>
                             </sources>
                         </configuration>
                     </execution>

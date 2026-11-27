@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,18 +79,17 @@ final class LookupTrace {
     }
 
     private static String instanceInfo(ServiceInstance<?> instance) {
+        // Reading registration metadata keeps tracing from starting a lazy service.
         double weight = instance.weight();
         TypeName scope = instance.scope();
         Set<Qualifier> qualifiers = instance.qualifiers();
-        Object o = instance.get();
 
         return "weight(" + weight + "), "
                 + "scope(" + scope(scope) + "), "
                 + "qualifiers(" + qualifiers.stream()
                 .map(Qualifier::typeName)
                 .map(TypeName::fqName)
-                .collect(Collectors.joining(", ")) + "), "
-                + "instance(" + o + ")";
+                .collect(Collectors.joining(", ")) + ")";
     }
 
     private static String scope(TypeName typeName) {

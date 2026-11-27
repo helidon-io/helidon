@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.sql.DataSource;
 
+import io.helidon.common.Weight;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.data.Data;
@@ -33,8 +34,10 @@ import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;
 import io.helidon.health.HealthCheckType;
 import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.service.registry.Lookup;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceInfo;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.service.registry.Services;
@@ -50,9 +53,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -109,7 +116,8 @@ class JdbcHealthRoutesTest {
                     : JdbcClientHealthCheck.builder().client(client).query("SELECT * FROM MISSING").build();
             HealthCheck live = datasource
                     ? JdbcClientHealthCheck.builder().client(client).name(first.name()).type(HealthCheckType.LIVENESS).build()
-                    : DataSourceHealthCheck.builder().dataSource(source).name(first.name()).type(HealthCheckType.LIVENESS).build();
+                    : DataSourceHealthCheck.builder().dataSource(source).name(first.name())
+                            .type(HealthCheckType.LIVENESS).build();
             assertThat(first.name(), is(second.name()));
             WebServer server = WebServer.builder().host("127.0.0.1").port(0).featuresDiscoverServices(false)
                     .addFeature(ObserveFeature.just(HealthObserver.builder().useSystemServices(false)
@@ -249,6 +257,149 @@ class JdbcHealthRoutesTest {
         }
     }
 
+    @Test
+    void observerStartupIsolatesUnavailableJdbcClients() {
+        JdbcClient supported = JdbcClient.builder().dataSource(source)
+                .health(health -> health.enabled(true)).build();
+        JdbcClient shadowed = JdbcClient.builder().dataSource(source)
+                .health(health -> health.enabled(true)).build();
+        for (boolean configured : List.of(true, false)) {
+            String observerPath = configured ? "Configured observer" : "Explicit observer";
+            AtomicInteger failedProviderAttempts = new AtomicInteger();
+            var providerFailure = new IllegalStateException("The JDBC provider failed to start.");
+            var manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                    .discoverServices(false).discoverServicesFromServiceLoader(false)
+                    .addServiceDescriptor(JdbcHealthCheckFactory__ServiceDescriptor.INSTANCE)
+                    .addServiceDescriptor(HealthObserveProvider__ServiceDescriptor.INSTANCE)
+                    .addServiceDescriptor(JdbcHealthRoutesTest_RequestClients__ServiceDescriptor.INSTANCE)
+                    .addServiceDescriptor(JdbcHealthRoutesTest_LivenessCheck__ServiceDescriptor.INSTANCE)
+                    .addServiceDescriptor(JdbcClientConfigFactory__ServiceDescriptor.INSTANCE)
+                    .putServiceInstance(JdbcClientHealthCheckTest_PreferredClients__ServiceDescriptor.INSTANCE,
+                            new JdbcClientHealthCheckTest.PreferredClients(() -> {
+                                failedProviderAttempts.incrementAndGet();
+                                throw providerFailure;
+                            }))
+                    .putServiceInstance(JdbcClientHealthCheckTest_FallbackClients__ServiceDescriptor.INSTANCE,
+                            new JdbcClientHealthCheckTest.FallbackClients(List.of(
+                                    Service.QualifiedInstance.create(shadowed, Qualifier.createNamed("orders")))))
+                    .build());
+            GlobalServiceRegistry.registry(manager.registry());
+            try {
+                Services.set(Config.class, Config.empty());
+                Services.addNamed(JdbcClient.class, 250, supported, "billing");
+                assertThat(observerPath, manager.registry().allServices(JdbcClient.class).stream()
+                                   .map(ServiceInfo::scope).toList(), hasItem(Service.PerRequest.TYPE));
+                int before = acquisitionCount.get();
+                ObserveFeature feature = configured
+                        ? new ObserveFeatureProvider().create(Config.empty(), "observe", manager.registry())
+                        : ObserveFeature.just(HealthObserver.builder().useSystemServices(true).build());
+                assertThat(observerPath, failedProviderAttempts.get(), is(1));
+                assertThat(observerPath, acquisitionCount.get(), is(before));
+                Lookup eligibleClients = Lookup.builder().addContract(JdbcClient.class)
+                        .addScope(Service.Singleton.TYPE).addScope(Service.PerLookup.TYPE).build();
+                Lookup billing = Lookup.builder(eligibleClients).addQualifier(Qualifier.createNamed("billing")).build();
+                Lookup orders = Lookup.builder(eligibleClients).addQualifier(Qualifier.createNamed("orders")).build();
+                assertThat(observerPath, manager.registry().get(billing),
+                           sameInstance(supported));
+                assertThat(observerPath, assertThrows(IllegalStateException.class,
+                        () -> manager.registry().get(orders), observerPath),
+                           sameInstance(providerFailure));
+                WebServer server = WebServer.builder().host("127.0.0.1").port(0).featuresDiscoverServices(false)
+                        .addFeature(feature).build().start();
+                try {
+                    Http1Client http = Http1Client.builder().baseUri("http://127.0.0.1:" + server.port()).build();
+                    // Billing still contributes to readiness, and process liveness remains available.
+                    var expectedStatuses = Map.of("/observe/health/ready/orders", 404,
+                                                  "/observe/health/check/orders", 404,
+                                                  "/observe/health/ready/billing", 204,
+                                                  "/observe/health/ready", 204,
+                                                  "/observe/health/live/process", 204,
+                                                  "/observe/health/live", 204,
+                                                  "/observe/health/", 204);
+                    for (var route : expectedStatuses.entrySet()) {
+                        try (Http1ClientResponse response = http.get(route.getKey()).request()) {
+                            assertThat(observerPath + " " + route.getKey(), response.status().code(), is(route.getValue()));
+                        }
+                    }
+                    assertThat(observerPath, acquisitionCount.get(), is(before + 3));
+                } finally {
+                    server.stop();
+                }
+            } finally {
+                manager.shutdown();
+            }
+        }
+    }
+
+    @Test
+    void multipleNamedQualifiersProduceOneDeterministicRoute() {
+        JdbcClient supported = JdbcClient.builder().name("logical-name").dataSource(source)
+                .health(health -> health.enabled(true)).build();
+        var primary = Qualifier.createNamed("alpha");
+        var alternate = Qualifier.createNamed("zulu");
+        for (List<Qualifier> qualifiers : List.of(List.of(primary, alternate), List.of(alternate, primary))) {
+            var manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                    .discoverServices(false).discoverServicesFromServiceLoader(false)
+                    .addServiceDescriptor(JdbcHealthCheckFactory__ServiceDescriptor.INSTANCE)
+                    .putServiceInstance(JdbcClientHealthCheckTest_PreferredClients__ServiceDescriptor.INSTANCE,
+                            new JdbcClientHealthCheckTest.PreferredClients(() -> List.of(
+                                    Service.QualifiedInstance.create(supported, qualifiers.toArray(Qualifier[]::new)))))
+                    .build());
+            try {
+                List<HealthCheck> checks = manager.registry().all(HealthCheck.class);
+                assertThat("Health names for " + qualifiers, checks.stream().map(HealthCheck::name).toList(),
+                           contains("alpha"));
+                WebServer server = WebServer.builder().host("127.0.0.1").port(0).featuresDiscoverServices(false)
+                        .addFeature(ObserveFeature.just(HealthObserver.create(checks.getFirst()))).build().start();
+                try {
+                    Http1Client http = Http1Client.builder().baseUri("http://127.0.0.1:" + server.port()).build();
+                    assertStatus(http, "/observe/health/ready/alpha", 204);
+                    assertStatus(http, "/observe/health/check/alpha", 204);
+                    assertStatus(http, "/observe/health/check/zulu", 404);
+                    assertStatus(http, "/observe/health/check/logical-name", 404);
+                } finally {
+                    server.stop();
+                }
+            } finally {
+                manager.shutdown();
+            }
+        }
+    }
+
+    @Test
+    void namedRoutesRequireOneDecodedPathSegment() {
+        HealthCheck regular = JdbcClientHealthCheck.builder().client(client).name("orders").build();
+        HealthCheck sourceWithSlash = DataSourceHealthCheck.builder().dataSource(source).name("orders/primary").build();
+        HealthCheck clientWithSlash = JdbcClientHealthCheck.builder().client(client).name("orders/replica").build();
+        assertThat("Direct data source check", sourceWithSlash.call().status(), is(HealthCheckResponse.Status.UP));
+        assertThat("Direct client check", clientWithSlash.call().status(), is(HealthCheckResponse.Status.UP));
+        var observer = HealthObserver.builder().details(true).useSystemServices(false)
+                .addCheck(regular).addCheck(sourceWithSlash).addCheck(clientWithSlash).build();
+        WebServer server = WebServer.builder().host("127.0.0.1").port(0).featuresDiscoverServices(false)
+                .addFeature(ObserveFeature.just(observer)).build().start();
+        try {
+            Http1Client http = Http1Client.builder().baseUri("http://127.0.0.1:" + server.port()).build();
+            for (String membership : List.of("ready", "check")) {
+                String prefix = "/observe/health/" + membership + "/";
+                assertStatus(http, prefix + "orders", 200);
+                for (String suffix : List.of("primary", "replica")) {
+                    assertStatus(http, prefix + "orders/" + suffix, 404);
+                    assertStatus(http, prefix + "orders%2F" + suffix, 404);
+                }
+            }
+            assertThat("Acquisitions from direct calls and routable names", acquisitionCount.get(), is(4));
+            try (Http1ClientResponse response = http.get("/observe/health/ready").request()) {
+                assertThat(response.status().code(), is(200));
+                String body = response.as(String.class);
+                assertThat(body, containsString(sourceWithSlash.name()));
+                assertThat(body, containsString(clientWithSlash.name()));
+            }
+            assertThat("Acquisitions after aggregate readiness", acquisitionCount.get(), is(7));
+        } finally {
+            server.stop();
+        }
+    }
+
     private static void assertStatus(Http1Client http, String path, int status) {
         try (Http1ClientResponse response = http.get(path).request()) {
             assertThat(path, response.status().code(), is(status));
@@ -331,6 +482,30 @@ class JdbcHealthRoutesTest {
             }
         } finally {
             server.stop();
+        }
+    }
+
+    @Service.PerRequest
+    @Service.Named("orders")
+    @Weight(300)
+    static class RequestClients implements Service.ServicesFactory<JdbcClient> {
+        @Override
+        public List<Service.QualifiedInstance<JdbcClient>> services() {
+            throw new AssertionError("Observer startup must not activate the request scope.");
+        }
+    }
+
+    @Service.Singleton
+    @Service.ExternalContracts(HealthCheck.class)
+    static class LivenessCheck implements HealthCheck {
+        @Override
+        public String name() {
+            return "process";
+        }
+
+        @Override
+        public HealthCheckResponse call() {
+            return HealthCheckResponse.builder().status(true).build();
         }
     }
 }

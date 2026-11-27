@@ -128,7 +128,9 @@ the source's health routes are registered. No client check or alias is created, 
 requests do not trigger an additional client probe.
 
 Discovered checks use resource registration names: `contacts` and `contacts-source`
-in these examples. An unqualified client registration uses its logical client name.
+in these examples. If a JDBC client registration has several concrete
+`@Service.Named` qualifiers, the check uses the first name in lexicographic order.
+A registration without a concrete name uses the logical client name.
 A `health.name` entry is ignored. To use a custom health name, construct and register
 the check explicitly as shown below.
 
@@ -182,11 +184,18 @@ apply. A named registration still determines the health name when the replacemen
 logical name differs. Data source health policy comes from the selected
 `DataSourceConfig`, even when the source instance is replaced.
 
-Each enabled registration publishes one unqualified `HealthCheck` in its owning registry.
+Each eligible enabled registration publishes one unqualified `HealthCheck` in its owning registry.
+Application-wide discovery considers singleton and per lookup JDBC clients.
 Data source discovery requests only enabled source names. A source remains available
 for ordinary use when its health check is disabled. Client discovery may activate
 clients and pools before reading their health policies. A disabled client policy
 publishes no check and executes no health SQL.
+
+If a JDBC client provider fails during discovery, Helidon logs a sanitized warning.
+When a lookup reaches the failed provider before finding a matching client, Helidon
+omits the check for that lookup, even if a lower-priority provider has a match.
+Checks for clients that still resolve and unrelated liveness checks remain available.
+Aggregate readiness evaluates the registered readiness checks, so it can still report `UP`.
 
 Explicit check builders expose `name`, `query`, `queryTimeout`, and `type`. Their
 `config` method applies configuration to the builder. The `enabled` setting controls
@@ -387,6 +396,11 @@ Aggregate readiness can be DOWN while the named database check is UP because ano
 readiness check failed. For a uniquely named check with `type: liveness`, the named
 readiness route returns 404, while `/observe/health/live/contacts` and the generic
 named route are available.
+
+An explicit or discovered check name must fit in a single decoded path segment to
+have a named HTTP route. A name containing a slash, such as `orders/primary`, still
+works for direct calls and appears in aggregate response details. Encoding the slash
+as `%2F` does not make the name routable.
 
 There is no bare `/observe/health/check` route. These paths use the default Observe
 prefix and Health endpoint. The application name is not automatically prepended.

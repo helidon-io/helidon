@@ -25,14 +25,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 
@@ -54,10 +55,10 @@ import io.helidon.health.HealthCheckResponse;
 import io.helidon.health.HealthCheckType;
 import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.Qualifier;
+import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.service.registry.Services;
-import io.helidon.tests.integration.data.jdbc.support.JdbcHealthApplication;
 import io.helidon.transaction.Tx;
 import io.helidon.transaction.TxException;
 import io.helidon.transaction.spi.TxSupport;
@@ -72,7 +73,9 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -98,11 +101,14 @@ import static org.mockito.Mockito.when;
 
 /**
  * Verifies independent health execution using real drivers and bounded pooled acquisitions.
+ * The MySQL, Oracle, and PostgreSQL suites inherit these cases and supply their own database fixtures.
  */
 @SuppressWarnings("helidon:api:internal")
 public abstract class AbstractJdbcHealthContract {
-    private final List<Connection> acquisitions = new ArrayList<>();
-    private final AtomicInteger acquisitionCount = new AtomicInteger();
+    private static final String CONCURRENT_PROBES = "jdbc-health-concurrency";
+    private static final long CONCURRENT_POOL_TIMEOUT_MILLIS = 10_000;
+
+    private final List<Connection> acquisitions = new CopyOnWriteArrayList<>();
 
     private HikariDataSource pool;
     private DataSource source;
@@ -123,19 +129,30 @@ public abstract class AbstractJdbcHealthContract {
     protected abstract String query();
 
     /**
-     * Supplies SQL that waits for a fixture lock or a database delay during timeout coverage.
+     * Supplies the SELECT that waits until the fixture releases its lock.
      *
-     * @return The SELECT normally waits beyond the query timeout under the configured fixture conditions.
+     * @return The SELECT waits for the lock even on a connection with auto-commit enabled.
      */
-    protected abstract String slowQuery();
+    protected abstract String timeoutQuery();
 
     /**
-     * Indicates whether the fixture must retain a row lock while testing query cancellation.
+     * Keeps the timeout query blocked until the returned resource closes.
      *
-     * @return Whether successful execution of the timeout SELECT must retain a fixture lock.
+     * @param blocker The fixture connection owns the lock.
+     * @return The resource releases the lock when closed.
+     * @throws SQLException The fixture could not acquire the lock.
      */
-    protected boolean requiresTimeoutLock() {
-        return false;
+    protected AutoCloseable holdTimeoutLock(Connection blocker) throws SQLException {
+        blocker.setAutoCommit(false);
+        try (PreparedStatement statement = blocker.prepareStatement(timeoutQuery())) {
+            statement.setQueryTimeout(10);
+            try (ResultSet result = statement.executeQuery()) {
+                assertThat("The fixture row must exist.", result.next(), is(true));
+                assertThat("The fixture must lock exactly one row.", result.next(), is(false));
+            }
+        }
+        // Closing the result set leaves the transaction and its row lock active.
+        return blocker::rollback;
     }
 
     /**
@@ -148,7 +165,7 @@ public abstract class AbstractJdbcHealthContract {
     }
 
     @BeforeEach
-    protected void setUpHealth() throws Exception {
+    protected void setUpHealth(TestInfo testInfo) throws Exception {
         Config connection = databaseConfig().get("data.clients.jdbc").asNodeList().orElseThrow().getFirst().get("connection");
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl(connection.get("url").asString().orElseThrow());
@@ -156,17 +173,15 @@ public abstract class AbstractJdbcHealthContract {
         config.setPassword(connection.get("password").asString().orElseThrow());
         config.setMaximumPoolSize(3);
         config.setMinimumIdle(0);
-        config.setConnectionTimeout(500);
+        // Hikari captures the acquisition timeout at startup. Warm-up needs a longer budget than exhaustion checks.
+        config.setConnectionTimeout(testInfo.getTags().contains(CONCURRENT_PROBES) ? CONCURRENT_POOL_TIMEOUT_MILLIS : 500);
         poolProperties().forEach(config::addDataSourceProperty);
         pool = new HikariDataSource(config);
         source = mock(DataSource.class);
         // Each recording connection delegates provider calls while the real pool and driver own physical resources.
         when(source.getConnection()).thenAnswer(_ -> {
             Connection leased = recordingConnection(pool.getConnection());
-            acquisitionCount.incrementAndGet();
-            synchronized (acquisitions) {
-                acquisitions.add(leased);
-            }
+            acquisitions.add(leased);
             return leased;
         });
         client = JdbcClient.builder().dataSource(source).build();
@@ -185,10 +200,10 @@ public abstract class AbstractJdbcHealthContract {
     @Test
     protected void freshProbesPreserveOwnershipAndOrdinaryReuse() throws Exception {
         var probe = probe(client, query(), Duration.ofSeconds(2));
-        assertThat(acquisitionCount.get(), is(0));
+        assertThat(acquisitions.size(), is(0));
         assertThat(probe.getAsBoolean(), is(true));
         assertThat(probe.getAsBoolean(), is(true));
-        assertThat(acquisitionCount.get(), is(2));
+        assertThat(acquisitions.size(), is(2));
         for (Connection connection : acquisitions) {
             verify(connection, never()).commit();
             verify(connection, never()).rollback();
@@ -224,7 +239,7 @@ public abstract class AbstractJdbcHealthContract {
      */
     @Test
     protected void driverQueryTimeoutLeavesThePoolUsable() throws Exception {
-        String timeoutQuery = slowQuery();
+        String timeoutQuery = timeoutQuery();
         AtomicReference<SQLException> executionFailure = new AtomicReference<>();
         // Record real execution failures so an unrelated acquisition or cleanup failure
         // cannot satisfy the timeout assertions.
@@ -251,35 +266,19 @@ public abstract class AbstractJdbcHealthContract {
         var executor = Executors.newSingleThreadExecutor();
         List<Future<?>> workers = new ArrayList<>();
         Throwable primary = null;
-        boolean lockQuery = requiresTimeoutLock();
-        // When a row lock is required, the fixture owns its transaction and releases it before worker cleanup.
         try (Connection blocker = pool.getConnection();
-             AutoCloseable _ = () -> {
-                 if (lockQuery) {
-                     blocker.rollback();
-                 }
-             }) {
-            if (lockQuery) {
-                blocker.setAutoCommit(false);
-            }
-            // For Oracle, this execution acquires the row lock and closing the result retains it.
-            // Independent timeout queries cannot acquire that row lock while the fixture retains it.
-            try (PreparedStatement statement = blocker.prepareStatement(timeoutQuery)) {
-                statement.setQueryTimeout(10);
-                try (ResultSet result = statement.executeQuery()) {
-                    assertThat(result.next(), is(true));
-                    assertThat(result.next(), is(false));
-                }
-            }
+             AutoCloseable _ = holdTimeoutLock(blocker)) {
             Future<SQLException> driver = executor.submit(() -> {
                 try (Connection connection = pool.getConnection();
                      PreparedStatement statement = connection.prepareStatement(timeoutQuery)) {
+                    assertThat("The cancellation precondition uses auto-commit.", connection.getAutoCommit(), is(true));
                     statement.setQueryTimeout(1);
                     return assertThrows(SQLException.class, statement::execute);
                 }
             });
             workers.add(driver);
-            // This wait is a test watchdog. The driver exception must establish query cancellation.
+            // The direct probe confirms that this driver cancels the locked query in auto-commit mode.
+            // The future deadline only bounds the test wait.
             assertQueryCancellation(driver.get(20, TimeUnit.SECONDS));
             List<HealthCheck> checks = List.of(
                     JdbcClientHealthCheck.builder().client(checkedClient)
@@ -294,7 +293,7 @@ public abstract class AbstractJdbcHealthContract {
                 assertThat("The timeout check is " + check.name() + ".", response.status(),
                            is(HealthCheckResponse.Status.DOWN));
                 assertThat("The timeout check is " + check.name() + ".", response.details(), anEmptyMap());
-                assertThat(executionFailure.get(), notNullValue());
+                assertThat("Execution failure for " + check.name(), executionFailure.get(), notNullValue());
                 assertQueryCancellation(executionFailure.get());
             }
         } catch (Exception | Error failure) {
@@ -303,10 +302,11 @@ public abstract class AbstractJdbcHealthContract {
         } finally {
             finishWorkers(workers, executor, primary);
         }
-        // Reusing the Oracle locking SELECT verifies that cleanup released the row lock.
-        String reuseQuery = lockQuery ? timeoutQuery : query();
-        assertThat(probe(checkedClient, reuseQuery, Duration.ofSeconds(2)).getAsBoolean(), is(true));
-        assertThat(probe(observedSource, reuseQuery, Duration.ofSeconds(2)).getAsBoolean(), is(true));
+        // The same SELECT must succeed after the fixture releases its lock and the workers return their leases.
+        assertThat("Client check after releasing the lock", probe(checkedClient, timeoutQuery, Duration.ofSeconds(2))
+                .getAsBoolean(), is(true));
+        assertThat("Data source check after releasing the lock", probe(observedSource, timeoutQuery, Duration.ofSeconds(2))
+                .getAsBoolean(), is(true));
         for (Connection connection : acquisitions) {
             verify(connection, never()).setAutoCommit(anyBoolean());
             verify(connection, never()).commit();
@@ -357,23 +357,24 @@ public abstract class AbstractJdbcHealthContract {
             var brokenSource = probe(source, "SELECT * FROM JDBC_HEALTH_TABLE_MISSING", Duration.ofSeconds(2));
             transactions.transaction(Tx.Type.REQUIRED, () -> {
                 managed.create("INSERT INTO TX_MATRIX (DATA_VALUE) VALUES ('health-pending')").execute();
-                int before = acquisitionCount.get();
+                int before = acquisitions.size();
                 assertThat(healthy.getAsBoolean(), is(true));
                 assertThat(broken.getAsBoolean(), is(false));
                 assertThat(healthySource.getAsBoolean(), is(true));
                 assertThat(brokenSource.getAsBoolean(), is(false));
-                assertThat(acquisitionCount.get(), is(before + 4));
+                assertThat(acquisitions.size(), is(before + 4));
                 Connection caller = acquisitions.get(before - 1);
                 try (Connection _ = pool.getConnection(); Connection _ = pool.getConnection()) {
                     assertThat(healthy.getAsBoolean(), is(false));
                     assertThat(broken.getAsBoolean(), is(false));
                     assertThat(healthySource.getAsBoolean(), is(false));
                     assertThat(brokenSource.getAsBoolean(), is(false));
-                    assertThat(acquisitionCount.get(), is(before + 4));
+                    assertThat(acquisitions.size(), is(before + 4));
                     assertThat(caller.getAutoCommit(), is(false));
                     verify(caller, never()).commit();
                     verify(caller, never()).rollback();
                 }
+                // The observer uses another connection. Only the caller should see the uncommitted insert.
                 assertThat(observer.create("SELECT COUNT(*) FROM TX_MATRIX").map(row -> row.get(1, Long.class)).one(), is(0L));
                 assertThat(managed.create("SELECT COUNT(*) FROM TX_MATRIX").map(row -> row.get(1, Long.class)).one(), is(1L));
                 return null;
@@ -428,9 +429,9 @@ public abstract class AbstractJdbcHealthContract {
             Services.setNamed(DataSource.class, source, "health-source");
             JdbcClient named = JdbcClient.builder().dataSourceName("health-source").build();
             var probe = probe(named, query(), Duration.ofSeconds(2));
-            assertThat(acquisitionCount.get(), is(0));
+            assertThat(acquisitions.size(), is(0));
             assertThat(probe.getAsBoolean(), is(true));
-            assertThat(acquisitionCount.get(), is(1));
+            assertThat(acquisitions.size(), is(1));
         } finally {
             manager.shutdown();
         }
@@ -440,9 +441,10 @@ public abstract class AbstractJdbcHealthContract {
      * Coordinates simultaneous acquisitions with bounded waits and releases workers even after a failure.
      */
     @Test
+    @Tag(CONCURRENT_PROBES)
     protected void concurrentProbesReleaseEveryAcquisition() throws Exception {
-        verifyConcurrentProbesReleaseEveryAcquisition(true);
-        verifyConcurrentProbesReleaseEveryAcquisition(false);
+        verifyConcurrentProbes(true, false);
+        verifyConcurrentProbes(false, false);
     }
 
     /**
@@ -474,9 +476,9 @@ public abstract class AbstractJdbcHealthContract {
             Http1Client http = Http1Client.builder().baseUri("http://127.0.0.1:" + server.port()).build();
             assertStatus(http, "/observe/health/ready/database", 204);
             assertStatus(http, "/observe/health/check/database", 204);
-            assertThat(acquisitionCount.get(), is(2));
+            assertThat(acquisitions.size(), is(2));
             assertStatus(http, "/observe/health/ready", 503);
-            assertThat(acquisitionCount.get(), is(3));
+            assertThat(acquisitions.size(), is(3));
             assertStatus(http, "/observe/health/check", 404);
         } finally {
             server.stop();
@@ -546,28 +548,28 @@ public abstract class AbstractJdbcHealthContract {
             JdbcHealthApplication application = manager.registry().get(JdbcHealthApplication.class);
             var provider = manager.registry().get(ObserveFeatureProvider.class);
             ObserveFeature feature = provider.create(Config.empty(), "observe", manager.registry());
-            assertThat(acquisitionCount.get(), is(0));
+            assertThat(acquisitions.size(), is(0));
             assertThat(application.check("health-client-0").status(), is(HealthCheckResponse.Status.UP));
             assertThat(application.check("health-client-1").status(), is(HealthCheckResponse.Status.UP));
             HealthCheckResponse failed = application.check("health-client-2");
             assertThat(failed.status(), is(HealthCheckResponse.Status.DOWN));
             assertThat(failed.details(), anEmptyMap());
-            assertThat(acquisitionCount.get(), is(3));
+            assertThat(acquisitions.size(), is(3));
             WebServer server = WebServer.builder().host("127.0.0.1").port(0).featuresDiscoverServices(false)
                     .addFeature(feature).build().start();
             try {
                 Http1Client http = Http1Client.builder().baseUri("http://127.0.0.1:" + server.port()).build();
                 assertStatus(http, "/observe/health/ready/health-client-0", 204);
                 assertStatus(http, "/observe/health/check/health-client-0", 204);
-                assertThat(acquisitionCount.get(), is(5));
+                assertThat(acquisitions.size(), is(5));
                 assertStatus(http, "/observe/health/ready", 503);
-                assertThat(acquisitionCount.get(), is(7));
+                assertThat(acquisitions.size(), is(7));
                 assertStatus(http, "/observe/health/ready/health-client-1", 404);
                 assertStatus(http, "/observe/health/live/health-client-1", 204);
                 assertStatus(http, "/observe/health/check/health-client-1", 204);
                 assertStatus(http, "/observe/health/check/health-client-2", 503);
                 assertStatus(http, "/observe/health/check", 404);
-                assertThat(acquisitionCount.get(), is(10));
+                assertThat(acquisitions.size(), is(10));
             } finally {
                 server.stop();
             }
@@ -585,12 +587,13 @@ public abstract class AbstractJdbcHealthContract {
     }
 
     /**
-     * Observes a failure before peer coordination and verifies bounded cleanup and subsequent pooled reuse.
+     * Observes a failure while both peers hold connections and verifies subsequent pooled reuse.
      */
     @Test
+    @Tag(CONCURRENT_PROBES)
     protected void failedConcurrentProbeDoesNotStrandItsPeers() throws Exception {
-        verifyFailedConcurrentProbeDoesNotStrandItsPeers(true);
-        verifyFailedConcurrentProbeDoesNotStrandItsPeers(false);
+        verifyConcurrentProbes(true, true);
+        verifyConcurrentProbes(false, true);
     }
 
     /**
@@ -665,7 +668,7 @@ public abstract class AbstractJdbcHealthContract {
             assertThat(sourceCheck.prototype().query(), is(query().replace("1", "3")));
             assertThat(clientCheck.prototype().query(), is("SELECT 1"));
             assertThat(clientCheck.prototype().queryTimeout(), is(Duration.ofSeconds(2)));
-            assertThat(acquisitionCount.get(), is(0));
+            assertThat(acquisitions.size(), is(0));
             var provider = manager.registry().get(ObserveFeatureProvider.class);
             ObserveFeature feature = provider.create(Config.empty(), "observe", manager.registry());
             WebServer server = WebServer.builder().host("127.0.0.1").port(0).featuresDiscoverServices(false)
@@ -674,18 +677,18 @@ public abstract class AbstractJdbcHealthContract {
                 Http1Client http = Http1Client.builder().baseUri("http://127.0.0.1:" + server.port()).build();
                 assertStatus(http, "/observe/health/ready/shared", 204);
                 assertStatus(http, "/observe/health/check/shared", 204);
-                assertThat(acquisitionCount.get(), is(2));
+                assertThat(acquisitions.size(), is(2));
                 for (Connection acquisition : acquisitions) {
                     verify(acquisition).prepareStatement(query().replace("1", "3"));
                 }
                 assertStatus(http, "/observe/health/ready", 204);
-                assertThat(acquisitionCount.get(), is(4));
+                assertThat(acquisitions.size(), is(4));
                 assertStatus(http, "/observe/health/", 204);
-                assertThat(acquisitionCount.get(), is(7));
+                assertThat(acquisitions.size(), is(7));
                 assertStatus(http, "/observe/health/ready/client-1", 404);
                 assertStatus(http, "/observe/health/live/client-1", 204);
                 assertStatus(http, "/observe/health/check/client-1", 204);
-                assertThat(acquisitionCount.get(), is(9));
+                assertThat(acquisitions.size(), is(9));
             } finally {
                 server.stop();
             }
@@ -723,11 +726,11 @@ public abstract class AbstractJdbcHealthContract {
                 Qualifier provider = Qualifier.create(Data.ProviderType.TYPE, "jdbc");
                 Qualifier name = Qualifier.createNamed("orders");
                 Services.setQualified(JdbcClient.class, replacement, name, provider);
-                int before = acquisitionCount.get();
+                int before = acquisitions.size();
                 List<HealthCheck> checks = manager.registry().all(HealthCheck.class);
                 assertThat("The replacement health enabled setting is " + enabled + ".", checks, hasSize(enabled ? 2 : 1));
                 assertThat(manager.registry().get(JdbcClient.class, name, provider), sameInstance(replacement));
-                assertThat(acquisitionCount.get(), is(before));
+                assertThat(acquisitions.size(), is(before));
                 if (enabled) {
                     var check = (JdbcClientHealthCheck) checks.stream()
                             .filter(candidate -> candidate instanceof JdbcClientHealthCheck).findFirst().orElseThrow();
@@ -748,11 +751,12 @@ public abstract class AbstractJdbcHealthContract {
                     assertStatus(http, "/observe/health/check/replacement-db", 404);
                     assertStatus(http, "/observe/health/ready/shared", 204);
                     assertStatus(http, "/observe/health/", 204);
-                    assertThat(acquisitionCount.get(), is(before + (enabled ? 5 : 2)));
+                    assertThat(acquisitions.size(), is(before + (enabled ? 5 : 2)));
                 } finally {
                     server.stop();
                 }
-                for (Connection acquisition : acquisitions.subList(before, acquisitions.size())) {
+                List<Connection> records = List.copyOf(acquisitions);
+                for (Connection acquisition : records.subList(before, records.size())) {
                     verify(acquisition, never()).setAutoCommit(anyBoolean());
                     verify(acquisition, never()).commit();
                     verify(acquisition, never()).rollback();
@@ -797,7 +801,7 @@ public abstract class AbstractJdbcHealthContract {
                 List<ObserveFeature> features = List.of(provider.create(Config.empty(), "observe", manager.registry()),
                         ObserveFeature.just(HealthObserver.builder().useSystemServices(true).build()));
                 for (ObserveFeature feature : features) {
-                    int before = acquisitionCount.get();
+                    int before = acquisitions.size();
                     WebServer server = WebServer.builder().host("127.0.0.1").port(0).featuresDiscoverServices(false)
                             .addFeature(feature).build().start();
                     try {
@@ -807,7 +811,7 @@ public abstract class AbstractJdbcHealthContract {
                         assertStatus(http, "/observe/health/check/pokemon", 404);
                         assertStatus(http, "/observe/health/check/unregistered", 404);
                         assertStatus(http, "/observe/health/ready", 204);
-                        assertThat(acquisitionCount.get(), is(before + 3));
+                        assertThat(acquisitions.size(), is(before + 3));
                     } finally {
                         server.stop();
                     }
@@ -828,6 +832,65 @@ public abstract class AbstractJdbcHealthContract {
     }
 
     /**
+     * Starts the observer with one enabled source and another pool that fails if selected.
+     */
+    @Test
+    protected void datasourceDiscoveryStartsOnlyTheEnabledPool() {
+        Config connection = databaseConfig().get("data.clients.jdbc").asNodeList().orElseThrow().getFirst().get("connection");
+        Map<String, String> values = new HashMap<>();
+        values.put("data.sources.sql.0.name", "unused");
+        values.put("data.sources.sql.0.provider.hikari.url", connection.get("url").asString().orElseThrow());
+        // This setting binds successfully and fails when Hikari applies it.
+        values.put("data.sources.sql.0.provider.hikari.maximum-pool-size", "0");
+        String prefix = "data.sources.sql.1";
+        values.put(prefix + ".name", "orders");
+        values.put(prefix + ".health.enabled", "true");
+        values.put(prefix + ".health.query", query());
+        values.put(prefix + ".provider.hikari.maximum-pool-size", "1");
+        values.put(prefix + ".provider.hikari.minimum-idle", "0");
+        values.put(prefix + ".provider.hikari.connection-timeout", "2000");
+        for (String key : List.of("url", "username", "password")) {
+            values.put(prefix + ".provider.hikari." + key, connection.get(key).asString().orElseThrow());
+        }
+        var manager = ServiceRegistryManager.create();
+        GlobalServiceRegistry.registry(manager.registry());
+        try {
+            Services.set(Config.class, Config.just(ConfigSources.create(values)));
+            var observer = HealthObserver.builder().useSystemServices(true).build();
+            var registry = manager.registry();
+            List<HealthCheck> checks = registry.all(HealthCheck.class);
+            try (var selected = (HikariDataSource) registry.getNamed(DataSource.class, "orders")) {
+                assertThat(checks, hasSize(1));
+                var check = (DataSourceHealthCheck) checks.getFirst();
+                assertThat(check.name(), is("orders"));
+                assertThat(check.prototype().dataSource(), sameInstance(selected));
+                JdbcClient ordinary = JdbcClient.builder().dataSource(selected).build();
+                WebServer server = WebServer.builder().host("127.0.0.1").port(0).featuresDiscoverServices(false)
+                        .addFeature(ObserveFeature.just(observer)).build().start();
+                try {
+                    Http1Client http = Http1Client.builder().baseUri("http://127.0.0.1:" + server.port()).build();
+                    String path = "/observe/health/ready/orders";
+                    assertStatus(http, path, 204);
+                    assertStatus(http, "/observe/health/check/unused", 404);
+                    assertThat("Query before requesting the unused pool", ordinary.create(query())
+                            .map(row -> row.get(1, Integer.class)).one(), is(1));
+                    var failure = assertThrows(IllegalArgumentException.class,
+                                               () -> registry.getNamed(DataSource.class, "unused"));
+                    assertThat(failure.getMessage(), is("maxPoolSize cannot be less than 1"));
+                    assertStatus(http, path, 204);
+                    assertThat("Query after requesting the unused pool", ordinary.create(query())
+                            .map(row -> row.get(1, Integer.class)).one(), is(1));
+                    assertThat(selected.getHikariPoolMXBean().getActiveConnections(), is(0));
+                } finally {
+                    server.stop();
+                }
+            }
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    /**
      * Rejects executable comments before acquisition and executes ordinary comments through both check types.
      */
     @Test
@@ -837,11 +900,11 @@ public abstract class AbstractJdbcHealthContract {
                      () -> DataSourceHealthCheck.builder().dataSource(source).query(executable).build());
         assertThrows(IllegalArgumentException.class,
                      () -> JdbcClientHealthCheck.builder().client(client).query(executable).build());
-        assertThat(acquisitionCount.get(), is(0));
+        assertThat(acquisitions.size(), is(0));
         String ordinary = "/* ordinary */ " + query() + " /* ordinary */";
         assertThat(probe(source, ordinary, Duration.ofSeconds(2)).getAsBoolean(), is(true));
         assertThat(probe(client, ordinary, Duration.ofSeconds(2)).getAsBoolean(), is(true));
-        assertThat(acquisitionCount.get(), is(2));
+        assertThat(acquisitions.size(), is(2));
         for (Connection acquisition : acquisitions) {
             verify(acquisition).prepareStatement(ordinary);
             verify(acquisition, never()).setAutoCommit(anyBoolean());
@@ -858,54 +921,78 @@ public abstract class AbstractJdbcHealthContract {
      */
     @Test
     protected void overlappingClientQualifiersPreserveSelectionAndAggregateCounts() throws Exception {
-        var manager = ServiceRegistryManager.create();
-        GlobalServiceRegistry.registry(manager.registry());
-        try {
-            Services.set(Config.class, Config.empty());
-            JdbcClient named = JdbcClient.builder().name("named").dataSource(source)
-                    .health(health -> health.enabled(true).query(query())).build();
-            JdbcClient qualified = JdbcClient.builder().name("qualified").dataSource(source)
-                    .health(health -> health.enabled(true).query(query())).build();
-            Qualifier name = Qualifier.createNamed("orders");
-            Qualifier provider = Qualifier.create(Data.ProviderType.TYPE, "jdbc");
-            Services.setNamed(JdbcClient.class, named, "orders");
-            Services.setQualified(JdbcClient.class, qualified, name, provider);
-            JdbcClient selected = manager.registry().get(JdbcClient.class, name);
-            assertThat(manager.registry().get(JdbcClient.class, name, provider), sameInstance(qualified));
-            List<JdbcClient> expected = selected == qualified ? List.of(qualified) : List.of(named, qualified);
-            List<HealthCheck> checks = manager.registry().all(HealthCheck.class);
-            assertThat(checks.stream().map(check -> ((JdbcClientHealthCheck) check).prototype().client()).toList(),
-                       containsInAnyOrder(expected.toArray(JdbcClient[]::new)));
-            assertThat(checks.stream().map(HealthCheck::name).toList(), everyItem(is("orders")));
-            assertThat(acquisitionCount.get(), is(0));
-            var providerFeature = manager.registry().get(ObserveFeatureProvider.class);
-            for (ObserveFeature feature : List.of(providerFeature.create(Config.empty(), "observe", manager.registry()),
-                    ObserveFeature.just(HealthObserver.builder().useSystemServices(true).build()))) {
-                int before = acquisitionCount.get();
-                WebServer server = WebServer.builder().host("127.0.0.1").port(0).featuresDiscoverServices(false)
-                        .addFeature(feature).build().start();
-                try {
-                    Http1Client http = Http1Client.builder().baseUri("http://127.0.0.1:" + server.port()).build();
-                    assertStatus(http, "/observe/health/ready/orders", 204);
-                    assertStatus(http, "/observe/health/check/orders", 204);
-                    assertStatus(http, "/observe/health/ready", 204);
-                    assertStatus(http, "/observe/health/check", 404);
-                    assertThat(acquisitionCount.get(), is(before + 2 + expected.size()));
-                } finally {
-                    server.stop();
+        String namedSql = query().replace("1", "2");
+        String qualifiedSql = query().replace("1", "3");
+        JdbcClient named = JdbcClient.builder().name("named").dataSource(source)
+                .health(health -> health.enabled(true).query(namedSql).type(HealthCheckType.LIVENESS)).build();
+        JdbcClient qualified = JdbcClient.builder().name("qualified").dataSource(source)
+                .health(health -> health.enabled(true).query(qualifiedSql)).build();
+        Qualifier name = Qualifier.createNamed("orders");
+        Qualifier provider = Qualifier.create(Data.ProviderType.TYPE, "jdbc");
+        var namedRegistration = Service.QualifiedInstance.create(named, name);
+        var qualifiedRegistration = Service.QualifiedInstance.create(qualified, name, provider);
+        for (boolean preferQualified : new boolean[] {true, false}) {
+            String phase = preferQualified ? "The provider-qualified registration is preferred"
+                    : "The name-only registration is preferred";
+            // One factory contributes both instances. Their order establishes preference on the overlapping lookup.
+            var registrations = preferQualified ? List.of(qualifiedRegistration, namedRegistration)
+                    : List.of(namedRegistration, qualifiedRegistration);
+            var manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                    .putServiceInstance(AbstractJdbcHealthContract_OverlappingClients__ServiceDescriptor.INSTANCE,
+                                        new OverlappingClients(registrations)).build());
+            GlobalServiceRegistry.registry(manager.registry());
+            try {
+                Services.set(Config.class, Config.empty());
+                var registry = manager.registry();
+                assertThat(phase, registry.all(JdbcClient.class, name), containsInAnyOrder(named, qualified));
+                assertThat(phase, registry.get(JdbcClient.class, name), sameInstance(preferQualified ? qualified : named));
+                assertThat(phase, registry.get(JdbcClient.class, name, provider), sameInstance(qualified));
+                int beforeDiscovery = acquisitions.size();
+                List<HealthCheck> checks = registry.all(HealthCheck.class);
+                List<JdbcClient> expected = preferQualified ? List.of(qualified) : List.of(named, qualified);
+                assertThat(phase, checks.stream().map(check -> ((JdbcClientHealthCheck) check).prototype().client()).toList(),
+                           is(expected));
+                assertThat(phase, checks.stream().map(HealthCheck::name).toList(), everyItem(is("orders")));
+                var providerFeature = registry.get(ObserveFeatureProvider.class);
+                var configured = providerFeature.create(Config.empty(), "observe", registry);
+                var explicit = ObserveFeature.just(HealthObserver.builder().useSystemServices(true).build());
+                assertThat(phase + " during observer construction", acquisitions.size(), is(beforeDiscovery));
+                for (ObserveFeature feature : List.of(configured, explicit)) {
+                    String path = feature == configured ? " through configured discovery" : " through explicit discovery";
+                    WebServer server = WebServer.builder().host("127.0.0.1").port(0).featuresDiscoverServices(false)
+                            .addFeature(feature).build().start();
+                    try {
+                        Http1Client http = Http1Client.builder().baseUri("http://127.0.0.1:" + server.port()).build();
+                        assertNamedQuery(http, "/observe/health/ready/orders", qualifiedSql);
+                        assertNamedQuery(http, "/observe/health/check/orders", preferQualified ? qualifiedSql : namedSql);
+                        if (preferQualified) {
+                            assertStatus(http, "/observe/health/live/orders", 404);
+                        } else {
+                            assertNamedQuery(http, "/observe/health/live/orders", namedSql);
+                        }
+                        int beforeAggregate = acquisitions.size();
+                        assertStatus(http, "/observe/health/ready", 204);
+                        assertThat(phase + path + " in aggregate readiness", acquisitions.size(), is(beforeAggregate + 1));
+                        assertStatus(http, "/observe/health/", 204);
+                        assertThat(phase + path + " in aggregate health", acquisitions.size(),
+                                   is(beforeAggregate + 1 + expected.size()));
+                        assertStatus(http, "/observe/health/check", 404);
+                    } finally {
+                        server.stop();
+                    }
                 }
+            } finally {
+                manager.shutdown();
             }
-            for (Connection acquisition : acquisitions) {
-                verify(acquisition, never()).setAutoCommit(anyBoolean());
-                verify(acquisition, never()).commit();
-                verify(acquisition, never()).rollback();
-            }
-            assertThat(qualified.create(query()).map(row -> row.get(1, Integer.class)).one(), is(1));
-            assertThat(pool.isClosed(), is(false));
-            assertThat(pool.getHikariPoolMXBean().getActiveConnections(), is(0));
-        } finally {
-            manager.shutdown();
         }
+        for (Connection acquisition : acquisitions) {
+            verify(acquisition, never()).setAutoCommit(anyBoolean());
+            verify(acquisition, never()).commit();
+            verify(acquisition, never()).rollback();
+        }
+        assertThat(qualified.create(query()).map(row -> row.get(1, Integer.class)).one(), is(1));
+        assertThat(pool.isClosed(), is(false));
+        assertThat(pool.getHikariPoolMXBean().getActiveConnections(), is(0));
     }
 
     /**
@@ -918,7 +1005,7 @@ public abstract class AbstractJdbcHealthContract {
         var billing = DataSourceHealthCheck.builder().dataSource(other).name("billing-db").query(query()).build();
         assertThat(orders.prototype().dataSource(), sameInstance(source));
         assertThat(billing.prototype().dataSource(), sameInstance(other));
-        assertThat(acquisitionCount.get(), is(0));
+        assertThat(acquisitions.size(), is(0));
         var observer = HealthObserver.builder().useSystemServices(false).addCheck(orders).addCheck(billing).build();
         WebServer server = WebServer.builder().host("127.0.0.1").port(0).featuresDiscoverServices(false)
                 .addFeature(ObserveFeature.just(observer)).build().start();
@@ -929,7 +1016,7 @@ public abstract class AbstractJdbcHealthContract {
             assertStatus(http, "/observe/health/ready/billing-db", 204);
             assertStatus(http, "/observe/health/check/billing-db", 204);
             assertStatus(http, "/observe/health/ready", 204);
-            assertThat(acquisitionCount.get(), is(6));
+            assertThat(acquisitions.size(), is(6));
         } finally {
             server.stop();
         }
@@ -968,25 +1055,23 @@ public abstract class AbstractJdbcHealthContract {
             // An explicit third check creates the collision without restoring a discovery naming override.
             HealthCheck live = JdbcClientHealthCheck.builder().client(client).name("shared")
                     .query(query().replace("1", "2")).type(HealthCheckType.LIVENESS).build();
-            assertThat(acquisitionCount.get(), is(0));
+            assertThat(acquisitions.size(), is(0));
             var observer = HealthObserver.builder().useSystemServices(false)
                     .addCheck(live).addCheck(sourceCheck).addCheck(ready).build();
             WebServer server = WebServer.builder().host("127.0.0.1").port(0).featuresDiscoverServices(false)
                     .addFeature(ObserveFeature.just(observer)).build().start();
             try {
                 Http1Client http = Http1Client.builder().baseUri("http://127.0.0.1:" + server.port()).build();
-                assertStatus(http, "/observe/health/check/shared", 204);
-                verify(acquisitions.getLast()).prepareStatement(query().replace("1", "2"));
-                assertStatus(http, "/observe/health/ready/shared", 204);
-                verify(acquisitions.getLast()).prepareStatement(query().replace("1", "3"));
-                assertStatus(http, "/observe/health/live/shared", 204);
-                assertThat(acquisitionCount.get(), is(3));
+                assertNamedQuery(http, "/observe/health/check/shared", query().replace("1", "2"));
+                assertNamedQuery(http, "/observe/health/ready/shared", query().replace("1", "3"));
+                assertNamedQuery(http, "/observe/health/live/shared", query().replace("1", "2"));
+                assertThat(acquisitions.size(), is(3));
                 assertStatus(http, "/observe/health/ready", 503);
-                assertThat(acquisitionCount.get(), is(5));
+                assertThat(acquisitions.size(), is(5));
                 assertStatus(http, "/observe/health/", 503);
-                assertThat(acquisitionCount.get(), is(8));
+                assertThat(acquisitions.size(), is(8));
                 assertStatus(http, "/observe/health/live", 204);
-                assertThat(acquisitionCount.get(), is(9));
+                assertThat(acquisitions.size(), is(9));
             } finally {
                 server.stop();
             }
@@ -1051,16 +1136,9 @@ public abstract class AbstractJdbcHealthContract {
     }
 
     private static void assertQueryCancellation(SQLException failure) {
-        assertThat("The driver must report query timeout or cancellation, but it reported " + failure + ".",
-                   failure instanceof SQLTimeoutException || "57014".equals(failure.getSQLState()), is(true));
-    }
-
-    private static void finishWorkers(CountDownLatch release,
-                                      List<Future<Boolean>> workers,
-                                      ExecutorService executor,
-                                      Throwable primary) throws InterruptedException {
-        release.countDown();
-        finishWorkers(workers, executor, primary);
+        if (!(failure instanceof SQLTimeoutException)) {
+            assertThat("The driver must report query cancellation. It reported " + failure, failure.getSQLState(), is("57014"));
+        }
     }
 
     private static void finishWorkers(List<? extends Future<?>> workers,
@@ -1100,6 +1178,15 @@ public abstract class AbstractJdbcHealthContract {
         }
     }
 
+    private void assertNamedQuery(Http1Client http, String path, String sql) throws SQLException {
+        int before = acquisitions.size();
+        assertStatus(http, path, 204);
+        // Tie the route to its own acquisition. A healthy response alone cannot identify the SQL that ran.
+        List<Connection> records = List.copyOf(acquisitions);
+        assertThat("Acquisition records after " + path, records, hasSize(before + 1));
+        verify(records.get(before)).prepareStatement(sql);
+    }
+
     private Map<String, String> namedHealthConfiguration() {
         Config connection = databaseConfig().get("data.clients.jdbc").asNodeList().orElseThrow().getFirst().get("connection");
         Map<String, String> values = new HashMap<>();
@@ -1116,67 +1203,41 @@ public abstract class AbstractJdbcHealthContract {
         return values;
     }
 
-    private void verifyConcurrentProbesReleaseEveryAcquisition(boolean clientCheck) throws Exception {
-        CountDownLatch entered = new CountDownLatch(3);
-        CountDownLatch release = new CountDownLatch(1);
-        DataSource coordinated = mock(DataSource.class);
-        when(coordinated.getConnection()).thenAnswer(_ -> {
-            Connection connection = source.getConnection();
-            entered.countDown();
-            try {
-                if (!release.await(5, TimeUnit.SECONDS)) {
-                    throw new IllegalStateException("The coordination wait expired.");
-                }
-                return connection;
-            } catch (Throwable failure) {
-                try {
-                    connection.close();
-                } catch (Throwable closeFailure) {
-                    failure.addSuppressed(closeFailure);
-                }
-                throw failure;
-            }
-        });
-        var probe = clientCheck
-                ? probe(JdbcClient.builder().dataSource(coordinated).build(), query(), Duration.ofSeconds(2))
-                : probe(coordinated, query(), Duration.ofSeconds(2));
-        var executor = Executors.newFixedThreadPool(3);
-        List<Future<Boolean>> workers = new ArrayList<>();
-        Throwable primary = null;
-        try {
-            for (int index = 0; index < 3; index++) {
-                workers.add(executor.submit(probe::getAsBoolean));
-            }
-            assertThat(entered.await(5, TimeUnit.SECONDS), is(true));
-            release.countDown();
-            for (Future<Boolean> worker : workers) {
-                assertThat(worker.get(5, TimeUnit.SECONDS), is(true));
-            }
-        } catch (Exception | Error failure) {
-            primary = failure;
-            throw failure;
-        } finally {
-            finishWorkers(release, workers, executor, primary);
+    private void verifyConcurrentProbes(boolean clientCheck, boolean failOne) throws Exception {
+        assertThat("Concurrency pool acquisition timeout in milliseconds", pool.getConnectionTimeout(),
+                   is(CONCURRENT_POOL_TIMEOUT_MILLIS));
+        // Establish all three physical connections before starting the workers.
+        try (Connection _ = pool.getConnection(); Connection _ = pool.getConnection(); Connection _ = pool.getConnection()) {
+            assertThat("Connections available to the workers", pool.getHikariPoolMXBean().getTotalConnections(), is(3));
         }
-        assertThat(pool.getHikariPoolMXBean().getActiveConnections(), is(0));
-    }
-
-    private void verifyFailedConcurrentProbeDoesNotStrandItsPeers(boolean clientCheck) throws Exception {
-        CountDownLatch entered = new CountDownLatch(2);
+        assertThat("Idle connections available before launching workers", pool.getHikariPoolMXBean().getIdleConnections(), is(3));
+        int peerCount = failOne ? 2 : 3;
+        CountDownLatch entered = new CountDownLatch(peerCount);
         CountDownLatch release = new CountDownLatch(1);
-        AtomicInteger attempts = new AtomicInteger();
+        AtomicBoolean failNext = new AtomicBoolean();
         DataSource coordinated = mock(DataSource.class);
+        String sql = query();
         when(coordinated.getConnection()).thenAnswer(_ -> {
-            if (attempts.getAndIncrement() == 0) {
+            if (failNext.compareAndSet(true, false)) {
                 throw new SQLException("Secret acquisition failure.");
             }
             Connection connection = source.getConnection();
-            entered.countDown();
             try {
-                if (!release.await(5, TimeUnit.SECONDS)) {
-                    throw new SQLException("The coordination wait expired.");
-                }
-                return connection;
+                Connection leased = mock(Connection.class, delegatesTo(connection));
+                doAnswer(_ -> {
+                    // The probe has acquired and validated its lease by the time it prepares the statement.
+                    entered.countDown();
+                    try {
+                        if (!release.await(15, TimeUnit.SECONDS)) {
+                            throw new SQLException("The coordination wait expired.");
+                        }
+                    } catch (InterruptedException failure) {
+                        Thread.currentThread().interrupt();
+                        throw new SQLException("The coordination wait was interrupted.", failure);
+                    }
+                    return connection.prepareStatement(sql);
+                }).when(leased).prepareStatement(sql);
+                return leased;
             } catch (Throwable failure) {
                 try {
                     connection.close();
@@ -1186,35 +1247,60 @@ public abstract class AbstractJdbcHealthContract {
                 throw failure;
             }
         });
-        var probe = clientCheck
-                ? probe(JdbcClient.builder().dataSource(coordinated).build(), query(), Duration.ofSeconds(2))
-                : probe(coordinated, query(), Duration.ofSeconds(2));
+        HealthCheck check = clientCheck
+                ? JdbcClientHealthCheck.builder().client(JdbcClient.builder().dataSource(coordinated).build())
+                        .query(sql).build()
+                : DataSourceHealthCheck.builder().dataSource(coordinated).query(sql).build();
+        String phase = check.name() + " with " + peerCount + " successful probes";
         var executor = Executors.newFixedThreadPool(3);
-        var completed = new ExecutorCompletionService<Boolean>(executor);
-        List<Future<Boolean>> workers = new ArrayList<>();
+        List<Future<HealthCheckResponse>> peers = new ArrayList<>();
+        List<Future<?>> workers = new ArrayList<>();
         Throwable primary = null;
         try {
-            for (int index = 0; index < 3; index++) {
-                workers.add(completed.submit(probe::getAsBoolean));
+            for (int index = 0; index < peerCount; index++) {
+                Future<HealthCheckResponse> worker = executor.submit(check::call);
+                peers.add(worker);
+                workers.add(worker);
             }
-            Future<Boolean> failure = completed.poll(5, TimeUnit.SECONDS);
-            assertThat(failure, notNullValue());
-            assertThat(failure.get(5, TimeUnit.SECONDS), is(false));
-            assertThat(entered.await(5, TimeUnit.SECONDS), is(true));
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+            while (!entered.await(50, TimeUnit.MILLISECONDS)) {
+                for (Future<HealthCheckResponse> peer : peers) {
+                    if (peer.isDone()) {
+                        throw new AssertionError(phase + ": A probe completed before checkout of all peer connections: "
+                                                         + peer.get(0, TimeUnit.SECONDS).status());
+                    }
+                }
+                if (System.nanoTime() >= deadline) {
+                    assertThat(phase + ": Remaining peer acquisitions", entered.getCount(), is(0L));
+                }
+            }
+            assertThat(phase + ": Active leases before release", pool.getHikariPoolMXBean().getActiveConnections(),
+                       is(peerCount));
+            if (failOne) {
+                // Arm the failure after both peers hold leases so the next acquisition is the only one affected.
+                failNext.set(true);
+                Future<HealthCheckResponse> failed = executor.submit(check::call);
+                workers.add(failed);
+                var response = failed.get(5, TimeUnit.SECONDS);
+                assertThat(phase + ": Injected failure", response.status(), is(HealthCheckResponse.Status.DOWN));
+                assertThat(phase + ": Injected failure details", response.details(), anEmptyMap());
+                assertThat(phase + ": Failure injection still armed", failNext.get(), is(false));
+                assertThat(phase + ": Peer leases at failure", pool.getHikariPoolMXBean().getActiveConnections(), is(2));
+            }
             release.countDown();
-            for (int index = 0; index < 2; index++) {
-                Future<Boolean> success = completed.poll(5, TimeUnit.SECONDS);
-                assertThat(success, notNullValue());
-                assertThat(success.get(5, TimeUnit.SECONDS), is(true));
+            for (int index = 0; index < peers.size(); index++) {
+                assertThat(phase + ": Peer " + index, peers.get(index).get(5, TimeUnit.SECONDS).status(),
+                           is(HealthCheckResponse.Status.UP));
             }
         } catch (Exception | Error failure) {
             primary = failure;
             throw failure;
         } finally {
-            finishWorkers(release, workers, executor, primary);
+            release.countDown();
+            finishWorkers(workers, executor, primary);
         }
-        assertThat(pool.getHikariPoolMXBean().getActiveConnections(), is(0));
-        assertThat(probe.getAsBoolean(), is(true));
+        assertThat(phase + ": Active leases after completion", pool.getHikariPoolMXBean().getActiveConnections(), is(0));
+        assertThat(phase + ": Probe after completion", check.call().status(), is(HealthCheckResponse.Status.UP));
         for (Connection connection : acquisitions) {
             verify(connection, never()).setAutoCommit(anyBoolean());
             verify(connection, never()).commit();
@@ -1266,7 +1352,7 @@ public abstract class AbstractJdbcHealthContract {
     private Connection recordingConnection(Connection physical) throws Exception {
         Connection recording = mock(Connection.class, delegatesTo(physical));
         doAnswer(invocation -> {
-            // The source must evict its pooled entry when abort invalidates the physical connection.
+            // The fixture explicitly evicts the original Hikari handle. Recovery assertions cover that eviction path.
             try {
                 physical.abort((Executor) invocation.getArguments()[0]);
             } finally {
@@ -1277,5 +1363,44 @@ public abstract class AbstractJdbcHealthContract {
         return recording;
     }
 
+    @Service.Singleton
+    static class OverlappingClients implements Service.ServicesFactory<JdbcClient> {
+        private final List<Service.QualifiedInstance<JdbcClient>> clients;
 
+        @Service.Inject
+        OverlappingClients() {
+            this(List.of());
+        }
+
+        OverlappingClients(List<Service.QualifiedInstance<JdbcClient>> clients) {
+            this.clients = List.copyOf(clients);
+        }
+
+        @Override
+        public List<Service.QualifiedInstance<JdbcClient>> services() {
+            return clients;
+        }
+    }
+
+    /**
+     * Invokes the health checks injected by the application registry.
+     */
+    @Service.Singleton
+    static class JdbcHealthApplication {
+        private final List<HealthCheck> checks;
+
+        @Service.Inject
+        JdbcHealthApplication(List<HealthCheck> checks) {
+            this.checks = List.copyOf(checks);
+        }
+
+        HealthCheckResponse check(String name) {
+            Objects.requireNonNull(name, "The health check name must not be null.");
+            return checks.stream()
+                    .filter(check -> check.name().equals(name))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("The requested health check is not registered."))
+                    .call();
+        }
+    }
 }

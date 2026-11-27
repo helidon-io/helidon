@@ -23,20 +23,23 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import javax.sql.DataSource;
 
 import io.helidon.common.Errors;
 import io.helidon.common.Weight;
 import io.helidon.config.Config;
-import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigSources;
 import io.helidon.data.Data;
-import io.helidon.data.DataException;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;
 import io.helidon.health.HealthCheckType;
@@ -44,14 +47,14 @@ import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.Lookup;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.Service;
-import io.helidon.service.registry.ServiceInstance;
 import io.helidon.service.registry.ServiceRegistry;
-import io.helidon.service.registry.ServiceRegistryException;
 import io.helidon.service.registry.ServiceRegistryConfig;
+import io.helidon.service.registry.ServiceRegistryException;
 import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.service.registry.Services;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -59,18 +62,24 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anEmptyMap;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 class JdbcClientHealthCheckTest {
+    private static final Lookup HEALTH_CLIENTS = Lookup.builder()
+            .addContract(JdbcClient.class)
+            .addScope(Service.Singleton.TYPE)
+            .addScope(Service.PerLookup.TYPE)
+            .build();
     private static final Qualifier PROVIDER = Qualifier.create(Data.ProviderType.TYPE, Jdbc.PROVIDER);
 
     /**
@@ -353,71 +362,166 @@ class JdbcClientHealthCheckTest {
     }
 
     /**
-     * Sanitizes activation failures at registry boundaries while preserving fatal errors.
+     * Keeps the observer available if registry enumeration fails and preserves fatal errors.
      */
     @Test
     void registryFailuresAreSanitizedAndFatalErrorsPropagate() {
         ServiceRegistry registry = mock(ServiceRegistry.class);
-        Lookup lookup = Lookup.create(JdbcClient.class);
-        for (RuntimeException failure : List.of(new ConfigException("SECRET_CONFIG"),
-                new ServiceRegistryException("SECRET_REGISTRY"), new IllegalStateException("SECRET_PROVIDER"))) {
-            doThrow(failure).when(registry).lookupInstances(lookup);
-            DataException actual = assertThrows(DataException.class, () -> new JdbcHealthCheckFactory(registry).services());
-            assertThat(actual.getMessage(), not(containsString("SECRET")));
-            assertThat(actual.getCause(), is((Throwable) null));
+        var factory = new JdbcHealthCheckFactory(registry);
+        Logger logger = Logger.getLogger(JdbcHealthCheckFactory.class.getName());
+        Handler handler = mock(Handler.class);
+        logger.addHandler(handler);
+        try {
+            when(registry.lookupServices(HEALTH_CLIENTS)).thenThrow(new ServiceRegistryException("SECRET_REGISTRY"));
+            assertThat(factory.services(), empty());
+            ArgumentCaptor<LogRecord> record = ArgumentCaptor.forClass(LogRecord.class);
+            verify(handler).publish(record.capture());
+            assertThat(record.getValue().getMessage(), is("JDBC health discovery could not inspect the service registry."));
+            assertThat(record.getValue().getThrown(), is((Throwable) null));
+        } finally {
+            logger.removeHandler(handler);
         }
         Error fatal = new OutOfMemoryError("Fatal activation failure.");
-        doThrow(fatal).when(registry).lookupInstances(lookup);
-        assertThat(assertThrows(OutOfMemoryError.class, () -> new JdbcHealthCheckFactory(registry).services()),
-                   sameInstance(fatal));
+        doThrow(fatal).when(registry).lookupServices(HEALTH_CLIENTS);
+        assertThat(assertThrows(OutOfMemoryError.class, factory::services), sameInstance(fatal));
     }
 
     /**
-     * Sanitizes failures selecting a named client and permits an empty selection without inspecting a fallback.
+     * An unavailable winning registration does not enable the health policy of a shadowed client.
      */
     @Test
-    void clientResolutionFailuresAreSanitizedAndFatalErrorsPropagate() {
-        ServiceRegistry registry = mock(ServiceRegistry.class);
+    void clientResolutionFailurePreservesOtherChecksAndDoesNotSelectShadowedClient() {
+        DataSource source = mock(DataSource.class);
+        JdbcClient enabled = JdbcClient.builder().dataSource(source).health(health -> health.enabled(true)).build();
         @SuppressWarnings("unchecked")
-        ServiceInstance<JdbcClient> candidate = mock(ServiceInstance.class);
-        Set<Qualifier> qualifiers = Set.of(Qualifier.createNamed("orders"), PROVIDER);
-        when(candidate.qualifiers()).thenReturn(qualifiers);
-        when(registry.<JdbcClient>lookupInstances(Lookup.create(JdbcClient.class))).thenReturn(List.of(candidate));
-        Lookup lookup = Lookup.builder().addContract(JdbcClient.class).qualifiers(qualifiers).build();
-        doThrow(new ServiceRegistryException("SECRET_RESOLUTION")).when(registry).lookupInstances(lookup);
-        var factory = new JdbcHealthCheckFactory(registry);
-        DataException failure = assertThrows(DataException.class, factory::services);
-        assertThat(failure.getMessage(), not(containsString("SECRET")));
-        assertThat(failure.getCause(), is((Throwable) null));
-        Error fatal = new OutOfMemoryError("Fatal client resolution failure.");
-        doThrow(fatal).when(registry).lookupInstances(lookup);
-        assertThat(assertThrows(OutOfMemoryError.class, factory::services), sameInstance(fatal));
-        doReturn(List.of()).when(registry).lookupInstances(lookup);
-        assertThat(factory.services(), empty());
-        when(registry.<JdbcClient>lookupInstances(lookup)).thenReturn(List.of(candidate));
-        when(candidate.get()).thenThrow(new ServiceRegistryException("SECRET_INSTANCE"));
-        failure = assertThrows(DataException.class, factory::services);
-        assertThat(failure.getMessage(), not(containsString("SECRET")));
-        assertThat(failure.getCause(), is((Throwable) null));
-        doThrow(fatal).when(candidate).get();
-        assertThat(assertThrows(OutOfMemoryError.class, factory::services), sameInstance(fatal));
+        Service.QualifiedInstance<JdbcClient> unavailable = mock(Service.QualifiedInstance.class);
+        when(unavailable.qualifiers()).thenReturn(Set.of(Qualifier.createNamed("orders"), PROVIDER));
+        when(unavailable.get()).thenThrow(new ServiceRegistryException("SECRET_INSTANCE"));
+        var manager = clientRegistry(() -> List.of(unavailable),
+                                     List.of(registered(enabled, "orders"), registered(enabled, "billing")));
+        try {
+            var factory = new JdbcHealthCheckFactory(manager.registry());
+            assertThat(factory.services().stream().map(check -> check.get().name()).toList(), contains("billing"));
+            verify(unavailable).get();
+            Error fatal = new OutOfMemoryError("Fatal client resolution failure.");
+            doThrow(fatal).when(unavailable).get();
+            assertThat(assertThrows(OutOfMemoryError.class, factory::services), sameInstance(fatal));
+            verifyZeroInteractions(source);
+        } finally {
+            manager.shutdown();
+        }
     }
 
     /**
-     * Reports an unused provider activation failure even when another resolved client disables health.
+     * A failed provider does not publish a check when the remaining client disables health.
      */
     @Test
-    void disabledHealthDoesNotSuppressClientActivationFailures() {
+    void unavailableProviderDoesNotEnableChecksForOtherClients() {
         DataSource source = mock(DataSource.class);
         JdbcClient disabled = JdbcClient.builder().dataSource(source).build();
+        AtomicInteger activations = new AtomicInteger();
         var manager = clientRegistry(() -> {
+            activations.incrementAndGet();
             throw new IllegalStateException("SECRET_PROVIDER_CONFIGURATION");
         }, List.of(registered(disabled, "orders")));
+        Logger logger = Logger.getLogger(JdbcHealthCheckFactory.class.getName());
+        Handler handler = mock(Handler.class);
+        logger.addHandler(handler);
         try {
-            DataException failure = assertThrows(DataException.class,
-                    () -> new JdbcHealthCheckFactory(manager.registry()).services());
-            assertThat(failure.getMessage(), not(containsString("SECRET")));
-            assertThat(failure.getCause(), is((Throwable) null));
+            assertThat(manager.registry().all(HealthCheck.class), empty());
+            assertThat(activations.get(), is(1));
+            ArgumentCaptor<LogRecord> record = ArgumentCaptor.forClass(LogRecord.class);
+            verify(handler).publish(record.capture());
+            assertThat(record.getValue().getMessage(), is("JDBC health discovery could not inspect the provider {0}."));
+            assertThat(record.getValue().getParameters(), is(new Object[] {PreferredClients.class.getCanonicalName()}));
+            assertThat(record.getValue().getThrown(), is((Throwable) null));
+            verifyZeroInteractions(source);
+        } finally {
+            logger.removeHandler(handler);
+            manager.shutdown();
+        }
+    }
+
+    @Test
+    void successfulProviderWithoutMatchAllowsLaterClient() {
+        DataSource source = mock(DataSource.class);
+        JdbcClient unrelated = JdbcClient.builder().dataSource(source).build();
+        JdbcClient enabled = JdbcClient.builder().dataSource(source).health(health -> health.enabled(true)).build();
+        List<List<Service.QualifiedInstance<JdbcClient>>> preferredResults =
+                List.of(List.of(), List.of(registered(unrelated, "billing")));
+        for (var preferred : preferredResults) {
+            String scenario = preferred.isEmpty() ? "Preferred provider has no registrations"
+                    : "Preferred provider has registrations for another name";
+            var manager = clientRegistry(() -> preferred, List.of(registered(enabled, "orders")));
+            try {
+                assertThat(scenario, manager.registry().get(JdbcClient.class, Qualifier.createNamed("orders"), PROVIDER),
+                           sameInstance(enabled));
+                assertThat(scenario, manager.registry().all(HealthCheck.class).stream().map(HealthCheck::name).toList(),
+                           contains("orders"));
+            } finally {
+                manager.shutdown();
+            }
+        }
+        verifyZeroInteractions(source);
+    }
+
+    @Test
+    void factoryFailureLeavesLaterUnqualifiedClientUnresolved() {
+        DataSource source = mock(DataSource.class);
+        JdbcClient enabled = JdbcClient.builder().name("fallback").dataSource(source)
+                .health(health -> health.enabled(true)).build();
+        var providerFailure = new IllegalStateException("The JDBC provider failed to start.");
+        var manager = clientRegistry(() -> {
+            throw providerFailure;
+        }, List.of(Service.QualifiedInstance.create(enabled)));
+        try {
+            assertThat(assertThrows(IllegalStateException.class, () -> manager.registry().get(HEALTH_CLIENTS)),
+                       sameInstance(providerFailure));
+            assertThat(manager.registry().all(HealthCheck.class), empty());
+            verifyZeroInteractions(source);
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
+    void lookupSpecificFailureKeepsChecksForOtherNames() {
+        DataSource source = mock(DataSource.class);
+        JdbcClient orders = JdbcClient.builder().dataSource(source).health(health -> health.enabled(true)).build();
+        JdbcClient billing = JdbcClient.builder().dataSource(source).health(health -> health.enabled(true)).build();
+        var manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                .discoverServices(false).discoverServicesFromServiceLoader(false)
+                .addServiceDescriptor(JdbcHealthCheckFactory__ServiceDescriptor.INSTANCE)
+                .addServiceDescriptor(JdbcClientHealthCheckTest_LookupClients__ServiceDescriptor.INSTANCE)
+                .build());
+        GlobalServiceRegistry.registry(manager.registry());
+        try {
+            Services.addNamed(JdbcClient.class, 100, orders, "orders");
+            Services.addNamed(JdbcClient.class, 100, billing, "billing");
+            // The orders lookup fails at the preferred provider. Billing still resolves through the later registration.
+            assertThrows(ServiceRegistryException.class,
+                         () -> manager.registry().get(JdbcClient.class, Qualifier.createNamed("orders")));
+            assertThat(manager.registry().get(JdbcClient.class, Qualifier.createNamed("billing")), sameInstance(billing));
+            assertThat(manager.registry().all(HealthCheck.class).stream().map(HealthCheck::name).toList(),
+                       contains("billing"));
+            verifyZeroInteractions(source);
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
+    void discoversIndependentDirectRegistrationsOfTheSameServiceType() {
+        DataSource source = mock(DataSource.class);
+        JdbcClient orders = JdbcClient.builder().dataSource(source).health(health -> health.enabled(true)).build();
+        JdbcClient billing = JdbcClient.builder().dataSource(source).health(health -> health.enabled(true)).build();
+        var manager = clientRegistry(List::of, List.of());
+        GlobalServiceRegistry.registry(manager.registry());
+        try {
+            Services.addNamed(JdbcClient.class, 300, orders, "orders");
+            Services.addNamed(JdbcClient.class, 250, billing, "billing");
+            List<HealthCheck> checks = manager.registry().all(HealthCheck.class);
+            assertThat(checks.stream().map(HealthCheck::name).toList(), contains("orders", "billing"));
             verifyZeroInteractions(source);
         } finally {
             manager.shutdown();
@@ -647,6 +751,27 @@ class JdbcClientHealthCheckTest {
         @Override
         public List<Service.QualifiedInstance<JdbcClient>> services() {
             return clients;
+        }
+    }
+
+    @Service.Singleton
+    @Service.Named(Service.Named.WILDCARD_NAME)
+    @Weight(200)
+    static class LookupClients implements Service.InjectionPointFactory<JdbcClient> {
+        /**
+         * Fails enumeration and orders lookup while allowing billing lookup to proceed.
+         *
+         * @param lookup The service lookup criteria.
+         * @return An empty result for lookups that succeed.
+         * @throws NullPointerException The lookup criteria are null.
+         */
+        @Override
+        public Optional<Service.QualifiedInstance<JdbcClient>> first(Lookup lookup) {
+            Objects.requireNonNull(lookup, "The lookup criteria must not be null.");
+            if (lookup.qualifiers().isEmpty() || lookup.qualifiers().contains(Qualifier.createNamed("orders"))) {
+                throw new IllegalStateException("The JDBC provider could not resolve this lookup.");
+            }
+            return Optional.empty();
         }
     }
 

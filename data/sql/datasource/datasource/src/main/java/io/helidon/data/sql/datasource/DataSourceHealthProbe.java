@@ -23,7 +23,8 @@ import java.sql.Statement;
 import javax.sql.DataSource;
 
 /**
- * Executes a probe with resources confined to the calling thread.
+ * Executes a probe with JDBC resources confined to the calling thread.
+ * Reports success only after traversal and resource release complete.
  */
 final class DataSourceHealthProbe {
     private DataSourceHealthProbe() {
@@ -41,6 +42,7 @@ final class DataSourceHealthProbe {
             boolean rowChannel = statement.execute();
             boolean valid = rowChannel;
             boolean first = true;
+            // Finish processing the results before releasing the connection, even after finding an unexpected channel.
             while (true) {
                 if (rowChannel) {
                     if (!first) {
@@ -48,10 +50,10 @@ final class DataSourceHealthProbe {
                     }
                     rows = statement.getResultSet();
                     if (rows == null) {
-                        throw DataSourceProbeFailures.safeException("The probe did not provide its result set.");
+                        throw DataSourceProbeFailures.conditionFailure("The statement reported a result set but returned none.");
                     }
                     while (rows.next()) {
-                        // Only traversal is required, so column values are neither read nor retained.
+                        // Validate traversal without inspecting column values.
                     }
                     try {
                         rows.close();
@@ -69,7 +71,7 @@ final class DataSourceHealthProbe {
                 rowChannel = statement.getMoreResults(Statement.CLOSE_CURRENT_RESULT);
             }
             if (!valid) {
-                throw DataSourceProbeFailures.safeException("The probe returned an unexpected result channel.");
+                throw DataSourceProbeFailures.conditionFailure("The statement returned an unexpected result channel.");
             }
         } catch (SQLException | RuntimeException | Error processingFailure) {
             failure = DataSourceProbeFailures.mergeInfrastructure(null, "executing an independent probe", processingFailure);

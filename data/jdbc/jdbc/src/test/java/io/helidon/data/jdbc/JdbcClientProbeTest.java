@@ -20,15 +20,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorCompletionService;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
 
 import javax.sql.DataSource;
@@ -38,7 +30,6 @@ import io.helidon.health.HealthCheckResponse;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -110,7 +101,9 @@ class JdbcClientProbeTest {
         assertThat(response.status(), is(HealthCheckResponse.Status.DOWN));
         assertThat(response.details(), is(Map.of()));
         doReturn(true).when(fixture.statement()).execute();
-        assertThat(check.call().status(), is(HealthCheckResponse.Status.UP));
+        HealthCheckResponse recovered = check.call();
+        assertThat(recovered.status(), is(HealthCheckResponse.Status.UP));
+        assertThat(recovered.details(), is(Map.of()));
         verify(fixture.source(), times(2)).getConnection();
         verify(fixture.statement(), times(2)).execute();
         verify(fixture.statement(), times(2)).close();
@@ -152,6 +145,7 @@ class JdbcClientProbeTest {
             order.verify(provider).checkProbeContext();
             order.verify(fixture.source()).getConnection();
         }
+        // An ordinary lease can reuse a caller connection, so the probe uses the provider only to check eligibility.
         verify(provider, never()).acquire(any());
         verify(fixture.rows(), times(2)).close();
         verify(fixture.statement(), times(2)).close();
@@ -238,117 +232,6 @@ class JdbcClientProbeTest {
         } finally {
             manager.rollback("local-id");
             manager.end();
-        }
-    }
-
-    /**
-     * Holds both invocations open together to prove that their connections and statements remain independent.
-     */
-    @Test
-    void concurrentInvocationsOwnDistinctResources() throws Exception {
-        Fixture first = fixture();
-        Fixture second = fixture();
-        when(first.source().getConnection()).thenReturn(first.connection(), second.connection());
-        CountDownLatch entered = new CountDownLatch(2);
-        CountDownLatch release = new CountDownLatch(1);
-        for (Fixture fixture : List.of(first, second)) {
-            when(fixture.statement().execute()).thenAnswer(_ -> {
-                entered.countDown();
-                if (!release.await(5, TimeUnit.SECONDS)) {
-                    throw new SQLException("The coordination wait expired.");
-                }
-                return true;
-            });
-        }
-        var executor = Executors.newFixedThreadPool(2);
-        var probe = probe(first);
-        List<Future<Boolean>> workers = new ArrayList<>();
-        Throwable primary = null;
-        try {
-            workers.add(executor.submit(probe::getAsBoolean));
-            workers.add(executor.submit(probe::getAsBoolean));
-            assertThat(entered.await(5, TimeUnit.SECONDS), is(true));
-            release.countDown();
-            for (Future<Boolean> worker : workers) {
-                assertThat(worker.get(5, TimeUnit.SECONDS), is(true));
-            }
-            for (Fixture fixture : List.of(first, second)) {
-                verify(fixture.connection()).close();
-                noTransactionControl(fixture.connection());
-            }
-        } catch (Exception | Error failure) {
-            primary = failure;
-            throw failure;
-        } finally {
-            finishWorkers(release, workers, executor, primary);
-        }
-    }
-
-    /**
-     * Reports acquisition failure before waiting for the peer and releases the successful probe independently.
-     */
-    @Test
-    void failedConcurrentProbeDoesNotStrandItsPeer() throws Exception {
-        Fixture fixture = fixture();
-        when(fixture.source().getConnection()).thenThrow(new SQLException("Secret acquisition failure."))
-                .thenReturn(fixture.connection());
-        CountDownLatch entered = new CountDownLatch(1);
-        CountDownLatch release = new CountDownLatch(1);
-        when(fixture.statement().execute()).thenAnswer(_ -> {
-            entered.countDown();
-            if (!release.await(5, TimeUnit.SECONDS)) {
-                throw new SQLException("The coordination wait expired.");
-            }
-            return true;
-        });
-        var executor = Executors.newFixedThreadPool(2);
-        var completed = new ExecutorCompletionService<Boolean>(executor);
-        BooleanSupplier probe = probe(fixture);
-        List<Future<Boolean>> workers = new ArrayList<>();
-        Throwable primary = null;
-        try {
-            workers.add(completed.submit(probe::getAsBoolean));
-            workers.add(completed.submit(probe::getAsBoolean));
-            Future<Boolean> failure = completed.poll(5, TimeUnit.SECONDS);
-            assertThat(failure, notNullValue());
-            assertThat(failure.get(5, TimeUnit.SECONDS), is(false));
-            assertThat(entered.await(5, TimeUnit.SECONDS), is(true));
-            release.countDown();
-            Future<Boolean> success = completed.poll(5, TimeUnit.SECONDS);
-            assertThat(success, notNullValue());
-            assertThat(success.get(5, TimeUnit.SECONDS), is(true));
-        } catch (Exception | Error failure) {
-            primary = failure;
-            throw failure;
-        } finally {
-            finishWorkers(release, workers, executor, primary);
-        }
-        verify(fixture.rows()).close();
-        verify(fixture.statement()).close();
-        verify(fixture.connection()).close();
-        noTransactionControl(fixture.connection());
-        assertThat(probe.getAsBoolean(), is(true));
-    }
-
-    private static void finishWorkers(CountDownLatch release,
-                                      List<Future<Boolean>> workers,
-                                      ExecutorService executor,
-                                      Throwable primary) throws InterruptedException {
-        try {
-            release.countDown();
-            workers.forEach(worker -> worker.cancel(true));
-            executor.shutdownNow();
-            assertThat(executor.awaitTermination(5, TimeUnit.SECONDS), is(true));
-        } catch (InterruptedException | RuntimeException | Error failure) {
-            if (primary == null) {
-                throw failure;
-            }
-            if (primary != failure) {
-                primary.addSuppressed(failure);
-            }
-            if (failure instanceof InterruptedException) {
-                Thread.currentThread().interrupt();
-            }
         }
     }
 

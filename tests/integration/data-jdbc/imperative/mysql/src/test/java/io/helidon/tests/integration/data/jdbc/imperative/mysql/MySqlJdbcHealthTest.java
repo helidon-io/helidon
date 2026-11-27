@@ -15,6 +15,11 @@
  */
 package io.helidon.tests.integration.data.jdbc.imperative.mysql;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.Map;
+
 import io.helidon.config.Config;
 import io.helidon.tests.integration.data.jdbc.contract.AbstractJdbcHealthContract;
 
@@ -38,7 +43,27 @@ class MySqlJdbcHealthTest extends AbstractJdbcHealthContract {
     }
 
     @Override
-    protected String slowQuery() {
-        return "SELECT SLEEP(3)";
+    protected Map<String, String> poolProperties() {
+        return Map.of("socketTimeout", "15000");
+    }
+
+    @Override
+    protected String timeoutQuery() {
+        return "SELECT ID FROM JDBC_HEALTH_TIMEOUT WHERE ID = 1";
+    }
+
+    @Override
+    protected AutoCloseable holdTimeoutLock(Connection blocker) throws SQLException {
+        // A write lock blocks other sessions from reading the table even when they use auto-commit.
+        try (Statement statement = blocker.createStatement()) {
+            statement.setQueryTimeout(10);
+            statement.execute("LOCK TABLES JDBC_HEALTH_TIMEOUT WRITE");
+        }
+        return () -> {
+            try (Statement statement = blocker.createStatement()) {
+                statement.setQueryTimeout(10);
+                statement.execute("UNLOCK TABLES");
+            }
+        };
     }
 }

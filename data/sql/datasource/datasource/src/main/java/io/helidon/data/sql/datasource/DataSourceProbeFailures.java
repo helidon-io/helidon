@@ -15,8 +15,6 @@
  */
 package io.helidon.data.sql.datasource;
 
-import java.sql.SQLException;
-
 /**
  * Retains bounded probe diagnostics without driver messages or connection information.
  */
@@ -44,6 +42,7 @@ final class DataSourceProbeFailures {
             return safe;
         }
         if (safe instanceof Error && !(primary instanceof Error)) {
+            // A fatal cleanup error takes precedence over an earlier expected failure.
             safe.addSuppressed(primary);
             return safe;
         }
@@ -53,8 +52,8 @@ final class DataSourceProbeFailures {
         return primary;
     }
 
-    static SQLException safeException(String message) {
-        return new SQLException(message);
+    static RuntimeException conditionFailure(String message) {
+        return new ProbeFailure(message);
     }
 
     private static final class ProbeFailure extends IllegalStateException {

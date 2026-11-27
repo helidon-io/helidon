@@ -21,6 +21,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,6 +63,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -140,7 +142,8 @@ class DataSourceHealthCheckTest {
                     .provider(mock(ProviderConfig.class)).build();
             assertThat(definition.health(), is(policy));
             assertThat(definition.toString(), not(containsString("SQL_CANARY")));
-            List<HealthCheck> checks = new DataSourceHealthCheckFactory(() -> List.of(definition), sourceRegistry(source, "orders"))
+            ServiceRegistry registry = sourceRegistry(source, "orders");
+            List<HealthCheck> checks = new DataSourceHealthCheckFactory(() -> List.of(definition), registry)
                     .services().stream().map(service -> service.get()).toList();
             assertThat("The obsolete naming configuration is " + obsolete + ".", checks, hasSize(1));
             var check = (DataSourceHealthCheck) checks.getFirst();
@@ -312,8 +315,36 @@ class DataSourceHealthCheckTest {
         Error fatal = new OutOfMemoryError("fatal");
         doThrow(fatal).when(fixture.statement()).close();
         assertThat(assertThrows(OutOfMemoryError.class, () -> probe(fixture).getAsBoolean()), sameInstance(fatal));
+        assertThat(Arrays.stream(fatal.getSuppressed()).map(Throwable::getMessage).toList(),
+                   contains("The database health probe failed while executing an independent probe.",
+                            "An earlier cleanup failure made the connection unsafe to reuse."));
         verify(fixture.connection()).close();
         noTransactionControl(fixture.connection());
+    }
+
+    @Test
+    void fatalCleanupRetainsSanitizedResultChannelFailure() throws Exception {
+        for (boolean missingRows : List.of(true, false)) {
+            Fixture fixture = fixture();
+            String condition;
+            if (missingRows) {
+                when(fixture.statement().getResultSet()).thenReturn(null);
+                condition = "The statement reported a result set but returned none.";
+            } else {
+                // An update count after the first result set is an unexpected channel.
+                when(fixture.statement().getUpdateCount()).thenReturn(1, -1);
+                condition = "The statement returned an unexpected result channel.";
+            }
+            Error fatal = new OutOfMemoryError("fatal");
+            doThrow(fatal).when(fixture.statement()).close();
+
+            assertThat(condition, assertThrows(OutOfMemoryError.class, () -> probe(fixture).getAsBoolean()), sameInstance(fatal));
+            assertThat(condition, Arrays.stream(fatal.getSuppressed()).map(Throwable::getMessage).toList(),
+                       contains(condition, "An earlier cleanup failure made the connection unsafe to reuse."));
+            verify(fixture.connection()).abort(any());
+            verify(fixture.connection()).close();
+            noTransactionControl(fixture.connection());
+        }
     }
 
     /**
@@ -321,14 +352,20 @@ class DataSourceHealthCheckTest {
      */
     @Test
     void invalidationPreservesFatalErrorsAndStillAttemptsClose() throws Exception {
-        Fixture fixture = fixture();
-        when(fixture.connection().getAutoCommit()).thenReturn(false);
-        Error fatal = new OutOfMemoryError("fatal");
-        doThrow(fatal).when(fixture.connection()).abort(any());
-        doThrow(new SQLException("Secret close diagnostic.")).when(fixture.connection()).close();
-        assertThat(assertThrows(OutOfMemoryError.class, () -> probe(fixture).getAsBoolean()), sameInstance(fatal));
-        verify(fixture.connection()).close();
-        noTransactionControl(fixture.connection());
+        for (boolean initiallyDisabled : List.of(true, false)) {
+            Fixture fixture = fixture();
+            when(fixture.connection().getAutoCommit()).thenReturn(!initiallyDisabled, false);
+            String condition = initiallyDisabled ? "The acquired connection has auto-commit disabled."
+                    : "The connection has auto-commit disabled before release.";
+            Error fatal = new OutOfMemoryError("fatal");
+            doThrow(fatal).when(fixture.connection()).abort(any());
+            doThrow(new SQLException("Secret close diagnostic.")).when(fixture.connection()).close();
+            assertThat(condition, assertThrows(OutOfMemoryError.class, () -> probe(fixture).getAsBoolean()), sameInstance(fatal));
+            assertThat(condition, Arrays.stream(fatal.getSuppressed()).map(Throwable::getMessage).toList(),
+                       contains(condition, "The database health probe failed while closing an invalidated connection."));
+            verify(fixture.connection()).close();
+            noTransactionControl(fixture.connection());
+        }
     }
 
     /**

@@ -57,7 +57,7 @@ final class DataSourceHealthCheckFactory implements Service.ServicesFactory<Heal
         List<Service.QualifiedInstance<HealthCheck>> checks = new ArrayList<>();
         Set<String> names = new HashSet<>();
         for (DataSourceConfig definition : definitions) {
-            // Registry order selects the preferred definition without merging independent health paths.
+            // The preferred definition owns the policy for this name, even when it disables health.
             if (!names.add(definition.name())) {
                 continue;
             }

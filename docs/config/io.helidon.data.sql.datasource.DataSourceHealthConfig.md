@@ -54,7 +54,7 @@ Configures health discovery without retaining or acquiring a data source
 <td>
 <code>false</code>
 </td>
-<td>Enables health discovery for this data source definition</td>
+<td>Enables health discovery, with individual HTTP routes available only for names that fit in a single decoded path segment</td>
 </tr>
 <tr>
 <td>

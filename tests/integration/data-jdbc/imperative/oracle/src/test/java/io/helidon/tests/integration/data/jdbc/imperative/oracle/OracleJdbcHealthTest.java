@@ -47,12 +47,7 @@ class OracleJdbcHealthTest extends AbstractJdbcHealthContract {
     }
 
     @Override
-    protected String slowQuery() {
+    protected String timeoutQuery() {
         return "SELECT ID FROM JDBC_HEALTH_TIMEOUT WHERE ID = 1 FOR UPDATE WAIT 30";
-    }
-
-    @Override
-    protected boolean requiresTimeoutLock() {
-        return true;
     }
 }

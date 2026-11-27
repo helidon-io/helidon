@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,12 @@ package io.helidon.data.sql.datasource.jdbc;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import javax.sql.DataSource;
 
+import io.helidon.common.LazyValue;
 import io.helidon.data.sql.common.SqlDriver;
 import io.helidon.data.sql.datasource.DataSourceConfig;
 import io.helidon.service.registry.Qualifier;
@@ -53,8 +55,20 @@ class JdbcDataSourceService implements Service.ServicesFactory<DataSource> {
     }
 
     private Service.QualifiedInstance<DataSource> createNamedDataSource(String name, JdbcDataSourceConfig providerConfig) {
-        return Service.QualifiedInstance.create(createDataSource(providerConfig),
-                                                Qualifier.createNamed(name));
+        Set<Qualifier> qualifiers = Set.of(Qualifier.createNamed(name));
+        return new Service.QualifiedInstance<>() {
+            private final LazyValue<DataSource> source = LazyValue.create(() -> createDataSource(providerConfig));
+
+            @Override
+            public DataSource get() {
+                return source.get();
+            }
+
+            @Override
+            public Set<Qualifier> qualifiers() {
+                return qualifiers;
+            }
+        };
     }
 
     private DataSource createDataSource(JdbcDataSourceConfig providerConfig) {

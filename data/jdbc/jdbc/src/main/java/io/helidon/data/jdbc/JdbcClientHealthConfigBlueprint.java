@@ -30,7 +30,8 @@ import io.helidon.health.HealthCheckType;
 @Prototype.Configured
 interface JdbcClientHealthConfigBlueprint {
     /**
-     * Enables health discovery for this client definition.
+     * Enables health discovery, with individual HTTP routes available only for names that fit in a single decoded path segment.
+     * The observer discovers singleton and per lookup clients.
      *
      * @return Discovery is disabled by default.
      */

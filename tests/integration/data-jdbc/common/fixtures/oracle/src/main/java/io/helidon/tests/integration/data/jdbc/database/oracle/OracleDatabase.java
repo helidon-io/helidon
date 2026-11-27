@@ -67,6 +67,18 @@ public final class OracleDatabase {
     }
 
     /**
+     * Provides access to the running database before any application schema is created.
+     *
+     * @param container The running database container.
+     * @return The URL and credentials of the fixture administrator.
+     * @throws NullPointerException The container is null.
+     */
+    public static Config administratorConnection(GenericContainer<?> container) {
+        Objects.requireNonNull(container, "The Oracle test container must not be null.");
+        return Config.just(ConfigSources.create(Map.of("url", jdbcUrl(container), "username", "system", "password", PASSWORD)));
+    }
+
+    /**
      * Returns Helidon config for a started Oracle container, creating and initializing one schema for each container
      * instance.
      *

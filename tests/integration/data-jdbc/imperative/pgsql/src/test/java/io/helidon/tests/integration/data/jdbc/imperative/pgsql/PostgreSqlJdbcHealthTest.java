@@ -15,6 +15,8 @@
  */
 package io.helidon.tests.integration.data.jdbc.imperative.pgsql;
 
+import java.util.Map;
+
 import io.helidon.config.Config;
 import io.helidon.tests.integration.data.jdbc.contract.AbstractJdbcHealthContract;
 
@@ -38,7 +40,12 @@ class PostgreSqlJdbcHealthTest extends AbstractJdbcHealthContract {
     }
 
     @Override
-    protected String slowQuery() {
-        return "SELECT pg_sleep(3)";
+    protected Map<String, String> poolProperties() {
+        return Map.of("socketTimeout", "15");
+    }
+
+    @Override
+    protected String timeoutQuery() {
+        return "SELECT ID FROM JDBC_HEALTH_TIMEOUT WHERE ID = 1 FOR UPDATE";
     }
 }

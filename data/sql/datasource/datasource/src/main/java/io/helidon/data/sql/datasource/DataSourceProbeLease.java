@@ -43,14 +43,15 @@ final class DataSourceProbeLease implements AutoCloseable {
             throw DataSourceProbeFailures.translateFailure("acquiring a connection", failure);
         }
         try {
+            // A connection with auto-commit disabled may already have pending work.
             if (!connection.getAutoCommit()) {
-                throw DataSourceProbeFailures.safeException(
-                        "An independent health check requires a connection with auto-commit enabled.");
+                throw DataSourceProbeFailures.conditionFailure("The acquired connection has auto-commit disabled.");
             }
             return new DataSourceProbeLease(connection);
         } catch (SQLException | RuntimeException | Error failure) {
+            Throwable safe = DataSourceProbeFailures.mergeInfrastructure(null, "checking auto-commit after acquisition", failure);
             throw DataSourceProbeFailures.translateFailure("validating a connection",
-                    invalidate(connection, failure));
+                    invalidate(connection, safe));
         }
     }
 
@@ -72,31 +73,34 @@ final class DataSourceProbeLease implements AutoCloseable {
         }
         closed = true;
         Throwable failure = null;
+        String operation = "checking auto-commit before release";
         try {
+            // The mode must still be safe before returning the connection through the normal close path.
             if (!connection.getAutoCommit()) {
-                throw DataSourceProbeFailures.safeException("The health check connection must remain in auto-commit mode.");
+                throw DataSourceProbeFailures.conditionFailure("The connection has auto-commit disabled before release.");
             }
             if (!unsafe) {
+                operation = "closing a probe connection";
                 connection.close();
                 return;
             }
-        } catch (SQLException | RuntimeException | Error inspectionFailure) {
-            failure = inspectionFailure;
+        } catch (SQLException | RuntimeException | Error releaseFailure) {
+            failure = DataSourceProbeFailures.mergeInfrastructure(null, operation, releaseFailure);
         }
         if (failure == null) {
-            failure = DataSourceProbeFailures.safeException("The health check connection cannot be safely reused.");
+            failure = DataSourceProbeFailures.conditionFailure("An earlier cleanup failure made the connection unsafe to reuse.");
         }
         throw DataSourceProbeFailures.translateFailure("releasing a connection",
                 invalidate(connection, failure));
     }
 
     private static Throwable invalidate(Connection connection, Throwable failure) {
-        failure = DataSourceProbeFailures.mergeInfrastructure(null, "invalidating an unsafe connection", failure);
         try {
             connection.abort(ABORT_EXECUTOR);
         } catch (SQLException | RuntimeException | Error abortFailure) {
             failure = DataSourceProbeFailures.mergeInfrastructure(failure, "aborting a connection", abortFailure);
         }
+        // Attempt to release the borrowed handle even when abort fails.
         try {
             connection.close();
         } catch (SQLException | RuntimeException | Error closeFailure) {
