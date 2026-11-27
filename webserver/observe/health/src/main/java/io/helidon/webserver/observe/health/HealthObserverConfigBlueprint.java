@@ -71,8 +71,9 @@ interface HealthObserverConfigBlueprint extends ObserverConfigBase, Prototype.Fa
     /**
      * Whether to use discovered health-check services.
      * By default, all {@link io.helidon.health.spi.HealthCheckProvider} and
-     * {@link io.helidon.health.HealthCheck} services are added. A directly created observer discovers services using
-     * {@link java.util.ServiceLoader} and the global service registry. A registry-managed observer uses its owning registry.
+     * {@link io.helidon.health.HealthCheck} services are added from the owning service registry.
+     * A directly created observer uses the application registry. The registry includes Java
+     * {@link java.util.ServiceLoader} health-check providers when its service-loader discovery is enabled.
      *
      * @return set to {@code false} to disable discovery
      */
