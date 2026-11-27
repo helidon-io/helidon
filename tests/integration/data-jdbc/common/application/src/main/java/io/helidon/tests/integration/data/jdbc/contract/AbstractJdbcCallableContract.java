@@ -47,12 +47,10 @@ import javax.sql.DataSource;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.data.Data;
 import io.helidon.data.DataException;
 import io.helidon.data.NoResultException;
 import io.helidon.data.NonUniqueResultException;
 import io.helidon.data.jdbc.GeneratedJdbcData;
-import io.helidon.data.jdbc.Jdbc;
 import io.helidon.data.jdbc.JdbcClient;
 import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.tests.integration.data.jdbc.declarative.repository.CallableRoutineRepository;
@@ -1875,16 +1873,6 @@ public abstract class AbstractJdbcCallableContract {
 
     private int committedCount(String value) {
         return client.create("SELECT COUNT(*) FROM TX_MATRIX WHERE DATA_VALUE = ?").bind(1, value).map(Integer.class).one();
-    }
-
-    public interface InferredCallableParent<T> {
-        @Jdbc.Statement("{? = call sp_add(:input)}")
-        @Jdbc.OutParameter
-        T inferredScalar(T input);
-
-        @Jdbc.Statement("${application.calls.inherited-total:{? = call sp_add(:input)}}")
-        @Jdbc.OutParameter
-        T inheritedConfiguredTotal(@Data.Param("input") T value);
     }
 
     private record CanonicalSample(JDBCType type, Object value) {

@@ -19,6 +19,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.codegen.classmodel.ClassModel;
+import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
 
@@ -54,10 +55,8 @@ final class JdbcRecordMapperGenerator {
                     .isStatic(true)
                     .isFinal(true)
                     .addContentLine("row -> {")
-                    .addContent(Objects.class).addContentLine(".requireNonNull(row, \"The current row must not be null.\");")
-                    .addContent("return new ")
-                    .addContent(plan.mappedType())
-                    .addContent("(");
+                    .addContent(Objects.class).addContentLine(".requireNonNull(row, \"The current row must not be null.\");");
+            addConstructor(field, plan.mappedType());
             // Record components use canonical constructor order. Labels allow the SQL columns to use a different order.
             for (int index = 0; index < plan.recordComponents().size(); index++) {
                 if (index > 0) {
@@ -74,6 +73,13 @@ final class JdbcRecordMapperGenerator {
             }
             field.addContentLine(");").addContent("}");
         });
+    }
+
+    static void addConstructor(ContentBuilder<?> content, TypeName type) {
+        // The target type can contain wildcards or bounded variables that cannot be printed as constructor arguments.
+        content.addContent("return new ")
+                .addContent(type.genericTypeName())
+                .addContent(type.typeArguments().isEmpty() ? "(" : "<>(");
     }
 
 }

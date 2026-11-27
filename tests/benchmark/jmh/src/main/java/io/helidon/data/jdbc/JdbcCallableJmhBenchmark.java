@@ -20,9 +20,6 @@ import java.lang.reflect.Proxy;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.JDBCType;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -126,7 +123,7 @@ public class JdbcCallableJmhBenchmark {
     @Benchmark
     public List<Integer> mapCallableRows(RowState state) {
         Objects.requireNonNull(state, "The benchmark state must not be null.");
-        return state.call.get().call().map(result -> result.rows(ROW_MAPPER).list());
+        return state.rows.call().call().map(result -> result.rows(ROW_MAPPER).list());
     }
 
     /**
@@ -139,7 +136,7 @@ public class JdbcCallableJmhBenchmark {
     @Benchmark
     public List<Integer> mapQueryRows(RowState state) {
         Objects.requireNonNull(state, "The benchmark state must not be null.");
-        return state.query.get().map(ROW_MAPPER).list();
+        return state.rows.query().map(ROW_MAPPER).list();
     }
 
     /**
@@ -152,7 +149,28 @@ public class JdbcCallableJmhBenchmark {
     @Benchmark
     public List<Integer> mapGeneratedKeys(RowState state) {
         Objects.requireNonNull(state, "The benchmark state must not be null.");
-        return state.update.get().generatedKeys().addColumn("ID").map(ROW_MAPPER).list();
+        return state.rows.update().generatedKeys().addColumn("ID").map(ROW_MAPPER).list();
+    }
+
+    /**
+     * Reads zero or one row through a direct result or an output cursor.
+     *
+     * @param state The state supplies the result channel and terminal.
+     * @return The result is the required row or an optional containing zero or one row.
+     * @throws NullPointerException The state is null.
+     */
+    @Benchmark
+    public Object mapSingularCall(SingularState state) {
+        Objects.requireNonNull(state, "The benchmark state must not be null.");
+        JdbcClient.Call call = state.cursor ? state.rows.cursor().call().returns(JDBCType.REF_CURSOR)
+                : state.rows.call().call();
+        return call.map(result -> {
+            if (state.cursor) {
+                result.skipRemainingResults();
+            }
+            JdbcClient.Rows<Integer> rows = state.cursor ? result.cursor("return", ROW_MAPPER) : result.rows(ROW_MAPPER);
+            return state.required ? rows.one() : rows.optional();
+        });
     }
 
     private static JdbcClient.Call register(OutputState state) {
@@ -216,82 +234,58 @@ public class JdbcCallableJmhBenchmark {
     }
 
     /**
-     * Supplies prepared statements and reusable row stubs for one benchmark thread.
+     * Supplies the indexed row workload for the original row mapping benchmarks.
      */
     @State(Scope.Thread)
     public static class RowState {
+
+        private final JdbcRowMappingJmhBenchmark.RowState rows = new JdbcRowMappingJmhBenchmark.RowState();
+
         @Param({"1", "128"})
         private int rowCount;
-
-        private Supplier<JdbcClient.Statement> call;
-        private Supplier<JdbcClient.Statement> query;
-        private Supplier<JdbcClient.Statement> update;
-        private int rowIndex;
-        private boolean updateCountPending;
 
         void rowCount(int count) {
             rowCount = count;
         }
 
         /**
-         * Prepares each definition and a result set that starts over on every execution.
+         * Prepares the indexed result set before timing starts.
          */
         @Setup
         public void setup() {
-            ResultSetMetaData columns = stub(ResultSetMetaData.class, (_, method, _) -> switch (method.getName()) {
-                case "getColumnCount" -> 1;
-                case "getColumnLabel", "getColumnName" -> "ID";
-                default -> throw new UnsupportedOperationException("The JDBC stub does not support " + method.getName() + ".");
-            });
-            ResultSet rows = stub(ResultSet.class, (_, method, _) -> switch (method.getName()) {
-                case "getMetaData" -> columns;
-                case "next" -> ++rowIndex < rowCount;
-                case "getInt" -> rowIndex;
-                case "wasNull" -> false;
-                case "close" -> null;
-                default -> throw new UnsupportedOperationException("The JDBC stub does not support " + method.getName() + ".");
-            });
-            CallableStatement callable = rowStatement(CallableStatement.class, rows, false);
-            PreparedStatement select = rowStatement(PreparedStatement.class, rows, false);
-            PreparedStatement insert = rowStatement(PreparedStatement.class, rows, true);
-            Connection connection = stub(Connection.class, (_, method, arguments) -> switch (method.getName()) {
-                case "getAutoCommit" -> true;
-                case "prepareCall" -> callable;
-                case "prepareStatement" -> arguments.length == 1 ? select : insert;
-                case "close" -> null;
-                default -> throw new UnsupportedOperationException("The JDBC stub does not support " + method.getName() + ".");
-            });
-            DataSource dataSource = stub(DataSource.class, (_, method, _) -> switch (method.getName()) {
-                case "getConnection" -> connection;
-                default -> throw new UnsupportedOperationException("The JDBC stub does not support " + method.getName() + ".");
-            });
-            JdbcClient client = JdbcClient.builder().dataSource(dataSource).build();
-            call = client.prepare("{call benchmark_rows()}");
-            query = client.prepare("SELECT ID FROM BENCHMARK_VALUE");
-            update = client.prepare("INSERT INTO BENCHMARK_VALUE (ID) VALUES (DEFAULT)");
+            rows.rowCount(rowCount);
+            rows.setup();
+        }
+    }
+
+    /**
+     * Selects a direct result or a REF_CURSOR and the cardinality of its terminal.
+     */
+    @State(Scope.Thread)
+    public static class SingularState {
+
+        private final JdbcRowMappingJmhBenchmark.RowState rows = new JdbcRowMappingJmhBenchmark.RowState();
+
+        @Param({"directOptionalEmpty", "directOptionalOne", "directOne",
+                "cursorOptionalEmpty", "cursorOptionalOne", "cursorOne"})
+        private String workload;
+
+        private boolean cursor;
+        private boolean required;
+
+        void workload(String workload) {
+            this.workload = workload;
         }
 
-        private <T extends PreparedStatement> T rowStatement(Class<T> type, ResultSet rows, boolean keys) {
-            return stub(type, (_, method, _) -> switch (method.getName()) {
-                case "execute" -> {
-                    rowIndex = -1;
-                    updateCountPending = keys;
-                    yield !keys;
-                }
-                case "getResultSet", "getGeneratedKeys" -> {
-                    if (keys != method.getName().equals("getGeneratedKeys")) {
-                        throw new IllegalStateException("The JDBC stub was asked for the wrong result channel.");
-                    }
-                    yield rows;
-                }
-                case "getLargeUpdateCount" -> updateCountPending ? (long) rowCount : -1L;
-                case "getMoreResults" -> {
-                    updateCountPending = false;
-                    yield false;
-                }
-                case "close" -> null;
-                default -> throw new UnsupportedOperationException("The JDBC stub does not support " + method.getName() + ".");
-            });
+        /**
+         * Prepares the selected result cardinality outside the measured call.
+         */
+        @Setup
+        public void setup() {
+            cursor = workload.startsWith("cursor");
+            required = !workload.contains("Optional");
+            rows.rowCount(workload.endsWith("Empty") ? 0 : 1);
+            rows.setup();
         }
     }
 }

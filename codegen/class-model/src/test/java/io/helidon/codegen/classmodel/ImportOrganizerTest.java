@@ -19,6 +19,7 @@ package io.helidon.codegen.classmodel;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -34,6 +35,27 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 
 class ImportOrganizerTest {
+    @Test
+    void qualifiesReservedTypeNames() {
+        ImportOrganizer organizer = ImportOrganizer.builder()
+                .typeName("Generated")
+                .packageName("example")
+                .reserveTypeName("Math")
+                .reserveTypeName("Objects")
+                .reserveTypeName("System")
+                .addImport(Math.class)
+                .addImport(Objects.class)
+                .addImport(System.Logger.class)
+                .addImport(List.class)
+                .build();
+        assertThat(organizer.typeName(Type.fromTypeName(TypeName.create(Math.class)), true), is("java.lang.Math"));
+        assertThat(organizer.typeName(Type.fromTypeName(TypeName.create(Objects.class)), true), is("java.util.Objects"));
+        assertThat(organizer.typeName(Type.fromTypeName(TypeName.create(System.Logger.class)), true),
+                   is("java.lang.System.Logger"));
+        assertThat(organizer.typeName(Type.fromTypeName(TypeName.create(List.class)), true), is("List"));
+        assertThat(organizer.imports(), is(List.of("java.util.List")));
+    }
+
     @Test
     void testImportSystemLoggerLevel() throws IOException {
         TypeName typeNameLevel = TypeName.create(System.Logger.Level.class);

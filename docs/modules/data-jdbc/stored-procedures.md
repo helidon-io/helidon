@@ -699,6 +699,17 @@ scalar snapshots and generated `LocalDate` outputs. For PostgreSQL functions, an
 application can instead select the function through the query API, which uses typed
 `LocalDate` result-set mapping.
 
+For callable `LocalDateTime` outputs, Helidon extracts the local date and time
+fields using the calendar supplied for retrieval and keeps the fractional seconds.
+This preserves the local fields when the driver honors the calendar and the date
+and time can be represented as a `LocalDateTime`.
+
+PostgreSQL JDBC 42.7.14 rejects callable TIME output retrieval as `LocalTime`
+with SQLSTATE `22023`, including when the output is SQL NULL. Oracle JDBC
+23.26.1.0.0 returns whole seconds when it reads a TIMESTAMP output registered as
+TIME. If the routine returns TIMESTAMP and fractional seconds matter, register
+TIMESTAMP and read the result as `LocalDateTime`.
+
 MySQL Connector/J does not support
 `REF_CURSOR` output registration. Use the routine's direct result sets when it provides
 them; Data JDBC does not substitute direct results for an unsupported cursor output.

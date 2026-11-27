@@ -109,6 +109,7 @@ class ImportOrganizer {
 
         private final Set<Type> imports = new HashSet<>();
         private final Set<Type> staticImports = new HashSet<>();
+        private final Set<String> reservedTypeNames = new HashSet<>();
 
         /**
          * Class imports.
@@ -171,6 +172,11 @@ class ImportOrganizer {
             return this;
         }
 
+        Builder reserveTypeName(String name) {
+            reservedTypeNames.add(name);
+            return this;
+        }
+
         Builder addStaticImport(String type) {
             return addStaticImport(TypeName.create(type));
         }
@@ -187,6 +193,7 @@ class ImportOrganizer {
         Builder from(ImportOrganizer.Builder builder) {
             this.imports.addAll(builder.imports);
             this.staticImports.addAll(builder.staticImports);
+            this.reservedTypeNames.addAll(builder.reservedTypeNames);
             return this;
         }
 
@@ -239,7 +246,9 @@ class ImportOrganizer {
                     identifiedInnerClasses.put(type.fqTypeName(), type.typeName().classNameWithEnclosingNames());
                 }
 
-                if (typePackage.equals("java.lang")) {
+                if (reservedTypeNames.contains(typeSimpleName) && !typePackage.isEmpty()) {
+                    forcedFullImports.add(fqTypeName);
+                } else if (typePackage.equals("java.lang")) {
                     //imported class is from java.lang package -> automatically imported
                     processImportJavaLang(type, fqTypeName, typeSimpleName);
                 } else if (this.packageName.equals(typePackage)) {

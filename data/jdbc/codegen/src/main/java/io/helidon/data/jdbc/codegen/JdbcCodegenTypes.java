@@ -50,6 +50,7 @@ final class JdbcCodegenTypes {
     static final TypeName SERVICE_SINGLETON = TypeName.create("io.helidon.service.registry.Service.Singleton");
     static final TypeName SERVICE_NAMED = TypeName.create("io.helidon.service.registry.Service.Named");
     static final TypeName JDBC_TYPE = TypeName.create("java.sql.JDBCType");
+    static final TypeName MATH = TypeName.create(Math.class);
     static final TypeName TX_MANDATORY = TypeName.create("io.helidon.transaction.Tx.Mandatory");
     static final TypeName TX_NEW = TypeName.create("io.helidon.transaction.Tx.New");
     static final TypeName TX_NEVER = TypeName.create("io.helidon.transaction.Tx.Never");

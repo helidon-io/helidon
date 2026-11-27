@@ -28,7 +28,6 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
@@ -40,6 +39,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.function.BiFunction;
 
 import io.helidon.data.DataException;
 import io.helidon.data.NoResultException;
@@ -181,9 +181,7 @@ final class JdbcCallResult implements JdbcClient.CallResult {
                             return null;
                         }
                         calendar.setTime(date);
-                        int year = calendar.get(Calendar.YEAR);
-                        return LocalDate.of(calendar.get(Calendar.ERA) == GregorianCalendar.BC ? 1 - year : year,
-                                            calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.DAY_OF_MONTH));
+                        return localDate(calendar);
                     }
                     Date date = statement.getDate(index);
                     return date == null ? null : new Date(date.getTime());
@@ -195,10 +193,17 @@ final class JdbcCallResult implements JdbcClient.CallResult {
                     return time == null ? null : new Time(time.getTime());
                 } else if (target == Timestamp.class || target == LocalDateTime.class) {
                     if (target == LocalDateTime.class) {
-                        // UTC preserves local SQL fields without applying the JVM time zone or daylight saving rules.
-                        Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+                        // Use the retrieval calendar to preserve local fields across the Gregorian cutover.
+                        Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"), Locale.ROOT);
                         Timestamp timestamp = statement.getTimestamp(index, calendar);
-                        return timestamp == null ? null : LocalDateTime.ofInstant(timestamp.toInstant(), ZoneOffset.UTC);
+                        if (timestamp == null) {
+                            return null;
+                        }
+                        calendar.setTime(timestamp);
+                        return localDate(calendar).atTime(calendar.get(Calendar.HOUR_OF_DAY),
+                                                                     calendar.get(Calendar.MINUTE),
+                                                                     calendar.get(Calendar.SECOND),
+                                                                     timestamp.getNanos());
                     }
                     Timestamp timestamp = statement.getTimestamp(index);
                     if (timestamp == null) {
@@ -284,6 +289,12 @@ final class JdbcCallResult implements JdbcClient.CallResult {
             lease.processingFailed();
         }
         failure = JdbcExceptionTranslator.mergeProcessingFailures(failure, caught);
+    }
+
+    private static LocalDate localDate(Calendar calendar) {
+        int year = calendar.get(Calendar.YEAR);
+        return LocalDate.of(calendar.get(Calendar.ERA) == GregorianCalendar.BC ? 1 - year : year,
+                            calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.DAY_OF_MONTH));
     }
 
     private JdbcCallOutput output(String name) {
@@ -385,20 +396,20 @@ final class JdbcCallResult implements JdbcClient.CallResult {
 
         @Override
         public T one() {
-            return materialize(1).getFirst();
+            return materialize(1, (value, _) -> value);
         }
 
         @Override
         public Optional<T> optional() {
-            return materialize(0).stream().findFirst();
+            return materialize(0, (value, _) -> Optional.ofNullable(value));
         }
 
         @Override
         public List<T> list() {
-            return materialize(-1);
+            return materialize(-1, (_, values) -> List.copyOf(values));
         }
 
-        private List<T> materialize(int cardinality) {
+        private <R> R materialize(int cardinality, BiFunction<T, List<T>, R> finish) {
             check();
             if (consumed || selectedEvent != event || terminalActive) {
                 throw new IllegalStateException("The callable row stage has already been consumed or expired.");
@@ -415,9 +426,11 @@ final class JdbcCallResult implements JdbcClient.CallResult {
                     }
                     JdbcColumnLayout columns = JdbcColumnLayout.create(
                             JdbcExceptionTranslator.invoke("reading callable column metadata", current::getMetaData), operation);
-                    List<T> values = new ArrayList<>();
+                    // Singular terminals keep one value and still check for a second row before returning it.
+                    List<T> values = cardinality < 0 ? new ArrayList<>() : null;
+                    T single = null;
                     while (JdbcExceptionTranslator.invoke("advancing callable rows", current::next)) {
-                        if (cardinality >= 0 && !values.isEmpty()) {
+                        if (cardinality >= 0 && single != null) {
                             throw new NonUniqueResultException("The callable result contains more than one row.");
                         }
                         JdbcRow row = new JdbcRow(current, columns, operation, JdbcCallResult.this);
@@ -436,12 +449,16 @@ final class JdbcCallResult implements JdbcClient.CallResult {
                         } finally {
                             row.expire();
                         }
-                        values.add(value);
+                        if (values == null) {
+                            single = value;
+                        } else {
+                            values.add(value);
+                        }
                     }
-                    if (cardinality == 1 && values.isEmpty()) {
+                    if (cardinality == 1 && single == null) {
                         throw new NoResultException("The callable result contains no rows.");
                     }
-                    return List.copyOf(values);
+                    return finish.apply(single, values);
                 } catch (SQLException caught) {
                     try {
                         throw JdbcExceptionTranslator.translate(operation, caught);

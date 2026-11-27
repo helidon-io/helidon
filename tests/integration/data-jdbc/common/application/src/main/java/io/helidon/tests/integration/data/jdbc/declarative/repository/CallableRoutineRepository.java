@@ -26,11 +26,10 @@ import io.helidon.data.Data;
 import io.helidon.data.jdbc.Jdbc;
 import io.helidon.data.jdbc.JdbcClient;
 import io.helidon.service.registry.Service;
-import io.helidon.tests.integration.data.jdbc.contract.AbstractJdbcCallableContract;
 
 @Data.Repository
 @Data.Provider("jdbc")
-public interface CallableRoutineRepository extends AbstractJdbcCallableContract.InferredCallableParent<Integer> {
+public interface CallableRoutineRepository extends InferredCallableParent<Integer> {
     @Jdbc.Statement("{? = call sp_add(:jdbcClient)}")
     @Jdbc.OutParameter(type = JDBCType.INTEGER)
     int scalar(Integer jdbcClient);
@@ -105,10 +104,11 @@ public interface CallableRoutineRepository extends AbstractJdbcCallableContract.
     @Jdbc.OutParameter(value = "value", type = JDBCType.INTEGER)
     Bundle aggregateCursor(int input);
 
+    // The type variable tests whether generated cursor and scalar mappings can still refer to java.lang.Integer.
     @Jdbc.Statement("{call sp_bundle(:input, :value, :rows)}")
     @Jdbc.OutParameter(value = "rows", type = JDBCType.REF_CURSOR)
     @Jdbc.OutParameter(value = "value", type = JDBCType.INTEGER)
-    OptionalBundle aggregateOptionalCursor(int input);
+    <Integer> OptionalBundle aggregateOptionalCursor(int input);
 
     @Jdbc.Statement("{? = call sp_cursor(:input)}")
     @Jdbc.OutParameter(type = JDBCType.REF_CURSOR)

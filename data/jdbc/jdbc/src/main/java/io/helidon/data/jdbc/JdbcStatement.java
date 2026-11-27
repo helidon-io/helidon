@@ -20,7 +20,8 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.regex.Pattern;
+
+import io.helidon.data.jdbc.lexical.JdbcSqlScanner;
 
 /**
  * In-memory description of one JDBC statement assembled by an application or
@@ -30,8 +31,6 @@ import java.util.regex.Pattern;
  * the bindings into an immutable operation and hands ownership to the runner.
  */
 final class JdbcStatement implements JdbcClient.Statement {
-
-    private static final Pattern CALL_RETURN = Pattern.compile("\\s*\\{\\s*\\?\\s*=\\s*call\\b", Pattern.CASE_INSENSITIVE);
 
     private final JdbcRunner runner;
     private final String sql;
@@ -162,11 +161,8 @@ final class JdbcStatement implements JdbcClient.Statement {
             return configured.leadingReturn();
         }
         // Resolve immutable SQL lazily so binding and callable validation share one classification.
-        // The prefix check avoids matcher allocation when the first character rules out a return escape.
         if (!leadingReturnResolved) {
-            leadingReturn = !sql.isEmpty()
-                    && (sql.charAt(0) == '{' || Character.isWhitespace(sql.charAt(0)))
-                    && CALL_RETURN.matcher(sql).lookingAt();
+            leadingReturn = JdbcSqlScanner.hasCallableReturn(sql);
             leadingReturnResolved = true;
         }
         return leadingReturn;
@@ -178,6 +174,9 @@ final class JdbcStatement implements JdbcClient.Statement {
             throw new IllegalStateException("Logical output registration requires a reusable statement definition.");
         }
         List<Integer> slots = configured.positions(name);
+        if (slots.isEmpty()) {
+            throw new IllegalArgumentException("The output name does not match a callable SQL marker or layout name.");
+        }
         if (slots.size() != 1) {
             throw new IllegalArgumentException("An OUT or INOUT marker must occur exactly once.");
         }
@@ -308,6 +307,9 @@ final class JdbcStatement implements JdbcClient.Statement {
             throw new IllegalStateException("Named bindings require a reusable statement definition.");
         }
         List<Integer> slots = configured.positions(name);
+        if (slots.isEmpty()) {
+            throw new IllegalArgumentException("The bind name does not match a required input.");
+        }
         for (int slot : slots) {
             if (slot == 1 && leadingReturn()) {
                 throw new IllegalArgumentException("A leading callable return cannot be bound as an input.");

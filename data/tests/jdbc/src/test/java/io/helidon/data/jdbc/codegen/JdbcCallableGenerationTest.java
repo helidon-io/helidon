@@ -111,11 +111,16 @@ class JdbcCallableGenerationTest {
 
                 @Jdbc.Statement("${application.sql.query:SELECT :Objects}")
                 String queryWithObjects(String Objects);
+
+                @Jdbc.Statement("UPDATE ITEMS SET VALUE = :Math")
+                @Jdbc.Execution(Jdbc.ExecutionType.UPDATE)
+                int update(int Math);
                 """);
         assertThat(result.diagnostics().toString(), result.success(), is(true));
         String generated = Files.readString(result.sourceOutput().resolve("example/Repository__Jdbc.java"));
         assertThat(generated, containsString(".returns(JDBCType.INTEGER)"));
         assertThat(generated, containsString(".bind(\"Objects\", data__Objects)"));
+        assertThat(generated, containsString(".bind(1, data__Math)"));
     }
 
     @Test
@@ -135,6 +140,10 @@ class JdbcCallableGenerationTest {
                     @Jdbc.Statement("SELECT :input")
                     @Jdbc.Execution(Jdbc.ExecutionType.QUERY)
                     int query(@Data.Param("input") Integer io);
+
+                    @Jdbc.Statement("{call routine()}")
+                    @Jdbc.Execution(Jdbc.ExecutionType.CALL)
+                    <io, java> int direct();
 
                     @Jdbc.Statement("SELECT VALUE FROM ITEMS")
                     JDBCType jdbcType();
@@ -165,6 +174,184 @@ class JdbcCallableGenerationTest {
     }
 
     @Test
+    void protectsJdbcTypeFromTypeParameters() throws IOException {
+        for (String typeParameter : List.of("JDBCType", "java")) {
+            TestCompiler.Result result = compiler().addSource("Repository.java", """
+                    package example;
+
+                    import io.helidon.data.Data;
+                    import io.helidon.data.jdbc.Jdbc;
+
+                    @Data.Repository @Data.Provider("jdbc")
+                    public interface Repository {
+                        @Jdbc.Statement("${application.total:{? = call routine(:JDBC_TYPE_INTEGER)}}")
+                        @Jdbc.OutParameter
+                        <%s> Integer total(Integer JDBC_TYPE_INTEGER);
+
+                        %s
+                    }
+
+                    %s
+                    """.formatted(typeParameter,
+                                  typeParameter.equals("java") ? "@Jdbc.Statement(\"SELECT ID FROM ITEMS\") JDBCType row();" : "",
+                                  typeParameter.equals("java") ? "record JDBCType(int id) { }" : ""))
+                    .build().compile();
+            assertThat(typeParameter + ": " + result.diagnostics(), result.success(), is(true));
+            String generated = Files.readString(result.sourceOutput().resolve("example/Repository__Jdbc.java"));
+            String type = typeParameter.equals("java") ? "java.sql.JDBCType" : "JDBCType";
+            assertThat(typeParameter, generated, containsString(".returns(" + type + ".INTEGER)"));
+            assertThat(typeParameter, generated, containsString(".bindNull("));
+            assertThat(typeParameter, generated, containsString("\"JDBC_TYPE_INTEGER\", " + type + ".INTEGER)"));
+            assertThat(typeParameter, generated, containsString(".bind(\"JDBC_TYPE_INTEGER\", JDBC_TYPE_INTEGER)"));
+        }
+    }
+
+    @Test
+    void protectsCallableTypesAndBounds() throws IOException {
+        TestCompiler.Result result = compile("""
+                @Jdbc.Statement("{call routine()}")
+                @Jdbc.Execution(Jdbc.ExecutionType.CALL)
+                <Objects extends Exception, data__Objects extends Objects> Integer rows() throws data__Objects, Objects;
+
+                @Jdbc.Statement("{call routine()}")
+                @Jdbc.Execution(Jdbc.ExecutionType.CALL)
+                <DataException, JdbcClient, GeneratedJdbcData, Statement, Call> Integer direct();
+
+                @Jdbc.Statement("{? = call routine()}")
+                @Jdbc.OutParameter
+                <Integer> java.lang.Integer scalar();
+
+                @Jdbc.Statement("{call routine()}")
+                @Jdbc.Execution(Jdbc.ExecutionType.CALL)
+                <Objects> void consume(Consumer<JdbcClient.CallResult> action);
+
+                @Jdbc.Statement("{call routine()}")
+                @Jdbc.Execution(Jdbc.ExecutionType.CALL)
+                <Objects> Objects callback(JdbcClient.CallMapper<Objects> action);
+
+                @Jdbc.Statement("{call routine(:name, :count)}")
+                @Jdbc.OutParameter("name")
+                @Jdbc.OutParameter("count")
+                <Objects> Aggregate<Objects> aggregate();
+
+                @Jdbc.Statement("{call routine(:name, :count)}")
+                @Jdbc.OutParameter("name")
+                @Jdbc.OutParameter("count")
+                <String> Aggregate<Void> stringComponent();
+
+                @Jdbc.Statement("{call routine(:name, :count)}")
+                @Jdbc.OutParameter("name")
+                @Jdbc.OutParameter("count")
+                <Integer> Aggregate<Void> boxedComponent();
+
+                record Aggregate<T>(String name, int count) {
+                }
+                """);
+        assertThat(result.diagnostics().toString(), result.success(), is(true));
+        String generated = Files.readString(result.sourceOutput().resolve("example/Repository__Jdbc.java"));
+        assertThat(generated, containsString("data__Objects extends data__data__Objects"));
+        assertThat(generated, containsString("throws data__Objects, data__data__Objects"));
+        assertThat(generated, containsString("throw new DataException("));
+        assertThat(generated, containsString(".get(\"return\", Integer.class)"));
+        assertThat(generated, containsString("CallMapper<data__Objects> action"));
+        assertThat(generated, containsString("return new Repository.Aggregate<>("));
+    }
+
+    @Test
+    void compilesGenericRecordConstructors() {
+        TestCompiler.Result result = compile("""
+                @Jdbc.Statement("{call routine(:name, :count)}")
+                @Jdbc.OutParameter("name")
+                @Jdbc.OutParameter("count")
+                Aggregate<?> any();
+
+                @Jdbc.Statement("{call routine(:name, :count)}")
+                @Jdbc.OutParameter("name")
+                @Jdbc.OutParameter("count")
+                Aggregate<? extends Number> number();
+
+                @Jdbc.Statement("{call routine(:name, :count)}")
+                @Jdbc.OutParameter("name")
+                @Jdbc.OutParameter("count")
+                <T extends Comparable<T>> Aggregate<T> bounded();
+
+                @Jdbc.Statement("{? = call routine()}")
+                @Jdbc.OutParameter(type = JDBCType.REF_CURSOR)
+                Aggregate<?> cursor();
+
+                @Jdbc.Statement("SELECT NAME, COUNT FROM ITEMS")
+                Aggregate<? extends Number> query();
+
+                record Aggregate<T>(String name, int count) {
+                }
+                """);
+        assertThat(result.diagnostics().toString(), result.success(), is(true));
+    }
+
+    @Test
+    void protectsInheritedMemberTypes() {
+        TestCompiler.Result result = compiler().addSource("Repository.java", """
+                package example;
+
+                import io.helidon.data.Data;
+                import io.helidon.data.jdbc.Jdbc;
+
+                interface Parent {
+                    record Objects(int value) { }
+                    record DataException(int value) { }
+                    enum JDBCType { INTEGER }
+                    record Config(int value) { }
+                    record List(int value) { }
+                    record JdbcClient(int value) { }
+                    record GeneratedJdbcData(int value) { }
+                }
+
+                @Data.Repository @Data.Provider("jdbc")
+                public interface Repository extends Parent {
+                    @Jdbc.Statement("{call routine()}")
+                    @Jdbc.Execution(Jdbc.ExecutionType.CALL)
+                    int direct();
+
+                    @Jdbc.Statement("${application.call:{? = call routine(:input)}}")
+                    @Jdbc.OutParameter
+                    int output(Integer input);
+
+                    @Jdbc.Statement("SELECT VALUE FROM ITEMS")
+                    Objects mappedRecord();
+                }
+                """).build().compile();
+        assertThat(result.diagnostics().toString(), result.success(), is(true));
+    }
+
+    @Test
+    void protectsUpdateWhenBothMathNamesAreHidden() throws IOException {
+        TestCompiler.Result result = compile("""
+                @Jdbc.Statement("UPDATE ITEMS SET VALUE = :Math")
+                @Jdbc.Execution(Jdbc.ExecutionType.UPDATE)
+                int update(int Math);
+
+                default int toIntExact(long count) {
+                    return -998;
+                }
+
+                record Math(int value) {
+                    static int toIntExact(long count) {
+                        return -999;
+                    }
+                }
+
+                record java(int value) {
+                }
+                """);
+        assertThat(result.diagnostics().toString(), result.success(), is(true));
+        String generated = Files.readString(result.sourceOutput().resolve("example/Repository__Jdbc.java"));
+        assertThat(generated, containsString(".bind(1, data__Math)"));
+        assertThat(generated, containsString("Repository__JdbcUpdateCount.toIntExact(jdbcStatement.execute())"));
+        String helper = Files.readString(result.sourceOutput().resolve("example/Repository__JdbcUpdateCount.java"));
+        assertThat(helper, containsString("return Math.toIntExact(count);"));
+    }
+
+    @Test
     void compilesOptionalScalarCursorAndCursorPresenceMappings() {
         TestCompiler.Result result = compile("""
                 @Jdbc.Statement("{? = call routine(:input)}")
@@ -178,7 +365,7 @@ class JdbcCallableGenerationTest {
                 @Jdbc.Statement("{call routine(:scalar, :rows)}")
                 @Jdbc.OutParameter(value = "scalar", type = JDBCType.REF_CURSOR)
                 @Jdbc.OutParameter(value = "rows", type = JDBCType.REF_CURSOR)
-                Outputs aggregate();
+                <Integer> Outputs aggregate();
 
                 record Outputs(Optional<Integer> scalar, Optional<List<Integer>> rows) {
                 }
@@ -665,6 +852,64 @@ import javax.lang.model.element.TypeElement;
                     """.formatted(sql, sql)).build().compile();
             assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
         }
+    }
+
+    @Test
+    void mapsEffectiveCovariantReturn() throws IOException {
+        for (String sql : List.of("{? = call routine(:input)}",
+                                  "${application.total:{? = call routine(:input)}}")) {
+            TestCompiler.Result result = compiler().addSource("Repository.java", """
+                    package example;
+
+                    import java.sql.JDBCType;
+
+                    import io.helidon.data.Data;
+                    import io.helidon.data.jdbc.Jdbc;
+
+                    interface First {
+                        @Jdbc.Statement("%s") @Jdbc.OutParameter(type = JDBCType.INTEGER)
+                        Number total(@Data.Param("input") Integer value);
+                    }
+                    interface Second {
+                        @Jdbc.Statement("%s") @Jdbc.OutParameter(type = JDBCType.INTEGER)
+                        Integer total(@Data.Param("input") Integer other);
+                    }
+                    @Data.Repository @Data.Provider("jdbc")
+                    public interface Repository extends First, Second { }
+                    """.formatted(sql, sql)).build().compile();
+            assertThat(sql + ": " + result.diagnostics(), result.success(), is(true));
+            String generated = Files.readString(result.sourceOutput().resolve("example/Repository__Jdbc.java"));
+            assertThat(sql, generated, containsString("Integer total("));
+            assertThat(sql, generated, containsString(".get(\"return\", Integer.class)"));
+        }
+    }
+
+    @Test
+    void rejectsMapperOnVoidCall() throws IOException {
+        TestCompiler.Result valid = compile("""
+                @Jdbc.Statement("{call routine()}")
+                @Jdbc.Execution(Jdbc.ExecutionType.CALL)
+                void discard();
+                """);
+        assertThat(valid.diagnostics().toString(), valid.success(), is(true));
+        String generated = Files.readString(valid.sourceOutput().resolve("example/Repository__Jdbc.java"));
+        assertThat(generated, containsString(".execute();"));
+
+        TestCompiler.Result invalid = compile("""
+                @Jdbc.Statement("{call routine()}")
+                @Jdbc.Execution(Jdbc.ExecutionType.CALL)
+                @Jdbc.RowMapper(DiscardedMapper.class)
+                void discard();
+
+                class DiscardedMapper implements JdbcClient.RowMapper<Integer> {
+                    @Override
+                    public Integer map(JdbcClient.Row row) {
+                        return row.get(1, Integer.class);
+                    }
+                }
+                """);
+        assertThat(invalid.diagnostics().toString(), invalid.success(), is(false));
+        assertThat(invalid.diagnostics().toString(), containsString("A void callable method cannot select a row mapper."));
     }
 
     @Test

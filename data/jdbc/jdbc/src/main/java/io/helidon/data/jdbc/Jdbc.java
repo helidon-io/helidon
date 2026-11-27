@@ -271,14 +271,18 @@ public final class Jdbc {
     }
 
     /**
-     * Selects an application row mapper for query or generated key rows.
+     * Selects an application row mapper for query rows, generated keys, direct callable rows,
+     * or rows from a single callable {@code REF_CURSOR} output.
      * <p>
      * With a mapper class, generated code injects that exact service type.
      * Without an explicit mapper class, generated code requires a row mapper
-     * service whose generic result type exactly matches the repository result
-     * type. When this annotation is absent for a query or generated key result,
+     * service whose generic result type exactly matches the mapped row type.
+     * When this annotation is absent for these row results,
      * supported scalar results are mapped from column one, and supported records
      * use generated component mapping.
+     * <p>
+     * Use {@link JdbcClient.CallMapper} to supply custom cursor mappers when a
+     * callable method combines several outputs into an application result.
      * <p>
      * A mapper used by a singleton repository must be stateless or safe for
      * concurrent use. The mapper receives a scoped {@link JdbcClient.Row} and

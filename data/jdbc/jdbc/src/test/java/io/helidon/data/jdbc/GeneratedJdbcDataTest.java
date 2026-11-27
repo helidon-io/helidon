@@ -143,6 +143,18 @@ class GeneratedJdbcDataTest {
         verifyZeroInteractions(source);
     }
 
+    @Test
+    void legacyNamedPreparationRejectsCallableReturn() {
+        DataSource source = mock(DataSource.class);
+        JdbcClient client = JdbcClient.builder().dataSource(source).build();
+
+        IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                () -> GeneratedJdbcData.prepareNamed(client, "{? = call routine(:input)}", List.of("return", "input")));
+        assertThat(failure.getMessage(), is("A leading return with named arguments requires CALL execution."));
+        GeneratedJdbcData.prepareNamed(client, "SELECT :return", List.of("return")).get().bind("return", 7);
+        verifyZeroInteractions(source);
+    }
+
     /**
      * Prepared alias stages retain defensive input copies and independent assignments.
      */

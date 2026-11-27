@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.UnaryOperator;
 
 import io.helidon.codegen.classmodel.Method;
 import io.helidon.common.types.TypeName;
@@ -32,7 +33,8 @@ final class JdbcCallableGenerator {
     private JdbcCallableGenerator() {
     }
 
-    static void terminal(JdbcMethodPlan plan, Method.Builder method, String statement, Map<String, String> parameters) {
+    static void terminal(JdbcMethodPlan plan, Method.Builder method, String statement, Map<String, String> parameters,
+                         UnaryOperator<TypeName> renderType) {
         JdbcCallablePlan call = plan.callable();
         Set<String> names = new HashSet<>(parameters.values());
         names.add(statement);
@@ -84,11 +86,12 @@ final class JdbcCallableGenerator {
                     for (JdbcCallablePlan.Output output : ordered) {
                         String local = unique("__helidonOutput", names);
                         locals.put(output, local);
-                        method.addContent(output.valueType()).addContent(" ").addContent(local).addContent(" = ");
+                        method.addContent(renderType.apply(output.valueType())).addContent(" ").addContent(local)
+                                .addContent(" = ");
                         output(method, output, output.valueType(), result, row);
                         method.addContentLine(";");
                     }
-                    method.addContent("return new ").addContent(plan.method().typeName()).addContent("(");
+                    JdbcRecordMapperGenerator.addConstructor(method, plan.method().typeName());
                     for (int index = 0; index < call.components().size(); index++) {
                         if (index > 0) {
                             method.addContent(", ");
@@ -107,7 +110,7 @@ final class JdbcCallableGenerator {
                         .addContent(result).addContentLine(".next();").addContentLine("}");
                 method.addContent("if (").addContent(result).addContent(".resultKind() != ")
                         .addContent(JdbcCodegenTypes.JDBC_CLIENT).addContentLine(".CallResultKind.ROWS) {")
-                        .addContent("throw new ").addContent(TypeName.create("io.helidon.data.DataException"))
+                        .addContent("throw new ").addContent(JdbcCodegenTypes.DATA_EXCEPTION)
                         .addContentLine("(\"The callable statement returned no direct rows.\");")
                         .addContentLine("}").addContent("return ").addContent(result).addContent(".rows(");
                 boolean nullable = plan.returnShape() == JdbcMethodPlan.ReturnShape.OPTIONAL

@@ -152,11 +152,7 @@ final class JdbcConfiguredStatement {
     }
 
     List<Integer> positions(String name) {
-        List<Integer> slots = positions.get(name);
-        if (slots == null) {
-            throw new IllegalArgumentException("The bind name does not match a required input.");
-        }
-        return slots;
+        return positions.getOrDefault(name, List.of());
     }
 
     private static final class PlanBuilder implements JdbcSqlScanHandler {

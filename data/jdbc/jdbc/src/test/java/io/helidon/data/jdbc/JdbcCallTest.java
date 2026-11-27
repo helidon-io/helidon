@@ -454,6 +454,30 @@ class JdbcCallTest {
     }
 
     @Test
+    void confinesRowToItsMapper() throws Exception {
+        rows(1, 42);
+        ResultSet current = statement.getResultSet();
+        AtomicReference<JdbcClient.Row> retained = new AtomicReference<>();
+
+        client.create("{call routine()}").call().consume(result -> {
+            assertThat(result.rows(row -> {
+                retained.set(row);
+                CompletableFuture<Void> worker = CompletableFuture.runAsync(() ->
+                        assertThrows(IllegalStateException.class, () -> row.get(1, Integer.class)));
+                try {
+                    worker.orTimeout(5, TimeUnit.SECONDS).join();
+                } finally {
+                    worker.cancel(true);
+                }
+                return row.get(1, Integer.class);
+            }).one(), is(42));
+
+            assertThrows(IllegalStateException.class, () -> retained.get().get(1, Integer.class));
+        });
+        verify(current, times(1)).getInt(1);
+    }
+
+    @Test
     void distinguishesNullOptionalCursorAndRequiredCursor() throws Exception {
         client.create("{call routine(?)}").call().out("cursor", 1, JDBCType.REF_CURSOR).consume(result ->
                 assertThat(result.optionalCursor("cursor", _ -> 1), is(Optional.empty())));
@@ -581,6 +605,33 @@ class JdbcCallTest {
         }
         verify(statement, times(dates.size())).close();
         verify(connection, times(dates.size())).close();
+    }
+
+    @Test
+    void readsLocalTimestampFields() throws Exception {
+        List<LocalDateTime> timestamps = List.of(LocalDateTime.of(1500, 3, 1, 12, 34, 56, 123456789),
+                                                 LocalDateTime.of(2024, 2, 29, 21, 43, 15, 987654321));
+        for (LocalDateTime expected : timestamps) {
+            when(statement.getTimestamp(eq(1), any(Calendar.class))).thenAnswer(invocation -> {
+                Calendar calendar = invocation.getArgument(1);
+                assertThat(expected.toString(), calendar.getTimeZone().getID(), is("UTC"));
+                calendar.clear();
+                calendar.set(expected.getYear(), expected.getMonthValue() - 1, expected.getDayOfMonth(),
+                             expected.getHour(), expected.getMinute(), expected.getSecond());
+                Timestamp timestamp = new Timestamp(calendar.getTimeInMillis());
+                timestamp.setNanos(expected.getNano());
+                return timestamp;
+            });
+            JdbcClient.OutParameters snapshot = client.create("{? = call routine()}").call()
+                    .returns(JDBCType.TIMESTAMP).outputs();
+            assertThat(expected.toString(), snapshot.get("return", LocalDateTime.class), is(expected));
+        }
+        when(statement.getTimestamp(eq(1), any(Calendar.class))).thenReturn(null);
+        JdbcClient.OutParameters snapshot = client.create("{? = call routine()}").call()
+                .returns(JDBCType.TIMESTAMP).outputs();
+        assertThat("SQL NULL timestamp", snapshot.optional("return", LocalDateTime.class), is(Optional.empty()));
+        verify(statement, times(3)).close();
+        verify(connection, times(3)).close();
     }
 
     @Test
@@ -833,6 +884,7 @@ class JdbcCallTest {
     void sanitizesFailuresAcrossEveryJdbcBoundary() throws Exception {
         for (String phase : List.of("acquire", "prepare", "register", "bind", "execute", "read", "close")) {
             setup();
+            String reason = "The callable diagnostic must be sanitized during the " + phase + " phase.";
             SQLException driver = new SQLException("confidential-driver-canary", "HY000", 1234);
             switch (phase) {
             case "acquire" -> when(source.getConnection()).thenThrow(driver);
@@ -845,18 +897,17 @@ class JdbcCallTest {
             default -> throw new AssertionError(phase);
             }
             DataException failure = assertThrows(DataException.class, () -> client.create("{call confidential_sql(?)}")
-                    .bind(1, 7).call().out("value", 1, JDBCType.INTEGER).outputs());
+                    .bind(1, 7).call().out("value", 1, JDBCType.INTEGER).outputs(), reason);
             StringWriter text = new StringWriter();
             failure.printStackTrace(new PrintWriter(text));
             String diagnostic = text.toString();
-            String reason = "The callable diagnostic must be sanitized during the " + phase + " phase.";
             assertThat(reason, diagnostic, not(containsString("confidential-driver-canary")));
             assertThat(reason, diagnostic, not(containsString("confidential_sql")));
             if (!phase.equals("acquire")) {
-                verify(connection).close();
+                verify(connection, times(1).description(reason)).close();
             }
             if (!phase.equals("acquire") && !phase.equals("prepare")) {
-                verify(statement).close();
+                verify(statement, times(1).description(reason)).close();
             }
         }
     }
@@ -921,7 +972,13 @@ class JdbcCallTest {
                 .bind("value", 7).call();
         assertThrows(IllegalArgumentException.class, () -> call.out("value", JDBCType.INTEGER));
         assertThrows(IllegalArgumentException.class, () -> call.out("other", 1, JDBCType.INTEGER));
-        assertThrows(IllegalArgumentException.class, () -> call.out("missing", JDBCType.INTEGER));
+        String missingName = "The output name does not match a callable SQL marker or layout name.";
+        assertThat(assertThrows(IllegalArgumentException.class, () -> call.out("missing", JDBCType.INTEGER))
+                           .getMessage(), is(missingName));
+        assertThat(assertThrows(IllegalArgumentException.class, () -> call.out("missing", JDBCType.STRUCT, "APP.TYPE"))
+                           .getMessage(), is(missingName));
+        assertThat(assertThrows(IllegalArgumentException.class, () -> call.out("missing", JDBCType.DECIMAL, 2))
+                           .getMessage(), is(missingName));
         assertThrows(IllegalArgumentException.class, () -> call.returns(JDBCType.INTEGER));
         verify(source, never()).getConnection();
         call.out("output", JDBCType.INTEGER).execute();
@@ -932,15 +989,19 @@ class JdbcCallTest {
     @Test
     void rejectsPositionalNamedOutputDefinitionsBeforeAcquisition() throws Exception {
         assertThrows(IllegalArgumentException.class,
-                     () -> GeneratedJdbcData.prepareNamed(client, "{call routine(?)}", List.of("output")));
+                     () -> GeneratedJdbcData.prepareCall(client, "{call routine(?)}", List.of("output"), true, false));
         assertThrows(IllegalArgumentException.class,
-                     () -> GeneratedJdbcData.prepareNamed(client, "{call routine(?, ?)}", List.of("input", "output")));
+                     () -> GeneratedJdbcData.prepareCall(client,
+                                                        "{call routine(?, ?)}",
+                                                        List.of("input", "output"),
+                                                        true,
+                                                        false));
         for (String sql : List.of("{call routine(:input, ?)}", "{? = call routine(:input, ?)}")) {
-            assertThrows(IllegalArgumentException.class, () -> client.prepare(sql));
+            assertThrows(IllegalArgumentException.class, () -> client.prepare(sql), sql);
         }
         verify(source, never()).getConnection();
 
-        GeneratedJdbcData.prepareNamed(client, "{call routine(:input, :output)}", List.of("input", "output"))
+        GeneratedJdbcData.prepareCall(client, "{call routine(:input, :output)}", List.of("input", "output"), true, false)
                 .get().bind("input", 7).call().out("output", JDBCType.INTEGER).execute();
         verify(statement).setInt(1, 7);
         verify(statement).registerOutParameter(2, JDBCType.INTEGER.getVendorTypeNumber());
@@ -961,7 +1022,7 @@ class JdbcCallTest {
 
     @Test
     void restrictsMixedReturnDefinitionsToCallableExecution() throws Exception {
-        var definition = GeneratedJdbcData.prepareNamed(client, "{? = call routine(:value)}", List.of("return", "value"));
+        var definition = client.prepare("{? = call routine(:value)}", List.of("return", "value"));
         assertThrows(IllegalStateException.class, () -> definition.get().bind("value", 7).execute());
         assertThrows(IllegalStateException.class, () -> definition.get().bind("value", 7).map(Integer.class).one());
         assertThrows(IllegalStateException.class, () -> definition.get().bind("value", 7).generatedKeys()

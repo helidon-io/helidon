@@ -17,6 +17,7 @@ package io.helidon.data.jdbc;
 
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.List;
 
 import io.helidon.data.DataException;
 
@@ -59,6 +60,35 @@ class JdbcColumnLayoutTest {
         assertThat(layout.index("PHYSICAL_NAME"), is(1));
         verify(metadata).getColumnLabel(1);
         verify(metadata).getColumnName(1);
+    }
+
+    @Test
+    void resolvesCaseVariantsAfterCacheFills() throws Exception {
+        ResultSetMetaData metadata = metadata("DisplayName", "PHYSICAL_NAME");
+        JdbcColumnLayout layout = JdbcColumnLayout.create(metadata, operation());
+
+        for (String label : List.of("DisplayName", "DISPLAYNAME", "displayName", "displayname", "DisplayName")) {
+            assertThat(label, layout.index(label), is(1));
+        }
+        verify(metadata).getColumnLabel(1);
+        verify(metadata, never()).getColumnName(anyInt());
+    }
+
+    @Test
+    void exactSpellingCannotBypassAmbiguity() throws Exception {
+        ResultSetMetaData metadata = mock(ResultSetMetaData.class);
+        when(metadata.getColumnCount()).thenReturn(3);
+        when(metadata.getColumnLabel(1)).thenReturn("Code");
+        when(metadata.getColumnLabel(2)).thenReturn("CODE");
+        when(metadata.getColumnLabel(3)).thenReturn("Name");
+        JdbcColumnLayout layout = JdbcColumnLayout.create(metadata, operation());
+
+        assertThat(layout.index("NAME"), is(3));
+        for (String label : List.of("Code", "CODE", "code")) {
+            DataException failure = assertThrows(DataException.class, () -> layout.index(label), label);
+            assertThat(label, failure.getMessage(), is("The result contains more than one column labeled '" + label + "'."));
+        }
+        assertThat(layout.index("NAME"), is(3));
     }
 
     /**

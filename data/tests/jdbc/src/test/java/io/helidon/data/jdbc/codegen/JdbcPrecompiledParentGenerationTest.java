@@ -74,6 +74,9 @@ class JdbcPrecompiledParentGenerationTest {
 
                             @Jdbc.Statement("SELECT VALUE FROM TEST_VALUE")
                             Projection<T> projection();
+
+                            record Objects(int value) {
+                            }
                         }
                         """)
                 .addSource("Key.java", """
@@ -146,7 +149,8 @@ class JdbcPrecompiledParentGenerationTest {
         assertThat(source, containsString(".map(int.class).one()"));
         assertThat(source, containsString(".generatedKeys().addColumn(\"ID\").map(keyMapper).one()"));
         assertThat(source, containsString("JdbcClient.RowMapper<Projection<String>>"));
-        assertThat(source, containsString("new Projection<String>(row.get(\"value\", String.class))"));
+        assertThat(source, containsString("java.util.Objects.requireNonNull(row,"));
+        assertThat(source, containsString("new Projection<>(row.get(\"value\", String.class))"));
     }
 
     /**

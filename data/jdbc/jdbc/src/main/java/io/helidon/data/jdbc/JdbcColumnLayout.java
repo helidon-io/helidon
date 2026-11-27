@@ -47,6 +47,7 @@ final class JdbcColumnLayout {
 
     // Built on first label access so index-only mapping does not pay this cost.
     private Map<String, Integer> indexes;
+    private int cachedSpellings;
 
     /**
      * Creates a cached column layout.
@@ -103,7 +104,16 @@ final class JdbcColumnLayout {
      * @throws DataException when the label is absent or ambiguous
      */
     int index(String label) {
-        Integer index = indexes().get(label.toLowerCase(Locale.ROOT));
+        Map<String, Integer> resolved = indexes();
+        Integer index = resolved.get(label);
+        if (index == null) {
+            index = resolved.get(label.toLowerCase(Locale.ROOT));
+            // Limit cached spellings to the column count so mapper input cannot grow the index indefinitely.
+            if (index != null && index != AMBIGUOUS_INDEX && cachedSpellings < columnCount) {
+                resolved.put(label, index);
+                cachedSpellings++;
+            }
+        }
         if (index == null) {
             throw new DataException("The result does not contain a column labeled '" + label + "'.");
         }
@@ -120,7 +130,7 @@ final class JdbcColumnLayout {
      * lookups of unrelated unique labels while ensuring that no caller can
      * depend on driver column order to resolve a duplicate.</p>
      *
-     * @return normalized label index
+     * @return The lookup index belongs to this result set.
      */
     private Map<String, Integer> indexes() {
         if (indexes == null) {
@@ -132,7 +142,7 @@ final class JdbcColumnLayout {
     /**
      * Resolves labels and physical-name fallbacks from JDBC metadata.
      *
-     * @return immutable normalized label index
+     * @return The index initially contains normalized labels.
      */
     private Map<String, Integer> createIndexes() {
         try {
@@ -154,7 +164,7 @@ final class JdbcColumnLayout {
                                index,
                                (existing, duplicate) -> AMBIGUOUS_INDEX);
             }
-            return Map.copyOf(resolved);
+            return resolved;
         } catch (SQLException e) {
             throw JdbcExceptionTranslator.translate(operation, e);
         }

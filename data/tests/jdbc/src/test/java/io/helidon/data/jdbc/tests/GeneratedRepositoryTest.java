@@ -44,14 +44,15 @@ class GeneratedRepositoryTest {
      * silently narrowing the JDBC long update count.
      */
     @Test
-    void rejectsAnUpdateCountOutsideThePrimitiveIntRange() {
+    void convertsUpdateCountExactly() {
         JdbcClient client = mock(JdbcClient.class);
         JdbcClient.Statement statement = mock(JdbcClient.Statement.class);
         when(client.create(anyString())).thenReturn(statement);
         when(statement.bind(anyInt(), any())).thenReturn(statement);
-        when(statement.execute()).thenReturn(Long.MAX_VALUE);
+        when(statement.execute()).thenReturn(42L, Long.MAX_VALUE);
         OverflowRepository repository = new OverflowRepository__Jdbc(client);
 
+        assertThat(repository.rename("updated", 1), is(42));
         assertThrows(ArithmeticException.class, () -> repository.rename("overflow", 1));
     }
 
@@ -96,10 +97,10 @@ class GeneratedRepositoryTest {
         assertThat(source.split("RowMapper<RecordMapperReuseRepository.Projection<Integer>> MAPPER_", -1).length - 1,
                    is(1));
         assertThat(source,
-                   containsString("new RecordMapperReuseRepository.Projection<String>("
+                   containsString("new RecordMapperReuseRepository.Projection<>("
                                           + "row.get(\"value\", String.class))"));
         assertThat(source,
-                   containsString("new RecordMapperReuseRepository.Projection<Integer>("
+                   containsString("new RecordMapperReuseRepository.Projection<>("
                                           + "row.get(\"value\", Integer.class))"));
     }
 
@@ -115,7 +116,7 @@ class GeneratedRepositoryTest {
 
         assertThat(source, containsString("JdbcClient.RowMapper<GenericProjection<String>>"));
         assertThat(source,
-                   containsString("new GenericProjection<String>(row.get(\"value\", String.class))"));
+                   containsString("new GenericProjection<>(row.get(\"value\", String.class))"));
     }
 
     /**

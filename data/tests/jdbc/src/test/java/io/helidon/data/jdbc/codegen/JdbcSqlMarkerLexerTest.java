@@ -24,6 +24,7 @@ import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class JdbcSqlMarkerLexerTest {
@@ -96,17 +97,26 @@ class JdbcSqlMarkerLexerTest {
                 boolean leading = prefix.contains("?");
                 for (String arguments : List.of("", "?", "?, ?", ":first", ":first, :second")) {
                     String sql = prefix + routine + "(" + arguments + ")}";
-                    JdbcSqlMarkerLexer.Result result = JdbcSqlMarkerLexer.parse(sql, true);
-                    assertThat(result.leadingReturn(), is(leading));
-                    assertThat(result.sql(), is(sql.replace(":first", "?").replace(":second", "?")));
-                    int inputs = arguments.isEmpty() ? 0 : arguments.contains(",") ? 2 : 1;
-                    assertThat(result.markers().size(), is(inputs + (leading ? 1 : 0)));
-                    if (arguments.contains(":")) {
-                        assertThat(result.style(), is(JdbcSqlMarkerLexer.MarkerStyle.NAMED));
-                    } else {
-                        assertThat(result.style(), is(inputs > 0 || leading
-                                ? JdbcSqlMarkerLexer.MarkerStyle.POSITIONAL : JdbcSqlMarkerLexer.MarkerStyle.NONE));
+                    JdbcSqlMarkerLexer.Result result;
+                    try {
+                        result = JdbcSqlMarkerLexer.parse(sql, true);
+                    } catch (IllegalArgumentException e) {
+                        throw new AssertionError("Failed to parse the SQL case " + sql + ".", e);
                     }
+                    String expectedSql = sql.replace(":first", "?").replace(":second", "?");
+                    int inputs = arguments.isEmpty() ? 0 : arguments.contains(",") ? 2 : 1;
+                    JdbcSqlMarkerLexer.MarkerStyle expectedStyle;
+                    if (arguments.contains(":")) {
+                        expectedStyle = JdbcSqlMarkerLexer.MarkerStyle.NAMED;
+                    } else {
+                        expectedStyle = inputs > 0 || leading
+                                ? JdbcSqlMarkerLexer.MarkerStyle.POSITIONAL : JdbcSqlMarkerLexer.MarkerStyle.NONE;
+                    }
+                    assertAll(sql,
+                              () -> assertThat("Leading return", result.leadingReturn(), is(leading)),
+                              () -> assertThat("Rewritten SQL", result.sql(), is(expectedSql)),
+                              () -> assertThat("Marker count", result.markers().size(), is(inputs + (leading ? 1 : 0))),
+                              () -> assertThat("Marker style", result.style(), is(expectedStyle)));
                 }
             }
         }

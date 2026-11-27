@@ -29,7 +29,6 @@ import io.helidon.data.jdbc.lexical.JdbcSqlScanHandler.RegionKind;
 public final class JdbcSqlScanner {
 
     private static final JdbcSqlLexicalProfile PROFILE = JdbcSqlLexicalProfile.PORTABLE;
-    private static final Pattern CALL_OPEN = Pattern.compile("\\s*\\{\\s*");
     private static final Pattern CALL_RETURN_SUFFIX = Pattern.compile("\\s*=\\s*call\\b", Pattern.CASE_INSENSITIVE);
 
     private final String source;
@@ -59,6 +58,20 @@ public final class JdbcSqlScanner {
     }
 
     /**
+     * Tests whether the SQL starts with a positional callable return slot.
+     *
+     * @param source The source supplies the SQL to inspect.
+     * @return The result is true if the SQL starts with a positional callable return slot.
+     * @throws NullPointerException The source is null.
+     */
+    public static boolean hasCallableReturn(String source) {
+        Objects.requireNonNull(source, "The SQL source must not be null.");
+        int start = callableMarkerStart(source);
+        return start >= 0 && start < source.length() && source.charAt(start) == '?'
+                && CALL_RETURN_SUFFIX.matcher(source).region(start + 1, source.length()).lookingAt();
+    }
+
+    /**
      * Tests whether a marker reported by the scanner occupies the leading callable return slot.
      *
      * @param source The original SQL.
@@ -71,9 +84,25 @@ public final class JdbcSqlScanner {
     public static boolean callableReturnMarker(String source, int start, int end) {
         Objects.requireNonNull(source, "The SQL source must not be null.");
         Objects.checkFromToIndex(start, end, source.length());
-        return start > 0 && (source.charAt(0) == '{' || Character.isWhitespace(source.charAt(0)))
-                && CALL_OPEN.matcher(source).region(0, start).matches()
+        return start == callableMarkerStart(source)
                 && CALL_RETURN_SUFFIX.matcher(source).region(end, source.length()).lookingAt();
+    }
+
+    private static int callableMarkerStart(String source) {
+        int index = skipEscapeWhitespace(source, 0);
+        return index < source.length() && source.charAt(index) == '{' ? skipEscapeWhitespace(source, index + 1) : -1;
+    }
+
+    private static int skipEscapeWhitespace(String source, int index) {
+        // Match the ASCII whitespace accepted by the JDBC escape pattern without allocating a matcher.
+        while (index < source.length()) {
+            char ch = source.charAt(index);
+            if (ch != ' ' && (ch < '\t' || ch > '\r')) {
+                break;
+            }
+            index++;
+        }
+        return index;
     }
 
     private void scan() {

@@ -42,7 +42,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -77,6 +76,14 @@ class JdbcCallableFailureTest {
                                             new IllegalArgumentException("Secret metadata label failure."));
                                 }
                                 int selected = shape;
+                                String description = "The metadata failure case uses transactional=" + transactional
+                                        + ", cursor=" + cursor + ", optional getter=" + optional
+                                        + ", physical name=" + physicalName + ", terminal=" + switch (selected) {
+                                            case 0 -> "list";
+                                            case 1 -> "one";
+                                            case 2 -> "optional";
+                                            default -> throw new AssertionError("The row shape is unknown.");
+                                        } + ".";
                                 AtomicReference<IllegalStateException> first = new AtomicReference<>();
                                 IllegalStateException observed = assertThrows(IllegalStateException.class,
                                         () -> fixture.call().consume(result -> {
@@ -89,26 +96,27 @@ class JdbcCallableFailureTest {
                                                     } else {
                                                         row.get("VALUE", Integer.class);
                                                     }
-                                                }));
-                                                assertThrows(IllegalStateException.class, () -> row.get(1, Integer.class));
+                                                }, description));
+                                                assertThrows(IllegalStateException.class,
+                                                        () -> row.get(1, Integer.class), description);
                                                 return 7;
                                             };
                                             JdbcClient.Rows<Integer> rows = fixture.rows(result, mapper);
-                                            assertThat(assertThrows(IllegalStateException.class, () -> {
+                                            assertThat(description, assertThrows(IllegalStateException.class, () -> {
                                                 switch (selected) {
                                                 case 0 -> rows.list();
                                                 case 1 -> rows.one();
                                                 case 2 -> rows.optional();
                                                 default -> throw new AssertionError("The row shape is unknown.");
                                                 }
-                                            }), sameInstance(first.get()));
-                                            assertThrows(IllegalStateException.class, result::resultKind);
-                                        }));
-                                assertThat(observed, sameInstance(first.get()));
-                                assertThat(render(observed), not(containsString("Secret metadata")));
-                                verify(fixture.result, times(1)).next();
-                                verify(fixture.result, never()).getInt(1);
-                                fixture.complete(true);
+                                            }, description), sameInstance(first.get()));
+                                            assertThrows(IllegalStateException.class, result::resultKind, description);
+                                        }), description);
+                                assertThat(description, observed, sameInstance(first.get()));
+                                assertThat(description, render(observed), not(containsString("Secret metadata")));
+                                verify(fixture.result, times(1).description(description)).next();
+                                verify(fixture.result, never().description(description)).getInt(1);
+                                fixture.complete(true, description);
                             }
                         }
                     }
@@ -123,21 +131,22 @@ class JdbcCallableFailureTest {
     @Test
     void keepsPureRowValidationRecoverable() throws Exception {
         for (boolean cursor : new boolean[] {false, true}) {
+            String description = "The recoverable validation case uses cursor=" + cursor + ".";
             try (Fixture fixture = new Fixture(cursor, true)) {
                 fixture.call().consume(result -> {
                     Objects.requireNonNull(result, "The callable result must not be null.");
                     JdbcClient.Rows<Integer> rows = fixture.rows(result, row -> {
                         Objects.requireNonNull(row, "The current row must not be null.");
-                        assertThrows(NullPointerException.class, () -> row.get(1, null));
-                        assertThrows(NullPointerException.class, () -> row.optional(null, Integer.class));
-                        assertThrows(IllegalArgumentException.class, () -> row.get(" ", Integer.class));
-                        assertThrows(IllegalArgumentException.class, () -> row.optional(0, Integer.class));
-                        assertThrows(IllegalArgumentException.class, () -> row.get(1, Object.class));
+                        assertThrows(NullPointerException.class, () -> row.get(1, null), description);
+                        assertThrows(NullPointerException.class, () -> row.optional(null, Integer.class), description);
+                        assertThrows(IllegalArgumentException.class, () -> row.get(" ", Integer.class), description);
+                        assertThrows(IllegalArgumentException.class, () -> row.optional(0, Integer.class), description);
+                        assertThrows(IllegalArgumentException.class, () -> row.get(1, Object.class), description);
                         return row.get(1, Integer.class);
                     });
-                    assertThat(rows.list(), is(List.of(42)));
+                    assertThat(description, rows.list(), is(List.of(42)));
                 });
-                fixture.complete(false);
+                fixture.complete(false, description);
             }
         }
     }
@@ -158,7 +167,7 @@ class JdbcCallableFailureTest {
                 assertThrows(IllegalStateException.class, () -> row.get("VALUE", Integer.class));
                 return row.get(1, Integer.class);
             }).list(), is(List.of(42)));
-            fixture.complete(false);
+            fixture.complete(false, "The ordinary materialized query should commit.");
         }
     }
 
@@ -170,6 +179,9 @@ class JdbcCallableFailureTest {
         for (String resource : List.of("rows", "statement", "lease")) {
             for (int mode = 0; mode < 2; mode++) {
                 for (boolean dataException : new boolean[] {false, true}) {
+                    String description = "The identity case uses resource=" + resource + ", failure source="
+                            + (mode == 0 ? "callback" : "row mapper")
+                            + " and dataException=" + dataException + ".";
                     try (Fixture fixture = new Fixture(false, false)) {
                         Error fatal = new AssertionError("The cleanup failed fatally.");
                         switch (resource) {
@@ -190,10 +202,10 @@ class JdbcCallableFailureTest {
                                 throw application;
                             });
                             rows.list();
-                        }));
-                        assertThat(observed, sameInstance(fatal));
-                        assertThat(observed.getSuppressed(), is(new Throwable[] {application}));
-                        fixture.verifyClosed(resource.equals("lease") ? 2 : 1);
+                        }), description);
+                        assertThat(description, observed, sameInstance(fatal));
+                        assertThat(description, observed.getSuppressed(), is(new Throwable[] {application}));
+                        fixture.verifyClosed(resource.equals("lease") ? 2 : 1, description);
                     }
                 }
             }
@@ -208,34 +220,32 @@ class JdbcCallableFailureTest {
         for (boolean transactional : new boolean[] {false, true}) {
             for (boolean cursor : new boolean[] {false, true}) {
                 String description = "The cleanup case uses transactional=" + transactional + " and cursor=" + cursor + ".";
-                assertAll(description, () -> {
-                    try (Fixture fixture = new Fixture(cursor, transactional)) {
-                        Error first = new AssertionError("The application failed first.");
-                        Error row = new AssertionError("The JDBC_CANARY row cleanup failed.");
-                        row.initCause(new IllegalArgumentException("The JDBC_CANARY cause was reported."));
-                        row.addSuppressed(new SQLException("The JDBC_CANARY failure was suppressed."));
-                        Error statement = new AssertionError("The JDBC_CANARY statement cleanup failed.");
-                        doThrow(row).when(fixture.result).close();
-                        doThrow(statement).when(fixture.callable).close();
+                try (Fixture fixture = new Fixture(cursor, transactional)) {
+                    Error first = new AssertionError("The application failed first.");
+                    Error row = new AssertionError("The JDBC_CANARY row cleanup failed.");
+                    row.initCause(new IllegalArgumentException("The JDBC_CANARY cause was reported."));
+                    row.addSuppressed(new SQLException("The JDBC_CANARY failure was suppressed."));
+                    Error statement = new AssertionError("The JDBC_CANARY statement cleanup failed.");
+                    doThrow(row).when(fixture.result).close();
+                    doThrow(statement).when(fixture.callable).close();
 
-                        Error observed = assertThrows(Error.class, () -> fixture.call().consume(result -> {
-                            if (cursor) {
-                                fixture.rows(result, _ -> {
-                                    throw first;
-                                }).list();
-                            } else {
+                    Error observed = assertThrows(Error.class, () -> fixture.call().consume(result -> {
+                        if (cursor) {
+                            fixture.rows(result, _ -> {
                                 throw first;
-                            }
-                        }), description);
+                            }).list();
+                        } else {
+                            throw first;
+                        }
+                    }), description);
 
-                        assertThat(description, observed, sameInstance(first));
-                        assertThat(description, first.getSuppressed().length, is(2));
-                        assertThat(description, first.getSuppressed()[0], not(sameInstance(row)));
-                        assertThat(description, first.getSuppressed()[1], not(sameInstance(statement)));
-                        assertThat(description, render(first), not(containsString("JDBC_CANARY")));
-                        fixture.complete(true);
-                    }
-                });
+                    assertThat(description, observed, sameInstance(first));
+                    assertThat(description, first.getSuppressed().length, is(2));
+                    assertThat(description, first.getSuppressed()[0], not(sameInstance(row)));
+                    assertThat(description, first.getSuppressed()[1], not(sameInstance(statement)));
+                    assertThat(description, render(first), not(containsString("JDBC_CANARY")));
+                    fixture.complete(true, description);
+                }
             }
         }
     }
@@ -246,6 +256,7 @@ class JdbcCallableFailureTest {
     @Test
     void sanitizesSetupFailuresBeforeFatalCleanup() throws Exception {
         for (String setup : List.of("prepare", "register", "bind")) {
+            String description = "The setup failure occurs during " + setup + ".";
             try (Fixture fixture = new Fixture(false, false)) {
                 SQLException original = new SQLException("Secret setup SQL and value.", "22003", 42);
                 Error fatal = new AssertionError("Cleanup failed fatally.");
@@ -261,13 +272,13 @@ class JdbcCallableFailureTest {
                     }
                 }
                 Error observed = assertThrows(Error.class, () -> fixture.statement("{call routine(?)}").bind(1, 1)
-                        .call().out("value", 1, JDBCType.INTEGER).execute());
-                assertThat(observed, sameInstance(fatal));
-                assertThat(observed.getSuppressed().length, is(1));
-                assertThat(render(observed), not(containsString(original.getMessage())));
-                assertThat(render(observed), containsString("22003"));
-                verify(fixture.callable, never()).execute();
-                verify(fixture.connection, times(setup.equals("prepare") ? 2 : 1)).close();
+                        .call().out("value", 1, JDBCType.INTEGER).execute(), description);
+                assertThat(description, observed, sameInstance(fatal));
+                assertThat(description, observed.getSuppressed().length, is(1));
+                assertThat(description, render(observed), not(containsString(original.getMessage())));
+                assertThat(description, render(observed), containsString("22003"));
+                verify(fixture.callable, never().description(description)).execute();
+                verify(fixture.connection, times(setup.equals("prepare") ? 2 : 1).description(description)).close();
             }
         }
     }
@@ -289,7 +300,7 @@ class JdbcCallableFailureTest {
             assertThat(fatal.getSuppressed(), is(new Throwable[] {application}));
             assertThat(application.getSuppressed().length, is(2));
             assertThat(render(fatal), not(containsString("Secret")));
-            fixture.verifyClosed(2);
+            fixture.verifyClosed(2, "Fatal cleanup should release the connection after retry.");
         }
     }
 
@@ -310,17 +321,17 @@ class JdbcCallableFailureTest {
                     }
                     JdbcClient.Call call = fixture.statement("{call routine(?)}").call().out("value", 1, JDBCType.INTEGER);
                     assertThat(description, assertThrows(LinkageError.class, call::execute, description), sameInstance(fatal));
-                    verify(fixture.callable).close();
+                    verify(fixture.callable, times(1).description(description)).close();
                     if (transactional) {
                         try {
                             assertThrows(TxException.class, () -> fixture.manager.commit("failure"), description);
-                            verify(fixture.connection).rollback();
+                            verify(fixture.connection, times(1).description(description)).rollback();
                         } finally {
                             fixture.active = false;
                             fixture.manager.end();
                         }
                     }
-                    verify(fixture.connection).close();
+                    verify(fixture.connection, times(1).description(description)).close();
                 }
             }
         }
@@ -342,7 +353,7 @@ class JdbcCallableFailureTest {
                 assertThat(assertThrows(LinkageError.class, rows::one), sameInstance(fatal));
             }));
             assertThat(observed, sameInstance(fatal));
-            fixture.complete(true);
+            fixture.complete(true, "The row translation error should require rollback.");
         }
     }
 
@@ -358,7 +369,7 @@ class JdbcCallableFailureTest {
             }));
             assertThat(observed, sameInstance(original.get()));
             assertThat(observed.getSuppressed(), is(new Throwable[0]));
-            fixture.complete(true);
+            fixture.complete(true, "The callback wrapper should require rollback.");
         }
     }
 
@@ -383,7 +394,7 @@ class JdbcCallableFailureTest {
                 }), description);
                 assertThat(description, observed, sameInstance(original));
                 assertThat(description, observed.getSuppressed(), is(new Throwable[0]));
-                fixture.complete(true);
+                fixture.complete(true, description);
             }
         }
     }
@@ -403,7 +414,7 @@ class JdbcCallableFailureTest {
                                     () -> result.optional("value", LocalDate.class), description));
                         }), description);
                 assertThat(description, observed, sameInstance(first.get()));
-                fixture.complete(true);
+                fixture.complete(true, description);
             }
         }
     }
@@ -476,30 +487,30 @@ class JdbcCallableFailureTest {
             return cursor ? result.cursor("rows", mapper) : result.rows(mapper);
         }
 
-        private void complete(boolean rollback) throws Exception {
+        private void complete(boolean rollback, String description) throws Exception {
             if (active) {
                 try {
                     if (rollback) {
-                        assertThrows(TxException.class, () -> manager.commit("failure"));
-                        verify(connection).rollback();
-                        verify(connection, never()).commit();
+                        assertThrows(TxException.class, () -> manager.commit("failure"), description);
+                        verify(connection, times(1).description(description)).rollback();
+                        verify(connection, never().description(description)).commit();
                     } else {
                         manager.commit("failure");
-                        verify(connection).commit();
-                        verify(connection, never()).rollback();
+                        verify(connection, times(1).description(description)).commit();
+                        verify(connection, never().description(description)).rollback();
                     }
                 } finally {
                     active = false;
                     manager.end();
                 }
             }
-            verifyClosed(1);
+            verifyClosed(1, description);
         }
 
-        private void verifyClosed(int connectionCloses) throws Exception {
-            verify(result).close();
-            verify(callable).close();
-            verify(connection, times(connectionCloses)).close();
+        private void verifyClosed(int connectionCloses, String description) throws Exception {
+            verify(result, times(1).description(description)).close();
+            verify(callable, times(1).description(description)).close();
+            verify(connection, times(connectionCloses).description(description)).close();
         }
     }
 }

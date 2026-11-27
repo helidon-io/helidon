@@ -404,8 +404,8 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
          * @param type The JDBC registration type.
          * @return This callable stage.
          * @throws NullPointerException A reference argument is null.
-         * @throws IllegalArgumentException The registration or parameter position is invalid.
-         * @throws IllegalStateException The statement is consumed or lacks logical parameter metadata.
+         * @throws IllegalArgumentException The SQL has no leading return slot or the registration is invalid.
+         * @throws IllegalStateException The statement has been consumed.
          * @throws UnsupportedOperationException The provider does not support this registration.
          */
         default Call returns(JDBCType type) {
@@ -421,8 +421,8 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
          * @param typeName The nonblank database type name.
          * @return This callable stage.
          * @throws NullPointerException A reference argument is null.
-         * @throws IllegalArgumentException The registration or parameter position is invalid.
-         * @throws IllegalStateException The statement is consumed or lacks logical parameter metadata.
+         * @throws IllegalArgumentException The SQL has no leading return slot or the registration is invalid.
+         * @throws IllegalStateException The statement has been consumed.
          * @throws UnsupportedOperationException The provider does not support this registration.
          */
         default Call returns(JDBCType type, String typeName) {
@@ -439,8 +439,8 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
          * @param scale The nonnegative scale requires NUMERIC or DECIMAL.
          * @return This callable stage.
          * @throws NullPointerException A reference argument is null.
-         * @throws IllegalArgumentException The registration or parameter position is invalid.
-         * @throws IllegalStateException The statement is consumed or lacks logical parameter metadata.
+         * @throws IllegalArgumentException The SQL has no leading return slot or the registration is invalid.
+         * @throws IllegalStateException The statement has been consumed.
          * @throws UnsupportedOperationException The provider does not support this registration.
          */
         default Call returns(JDBCType type, int scale) {

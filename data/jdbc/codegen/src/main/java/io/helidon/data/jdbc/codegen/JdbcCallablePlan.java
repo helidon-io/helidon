@@ -87,46 +87,17 @@ record JdbcCallablePlan(List<Output> outputs, List<Output> components, TypedElem
         NormalizedOutputs normalized = normalizeOutputs(method, context);
         List<Output> outputs = normalized.outputs();
         boolean aggregate = !normalized.componentOrder().isEmpty();
-        TypedElementInfo control = null;
-        boolean consumer = false;
-        List<TypedElementInfo> inputs = new ArrayList<>();
-        for (TypedElementInfo parameter : method.parameterArguments()) {
-            TypeName type = parameter.typeName();
-            boolean isConsumer = type.genericTypeName().equals(TypeName.create(Consumer.class));
-            boolean isMapper = type.genericTypeName().equals(JdbcCodegenTypes.CALL_MAPPER);
-            if (isConsumer || isMapper) {
-                if (parameter.hasAnnotation(JdbcCodegenTypes.DATA_PARAM)) {
-                    throw JdbcMethodPlan.failure(parameter, "A callable callback cannot declare @Data.Param.");
-                }
-                if (control != null || type.typeArguments().size() != 1) {
-                    throw JdbcMethodPlan.failure(parameter, "A callable method requires at most one fully typed callback.");
-                }
-                TypeName expected = isConsumer ? JdbcCodegenTypes.CALL_RESULT : method.typeName().boxed();
-                if (!ResolvedType.create(type.typeArguments().getFirst()).equals(ResolvedType.create(expected))
-                        || (isConsumer && !method.typeName().equals(TypeNames.PRIMITIVE_VOID))
-                        || (!isConsumer && method.typeName().equals(TypeNames.PRIMITIVE_VOID))) {
-                    throw JdbcMethodPlan.failure(parameter, "The callable callback type must match the method return contract.");
-                }
-                control = parameter;
-                consumer = isConsumer;
-            } else {
-                if (!JdbcScalarTypes.isScalar(type)) {
-                    throw JdbcMethodPlan.failure(parameter, "A callable input must have a supported scalar type.");
-                }
-                inputs.add(parameter);
+        Parameters callParameters = executionParameters(method, context, sql, reference, outputs);
+        TypedElementInfo control = callParameters.control();
+        boolean returnsVoid = method.typeName().equals(TypeNames.PRIMITIVE_VOID);
+        if (method.hasAnnotation(JdbcCodegenTypes.JDBC_ROW_MAPPER)) {
+            if (control != null) {
+                throw JdbcMethodPlan.failure(method, "A callable callback cannot accompany a method row mapper.");
+            }
+            if (returnsVoid) {
+                throw JdbcMethodPlan.failure(method, "A void callable method cannot select a row mapper.");
             }
         }
-        if (control != null && method.hasAnnotation(JdbcCodegenTypes.JDBC_ROW_MAPPER)) {
-            throw JdbcMethodPlan.failure(method, "A callable callback cannot accompany a method row mapper.");
-        }
-        JdbcSqlParameterPlan configured = null;
-        if (reference == null) {
-            JdbcSqlParameterPlan.validateParameters(inputs, method);
-        } else {
-            configured = JdbcSqlParameterPlan.configured("", inputs, method, context.typeHierarchyResolver());
-        }
-        Parameters callParameters = parameters(method, context, reference == null ? sql : reference.defaultSql(),
-                                               inputs, outputs, configured);
         List<Output> positioned = callParameters.outputs();
         JdbcSqlParameterPlan parameters = callParameters.plan();
         // Snapshot restrictions belong to the outputs terminal. Callbacks select their own detached result.
@@ -134,7 +105,7 @@ record JdbcCallablePlan(List<Output> outputs, List<Output> components, TypedElem
         JdbcMethodPlan plan = JdbcMethodPlan.callableUnmapped(method, parameters);
         List<Output> mappedOutputs = new ArrayList<>();
         Map<String, Output> mappedByName = aggregate ? new HashMap<>() : Map.of();
-        boolean discarded = method.typeName().equals(TypeNames.PRIMITIVE_VOID) || control != null;
+        boolean discarded = returnsVoid || control != null;
         for (Output output : positioned) {
             JdbcMethodPlan mapping = null;
             if (snapshot && (!SNAPSHOT_TYPES.contains(output.type()) || !output.typeName().isEmpty())) {
@@ -168,10 +139,50 @@ record JdbcCallablePlan(List<Output> outputs, List<Output> components, TypedElem
         List<Output> componentOutputs = aggregate ? normalized.componentOrder().stream()
                 .map(mappedByName::get).toList() : List.of();
         plan.callable(new JdbcCallablePlan(List.copyOf(mappedOutputs), componentOutputs,
-                                           control, consumer, snapshot, aggregate,
+                                           control, control != null && returnsVoid, snapshot, aggregate,
                                            callParameters.names(), callParameters.namedOnly()));
         plan.reference(reference);
         return plan;
+    }
+
+    // Inherited declarations compare JDBC registrations and bindings before mapping the effective return type.
+    static Parameters executionParameters(TypedElementInfo method, RoundContext context, String sql,
+                                          JdbcSqlReference reference, List<Output> outputs) {
+        TypedElementInfo control = null;
+        List<TypedElementInfo> inputs = new ArrayList<>();
+        for (TypedElementInfo parameter : method.parameterArguments()) {
+            TypeName type = parameter.typeName();
+            boolean isConsumer = type.genericTypeName().equals(TypeName.create(Consumer.class));
+            boolean isMapper = type.genericTypeName().equals(JdbcCodegenTypes.CALL_MAPPER);
+            if (isConsumer || isMapper) {
+                if (parameter.hasAnnotation(JdbcCodegenTypes.DATA_PARAM)) {
+                    throw JdbcMethodPlan.failure(parameter, "A callable callback cannot declare @Data.Param.");
+                }
+                if (control != null || type.typeArguments().size() != 1) {
+                    throw JdbcMethodPlan.failure(parameter, "A callable method requires at most one fully typed callback.");
+                }
+                TypeName expected = isConsumer ? JdbcCodegenTypes.CALL_RESULT : method.typeName().boxed();
+                if (!ResolvedType.create(type.typeArguments().getFirst()).equals(ResolvedType.create(expected))
+                        || (isConsumer && !method.typeName().equals(TypeNames.PRIMITIVE_VOID))
+                        || (!isConsumer && method.typeName().equals(TypeNames.PRIMITIVE_VOID))) {
+                    throw JdbcMethodPlan.failure(parameter, "The callable callback type must match the method return contract.");
+                }
+                control = parameter;
+            } else {
+                if (!JdbcScalarTypes.isScalar(type)) {
+                    throw JdbcMethodPlan.failure(parameter, "A callable input must have a supported scalar type.");
+                }
+                inputs.add(parameter);
+            }
+        }
+        JdbcSqlParameterPlan configured = null;
+        if (reference == null) {
+            JdbcSqlParameterPlan.validateParameters(inputs, method);
+        } else {
+            configured = JdbcSqlParameterPlan.configured("", inputs, method, context.typeHierarchyResolver());
+        }
+        return parameters(method, context, reference == null ? sql : reference.defaultSql(),
+                          inputs, outputs, configured, control);
     }
 
     private static NormalizedOutputs normalizeOutputs(TypedElementInfo method, RoundContext context) {
@@ -269,7 +280,7 @@ record JdbcCallablePlan(List<Output> outputs, List<Output> components, TypedElem
 
     private static Parameters parameters(TypedElementInfo method, RoundContext context, String sql,
                                          List<TypedElementInfo> inputs, List<Output> outputs,
-                                         JdbcSqlParameterPlan configured) {
+                                         JdbcSqlParameterPlan configured, TypedElementInfo control) {
         Map<String, TypedElementInfo> inputNames = new HashMap<>();
         inputs.forEach(input -> inputNames.put(JdbcSqlParameterPlan.effectiveName(input), input));
         Map<String, Output> outputNames = new HashMap<>();
@@ -299,7 +310,7 @@ record JdbcCallablePlan(List<Output> outputs, List<Output> components, TypedElem
         boolean namedOnly = aliases || outputs.stream().anyMatch(output -> !output.marker().isEmpty());
         Parameters configuredParameters = configured == null ? null
                 : new Parameters(new JdbcSqlParameterPlan(configured.sql(), configured.binds(), names.size()),
-                                 outputs, List.copyOf(names), namedOnly);
+                                 outputs, List.copyOf(names), namedOnly, control);
         if (sql == null) {
             return configuredParameters;
         }
@@ -359,7 +370,7 @@ record JdbcCallablePlan(List<Output> outputs, List<Output> components, TypedElem
             }
         }
         return new Parameters(new JdbcSqlParameterPlan(parsed.sql(), binds, markers.size()),
-                              List.copyOf(positioned), List.copyOf(names), namedOnly);
+                              List.copyOf(positioned), List.copyOf(names), namedOnly, control);
     }
 
     private static JdbcMethodPlan outputMapping(TypedElementInfo method, Output output, RoundContext context,
@@ -402,13 +413,17 @@ record JdbcCallablePlan(List<Output> outputs, List<Output> components, TypedElem
                 .toList();
     }
 
-    private record NormalizedOutputs(List<Output> outputs, List<String> componentOrder) {
-    }
-
-    private record Parameters(JdbcSqlParameterPlan plan, List<Output> outputs, List<String> names, boolean namedOnly) {
+    record Parameters(JdbcSqlParameterPlan plan,
+                      List<Output> outputs,
+                      List<String> names,
+                      boolean namedOnly,
+                      TypedElementInfo control) {
     }
 
     record Output(String name, String marker, String type, String typeName, int scale, int index,
                   TypeName valueType, JdbcMethodPlan mapping) {
+    }
+
+    private record NormalizedOutputs(List<Output> outputs, List<String> componentOrder) {
     }
 }

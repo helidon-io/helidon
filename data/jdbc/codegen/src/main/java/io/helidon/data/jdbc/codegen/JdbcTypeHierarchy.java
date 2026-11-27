@@ -173,7 +173,7 @@ final class JdbcTypeHierarchy {
 
     private static List<ConfiguredParameterBinding> configuredParameterBindings(TypedElementInfo method, RoundContext context) {
         List<TypedElementInfo> inputs = JdbcCallablePlan.selected(method, context)
-                ? JdbcMethodPlan.create(method, context).parameterPlan().binds().stream()
+                ? callableParameters(method, context).plan().binds().stream()
                         .map(JdbcSqlParameterPlan.Bind::parameter).toList()
                 : method.parameterArguments();
         return inputs.stream()
@@ -185,7 +185,7 @@ final class JdbcTypeHierarchy {
     private static ParameterBindingContract parameterBindingContract(TypedElementInfo method, String sql, RoundContext context) {
         List<TypedElementInfo> parameters = method.parameterArguments();
         JdbcSqlParameterPlan plan = JdbcCallablePlan.selected(method, context)
-                ? JdbcCallablePlan.create(method, context, sql, null).parameterPlan()
+                ? callableParameters(method, context).plan()
                 : JdbcSqlParameterPlan.create(sql, method.parameterArguments(), method);
         List<ParameterBinding> bindings = plan.binds()
                 .stream()
@@ -208,16 +208,16 @@ final class JdbcTypeHierarchy {
     private static boolean sameMethodAnnotations(TypedElementInfo first, TypedElementInfo second, RoundContext context) {
         for (TypeName annotation : EXACT_METHOD_ANNOTATIONS) {
             if (annotation.equals(JdbcCodegenTypes.JDBC_STATEMENT)) {
-                if (!first.findAnnotation(annotation).flatMap(Annotation::stringValue)
-                        .equals(second.findAnnotation(annotation).flatMap(Annotation::stringValue))) {
+                Optional<String> statement = first.findAnnotation(annotation).flatMap(Annotation::stringValue);
+                if (!statement.equals(second.findAnnotation(annotation).flatMap(Annotation::stringValue))) {
                     return false;
                 }
-                if (JdbcCallablePlan.selected(first, context) && JdbcCallablePlan.selected(second, context)) {
-                    JdbcMethodPlan firstPlan = JdbcMethodPlan.create(first, context);
-                    JdbcMethodPlan secondPlan = JdbcMethodPlan.create(second, context);
-                    JdbcCallablePlan firstCall = firstPlan.callable();
-                    JdbcCallablePlan secondCall = secondPlan.callable();
-                    if (firstPlan.configured()) {
+                if (statement.isPresent()
+                        && JdbcCallablePlan.selected(first, context)
+                        && JdbcCallablePlan.selected(second, context)) {
+                    JdbcCallablePlan.Parameters firstCall = callableParameters(first, context);
+                    JdbcCallablePlan.Parameters secondCall = callableParameters(second, context);
+                    if (JdbcSqlReference.parse(statement.get(), first) != null) {
                         boolean sameNames = firstCall.namedOnly() && secondCall.namedOnly()
                                 ? new HashSet<>(firstCall.names()).equals(new HashSet<>(secondCall.names()))
                                 : firstCall.names().equals(secondCall.names());
@@ -242,6 +242,13 @@ final class JdbcTypeHierarchy {
         }
         return effectiveExecution(first, context) == effectiveExecution(second, context)
                 && outputContract(first, context).equals(outputContract(second, context));
+    }
+
+    private static JdbcCallablePlan.Parameters callableParameters(TypedElementInfo method, RoundContext context) {
+        String sql = method.findAnnotation(JdbcCodegenTypes.JDBC_STATEMENT).flatMap(Annotation::stringValue).orElse("");
+        JdbcSqlReference reference = JdbcSqlReference.parse(sql, method);
+        return JdbcCallablePlan.executionParameters(method, context, sql, reference,
+                                                    JdbcCallablePlan.methodOutputs(method, context));
     }
 
     private static JdbcExecutionSelection effectiveExecution(TypedElementInfo method, RoundContext context) {

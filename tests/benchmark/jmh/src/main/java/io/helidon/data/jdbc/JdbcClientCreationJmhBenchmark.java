@@ -19,6 +19,7 @@ import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
@@ -32,6 +33,7 @@ import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
@@ -107,6 +109,32 @@ public class JdbcClientCreationJmhBenchmark {
     }
 
     /**
+     * Binds the first value on a generated statement with a known marker count.
+     *
+     * @param state The state supplies the SQL and client.
+     * @return The statement contains the bound value.
+     * @throws NullPointerException The state is null.
+     */
+    @Benchmark
+    public JdbcClient.Statement generatedFirstBind(BindingState state) {
+        Objects.requireNonNull(state, "The benchmark state must not be null.");
+        return GeneratedJdbcData.createGenerated(state.client, state.sql, PARAMETER_COUNT).bind(1, 42);
+    }
+
+    /**
+     * Binds the first value after a marker count cache hit.
+     *
+     * @param state The state supplies the SQL and client.
+     * @return The statement contains the bound value.
+     * @throws NullPointerException The state is null.
+     */
+    @Benchmark
+    public JdbcClient.Statement cachedFirstBind(BindingState state) {
+        Objects.requireNonNull(state, "The benchmark state must not be null.");
+        return state.client.create(state.sql).bind(1, 42);
+    }
+
+    /**
      * One client shared by every benchmark thread.
      */
     @State(Scope.Benchmark)
@@ -145,6 +173,28 @@ public class JdbcClientCreationJmhBenchmark {
             int result = index;
             index = (index + 1) & (SQL_COUNT - 1);
             return result;
+        }
+    }
+
+    /**
+     * Uses the same SQL and input for both paths so only leading whitespace and statement creation vary.
+     */
+    @State(Scope.Benchmark)
+    public static class BindingState {
+        @Param({"plain", "whitespace"})
+        private String prefix;
+
+        private JdbcClient client;
+        private String sql;
+
+        /**
+         * Warms the imperative marker count cache without acquiring JDBC resources.
+         */
+        @Setup
+        public void setup() {
+            sql = prefix.equals("whitespace") ? " \t\n  " + SQL[0] : SQL[0];
+            client = JdbcClient.builder().dataSource(new UnusedDataSource()).build();
+            client.create(sql);
         }
     }
 

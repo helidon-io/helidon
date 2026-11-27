@@ -35,8 +35,8 @@ final class JdbcRow implements JdbcClient.Row {
     private final ResultSet resultSet;
     private final JdbcColumnLayout columns;
     private final JdbcOperation operation;
-    private final Thread callbackThread;
-    private final JdbcCallResult callScope;
+    // A callable result already owns its callback thread. Ordinary rows retain the thread directly.
+    private final Object owner;
 
     // Volatile makes expiration visible to code that retained the row after the callback.
     private volatile boolean active = true;
@@ -49,15 +49,18 @@ final class JdbcRow implements JdbcClient.Row {
      * @param operation current operation
      */
     JdbcRow(ResultSet resultSet, JdbcColumnLayout columns, JdbcOperation operation) {
-        this(resultSet, columns, operation, null);
+        this(resultSet, columns, operation, Thread.currentThread());
     }
 
     JdbcRow(ResultSet resultSet, JdbcColumnLayout columns, JdbcOperation operation, JdbcCallResult callScope) {
-        this.callScope = callScope;
+        this(resultSet, columns, operation, (Object) callScope);
+    }
+
+    private JdbcRow(ResultSet resultSet, JdbcColumnLayout columns, JdbcOperation operation, Object owner) {
+        this.owner = owner;
         this.resultSet = resultSet;
         this.columns = columns;
         this.operation = operation;
-        this.callbackThread = Thread.currentThread();
     }
 
     @Override
@@ -167,7 +170,7 @@ final class JdbcRow implements JdbcClient.Row {
     }
 
     private void record(Throwable failure) {
-        if (callScope != null) {
+        if (owner instanceof JdbcCallResult callScope) {
             callScope.retain(failure);
         }
     }
@@ -189,13 +192,15 @@ final class JdbcRow implements JdbcClient.Row {
      * Verifies that the current callback can read this row.
      */
     private void ensureReadable() {
-        if (callScope != null) {
+        boolean onOwnerThread = owner == Thread.currentThread();
+        if (!onOwnerThread && owner instanceof JdbcCallResult callScope) {
             callScope.check();
+            onOwnerThread = true;
         }
         if (!active) {
             throw new IllegalStateException("A JDBC row is valid only during its mapper callback.");
         }
-        if (Thread.currentThread() != callbackThread) {
+        if (!onOwnerThread) {
             throw new IllegalStateException("A JDBC row can be read only on its mapper callback thread.");
         }
     }

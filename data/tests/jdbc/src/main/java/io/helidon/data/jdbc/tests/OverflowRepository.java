@@ -35,4 +35,13 @@ public interface OverflowRepository {
     @Jdbc.Statement("UPDATE CONTACT SET NAME = :name WHERE ID = :id")
     @Jdbc.Execution(Jdbc.ExecutionType.UPDATE)
     int rename(String name, long id);
+
+    /**
+     * Detects accidental calls to a type inherited by the generated repository.
+     */
+    record Math(int value) {
+        static int toIntExact(long count) {
+            return -999;
+        }
+    }
 }
