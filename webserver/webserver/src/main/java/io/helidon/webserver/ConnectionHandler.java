@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -111,6 +112,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext, C
     private final Consumer<ConnectionHandler> connectionHandlerRemoveListener;
     private final ConnectionObservation httpTransportObservation;
     private final boolean httpTransportObserved;
+    private final ScheduledExecutorService writeTimeoutExecutor;
     private final ReentrantLock closeLock = new ReentrantLock();
 
     private String socketIds;
@@ -141,7 +143,8 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext, C
                       Tls tls,
                       ListenerTlsContext listenerTls,
                       ConnectionObservation httpTransportObservation,
-                      Consumer<ConnectionHandler> connectionHandlerRemoveListener) {
+                      Consumer<ConnectionHandler> connectionHandlerRemoveListener,
+                      ScheduledExecutorService writeTimeoutExecutor) {
         this.listenerContext = listenerContext;
         this.trustedProxyMatcher = trustedProxyMatcher;
         this.limitToken = limitToken;
@@ -158,6 +161,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext, C
         this.listenerConfig = listenerContext.config();
         this.connectionHandlerRemoveListener = connectionHandlerRemoveListener;
         this.channelId = "0x" + HexFormat.of().toHexDigits(System.identityHashCode(socket));
+        this.writeTimeoutExecutor = writeTimeoutExecutor;
     }
 
     @Override
@@ -549,10 +553,22 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext, C
     }
 
     private HelidonSocket createSocket(Tls tls, SocketChannel socket, String channelId) throws IOException {
+        HelidonSocket transport;
         if (listenerConfig.useNio() || socket.getLocalAddress() instanceof UnixDomainSocketAddress) {
-            return createNioSocket(tls, socket, channelId);
+            transport = createNioSocket(tls, socket, channelId);
+        } else {
+            transport = createByteSocket(tls, socket, channelId);
         }
-        return createByteSocket(tls, socket, channelId);
+        if (writeTimeoutExecutor == null) {
+            return transport;
+        }
+        return new WriteTimeoutSocket(transport, listenerConfig.writeTimeout().orElseThrow(), writeTimeoutExecutor, () -> {
+            try {
+                httpTransportOutcome(ConnectionOutcome.TIMEOUT);
+            } finally {
+                abortSocket();
+            }
+        }, System::nanoTime);
     }
 
     private HelidonSocket createNioSocket(Tls tls, SocketChannel channel, String channelId) throws IOException {

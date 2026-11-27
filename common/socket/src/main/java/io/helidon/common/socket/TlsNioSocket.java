@@ -31,6 +31,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
@@ -69,6 +70,7 @@ public final class TlsNioSocket extends NioSocket {
     private final ByteBuffer emptyHandshakeData = ByteBuffer.allocate(0);
     private final Runnable initialHandshakeCompleted;
 
+    private Runnable sendControlData;
     private int unwrapRemaining;
     private ByteBuffer peerAppData;
     private ByteBuffer myNetData;
@@ -229,6 +231,19 @@ public final class TlsNioSocket extends NioSocket {
                                 "client",
                                 null,
                                 NO_OP);
+    }
+
+    /**
+     * Configure the guard for sending a complete TLS control buffer.
+     * The guard must synchronously run the supplied write action. Configure it before using this socket.
+     *
+     * @param guard guard for handshake and closure writes
+     */
+    @Api.Internal
+    public void controlWriteGuard(Consumer<Runnable> guard) {
+        Objects.requireNonNull(guard, "control write guard");
+        Runnable send = this::sendNetData;
+        this.sendControlData = () -> guard.accept(send);
     }
 
     @Override
@@ -412,7 +427,7 @@ public final class TlsNioSocket extends NioSocket {
             SSLEngineResult.HandshakeStatus hs;
             do {
                 myAppData.flip();
-                SSLEngineResult r = wrapAndSend(myAppData, true);
+                SSLEngineResult r = wrapAndSend(myAppData, WriteType.CLOSURE);
                 hs = r.getHandshakeStatus();
                 st = r.getStatus();
             } while (st != SSLEngineResult.Status.CLOSED
@@ -600,7 +615,7 @@ public final class TlsNioSocket extends NioSocket {
                     // fall through to wrap
                 case NEED_WRAP:
                     emptyHandshakeData.clear();
-                    result = wrapAndSend(emptyHandshakeData, false);
+                    result = wrapAndSend(emptyHandshakeData, WriteType.HANDSHAKE);
                     break;
                 case NEED_UNWRAP:
                     peerAppData.clear();
@@ -633,7 +648,7 @@ public final class TlsNioSocket extends NioSocket {
             myAppData.flip();
 
             while (myAppData.hasRemaining()) {
-                SSLEngineResult result = wrapAndSend(myAppData, false);
+                SSLEngineResult result = wrapAndSend(myAppData, WriteType.APPLICATION);
                 SSLEngineResult.Status status = result.getStatus();
                 if (status == SSLEngineResult.Status.CLOSED) {
                     doClosure();
@@ -693,8 +708,8 @@ public final class TlsNioSocket extends NioSocket {
                 || status == SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING;
     }
 
-    private SSLEngineResult wrapAndSend(ByteBuffer appData, boolean ignoreClose) throws SSLException {
-        if (closed && !ignoreClose) {
+    private SSLEngineResult wrapAndSend(ByteBuffer appData, WriteType writeType) throws SSLException {
+        if (closed && writeType != WriteType.CLOSURE) {
             throw new SSLException("Engine is closed");
         }
         SSLEngineResult.Status status;
@@ -711,19 +726,26 @@ public final class TlsNioSocket extends NioSocket {
             }
         } while (status == SSLEngineResult.Status.BUFFER_OVERFLOW);
 
-        if (status == SSLEngineResult.Status.CLOSED && !ignoreClose) {
+        if (status == SSLEngineResult.Status.CLOSED && writeType != WriteType.CLOSURE) {
             closed = true;
         }
 
         if (result.bytesProduced() > 0) {
             myNetData.flip();
-            int len = myNetData.remaining();
-            while (len > 0) {
-                len -= write(myNetData);
+            if (writeType != WriteType.APPLICATION && sendControlData != null) {
+                sendControlData.run();
+            } else {
+                sendNetData();
             }
         }
 
         return result;
+    }
+
+    private void sendNetData() {
+        while (myNetData.hasRemaining()) {
+            write(myNetData);
+        }
     }
 
     private ByteBuffer reallocate(ByteBuffer buffer, int size, boolean flip) {
@@ -754,5 +776,11 @@ public final class TlsNioSocket extends NioSocket {
 
         lastSslSessionId = currentSessionId;
         return true;
+    }
+
+    private enum WriteType {
+        APPLICATION,
+        HANDSHAKE,
+        CLOSURE
     }
 }
