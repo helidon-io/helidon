@@ -23,6 +23,7 @@ module io.helidon.data.sql.datasource.jdbc {
 
     requires io.helidon.config;
     requires io.helidon.builder.api;
+    requires io.helidon.common;
     requires io.helidon.service.registry;
     requires transitive io.helidon.data.sql.common;
     requires io.helidon.data.sql.datasource;

@@ -70,6 +70,17 @@ interface JdbcConnectionLease extends AutoCloseable {
          * @throws IllegalStateException when the driver reports an unchecked failure
          */
         JdbcConnectionLease acquire(DataSource dataSource);
+
+        /**
+         * Validates whether the current context permits an independent health check.
+         * Implementations must not acquire resources or change transaction state.
+         * The default implementation imposes no context restrictions.
+         *
+         * @throws io.helidon.data.DataException The current transaction context does not permit the check.
+         * @throws IllegalStateException The transaction association is invalid.
+         */
+        default void checkProbeContext() {
+        }
     }
 
     /**

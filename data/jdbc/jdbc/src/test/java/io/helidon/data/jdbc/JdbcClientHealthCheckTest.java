@@ -1,0 +1,778 @@
+/*
+ * Copyright (c) 2026 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package io.helidon.data.jdbc;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
+
+import javax.sql.DataSource;
+
+import io.helidon.common.Errors;
+import io.helidon.common.Weight;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
+import io.helidon.data.Data;
+import io.helidon.health.HealthCheck;
+import io.helidon.health.HealthCheckResponse;
+import io.helidon.health.HealthCheckType;
+import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.service.registry.Lookup;
+import io.helidon.service.registry.Qualifier;
+import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceRegistry;
+import io.helidon.service.registry.ServiceRegistryConfig;
+import io.helidon.service.registry.ServiceRegistryException;
+import io.helidon.service.registry.ServiceRegistryManager;
+import io.helidon.service.registry.Services;
+
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anEmptyMap;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.hasSize;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.when;
+
+class JdbcClientHealthCheckTest {
+    private static final Lookup HEALTH_CLIENTS = Lookup.builder()
+            .addContract(JdbcClient.class)
+            .addScope(Service.Singleton.TYPE)
+            .addScope(Service.PerLookup.TYPE)
+            .build();
+    private static final Qualifier PROVIDER = Qualifier.create(Data.ProviderType.TYPE, Jdbc.PROVIDER);
+
+    /**
+     * Keeps policy defaults, configuration, and owner builders consistent without acquiring connections.
+     */
+    @Test
+    void healthPolicyDefaultsAndOwnerBuilderParity() {
+        JdbcClientHealthConfig defaults = JdbcClientHealthConfig.create();
+        assertThat(defaults.enabled(), is(false));
+        assertThat(defaults.query(), is("SELECT 1"));
+        assertThat(defaults.queryTimeout(), is(Duration.ofSeconds(2)));
+        assertThat(defaults.type(), is(HealthCheckType.READINESS));
+
+        String query = "SELECT 'POLICY_SQL_CANARY'";
+        Config config = Config.just(ConfigSources.create(Map.of("name", "orders",
+                "health.enabled", "true", "health.query", query, "health.query-timeout", "PT3S",
+                "health.type", "liveness")));
+        DataSource source = mock(DataSource.class);
+        var configured = JdbcClientConfig.builder().config(config).dataSource(source);
+        var policy = JdbcClientHealthConfig.builder().enabled(true).query(query).queryTimeout(Duration.ofSeconds(3))
+                .type(HealthCheckType.LIVENESS);
+        var typed = JdbcClientConfig.builder().name("orders").dataSource(source).health(policy.build());
+        var nested = JdbcClientConfig.builder().name("orders").dataSource(source)
+                .health(health -> health.enabled(true).query(query).queryTimeout(Duration.ofSeconds(3))
+                        .type(HealthCheckType.LIVENESS));
+        assertThat(JdbcClientConfig.builder().dataSource(source).buildPrototype().health(), is(defaults));
+        for (var builder : List.of(configured, typed, nested)) {
+            JdbcClientConfig owner = builder.buildPrototype();
+            assertThat(owner.health(), is(policy.build()));
+            assertThat(builder.toString(), not(containsString("POLICY_SQL_CANARY")));
+            assertThat(owner.toString(), not(containsString("POLICY_SQL_CANARY")));
+            assertThat(owner.health().query(), is(query));
+        }
+        assertThat(policy.toString(), containsString("query=****"));
+        assertThat(policy.build().toString(), not(containsString("POLICY_SQL_CANARY")));
+        verifyZeroInteractions(source);
+    }
+
+    /**
+     * Ignores obsolete naming nodes while retaining policy values and confidential rendering.
+     */
+    @Test
+    void obsoletePolicyNamesDoNotChangeDiscovery() {
+        DataSource source = mock(DataSource.class);
+        for (Map<String, String> obsolete : List.of(Map.<String, String>of(), Map.of("name", "legacy-db"),
+                Map.of("name", " "), Map.of("name.child", "legacy-db"), Map.of("name.0", "legacy-db"))) {
+            Map<String, String> values = new HashMap<>(obsolete);
+            values.putAll(Map.of("enabled", "true", "query", "SELECT 'SQL_CANARY'", "query-timeout", "PT3S",
+                    "type", "liveness"));
+            JdbcClientHealthConfig policy = JdbcClientHealthConfig.create(Config.just(ConfigSources.create(values)));
+            JdbcClientHealthConfig expected = JdbcClientHealthConfig.builder().enabled(true).query("SELECT 'SQL_CANARY'")
+                    .queryTimeout(Duration.ofSeconds(3)).type(HealthCheckType.LIVENESS).build();
+            assertThat(policy, is(expected));
+            assertThat(policy.toString(), not(containsString("legacy-db")));
+            assertThat(policy.toString(), not(containsString("SQL_CANARY")));
+            Map<String, String> ownerValues = new HashMap<>();
+            values.forEach((key, value) -> ownerValues.put("health." + key, value));
+            ownerValues.put("name", "logical");
+            JdbcClient client = JdbcClient.builder().config(Config.just(ConfigSources.create(ownerValues)))
+                    .dataSource(source).build();
+            assertThat(client.prototype().health(), is(policy));
+            assertThat(client.prototype().toString(), not(containsString("SQL_CANARY")));
+            var manager = clientRegistry(() -> List.of(registered(client, "orders")), List.of());
+            try {
+                List<HealthCheck> checks = manager.registry().all(HealthCheck.class);
+                assertThat("The obsolete naming configuration is " + obsolete + ".", checks, hasSize(1));
+                var check = (JdbcClientHealthCheck) checks.getFirst();
+                assertThat(check.name(), is("orders"));
+                assertThat(check.prototype().query(), is(policy.query()));
+                assertThat(check.prototype().queryTimeout(), is(policy.queryTimeout()));
+                assertThat(check.type(), is(policy.type()));
+            } finally {
+                manager.shutdown();
+            }
+            JdbcClientHealthConfig nameOnly = JdbcClientHealthConfig.create(Config.just(ConfigSources.create(obsolete)));
+            assertThat(nameOnly, is(JdbcClientHealthConfig.create()));
+        }
+        verifyZeroInteractions(source);
+    }
+
+    /**
+     * Verifies configuration parity and construction defaults without acquiring resources.
+     */
+    @Test
+    void defaultsAndConfigurationMatchBuildersWithoutAcquisition() {
+        DataSource source = mock(DataSource.class);
+        JdbcClient client = JdbcClient.builder().name("orders").dataSource(source).build();
+        JdbcClientHealthCheck defaults = JdbcClientHealthCheck.builder().client(client).build();
+        assertThat(defaults.name(), is(client.prototype().name()));
+        assertThat(defaults.path(), is(defaults.name()));
+        assertThat(defaults.type(), is(HealthCheckType.READINESS));
+        assertThat(defaults.prototype().query(), is("SELECT 1"));
+        assertThat(defaults.prototype().queryTimeout(), is(Duration.ofSeconds(2)));
+        Config config = Config.just(ConfigSources.create(Map.of("query", "SELECT 2", "name", "database",
+                                                               "query-timeout", "PT3S", "type", "liveness")));
+        JdbcClientHealthCheck configured = JdbcClientHealthCheck.builder().config(config).client(client).build();
+        JdbcClientHealthCheck built = JdbcClientHealthCheck.builder().client(client).query("SELECT 2").name("database")
+                .queryTimeout(Duration.ofSeconds(3)).type(HealthCheckType.LIVENESS).build();
+        assertThat(configured.prototype(), is(built.prototype()));
+        assertThat(configured.prototype().client(), sameInstance(client));
+        assertThrows(IllegalArgumentException.class, () -> JdbcClientHealthCheck.builder().client(client).name(" ").build());
+        assertThrows(IllegalArgumentException.class,
+                     () -> JdbcClientHealthCheck.builder().client(client).query("UPDATE t SET x=1").build());
+        assertThrows(NullPointerException.class, () -> JdbcClientHealthCheck.create((JdbcClientHealthCheckConfig) null));
+        assertThrows(NullPointerException.class,
+                     () -> JdbcClientHealthCheck.create((Consumer<JdbcClientHealthCheckConfig.Builder>) null));
+        assertThrows(Errors.ErrorMessagesException.class, () -> JdbcClientHealthCheck.builder().build());
+        verifyZeroInteractions(source);
+    }
+
+    /**
+     * Redacts SQL in builder and prototype text while retaining the query and acquiring no resources.
+     */
+    @Test
+    void queryIsConfidentialInBuilderAndPrototypeRendering() {
+        String query = "SELECT 'HEALTH_SQL_LITERAL_CANARY'";
+        DataSource source = mock(DataSource.class);
+        JdbcClient client = JdbcClient.builder().dataSource(source).build();
+        Config config = Config.just(ConfigSources.create(Map.of("query", query)));
+        for (var builder : List.of(JdbcClientHealthCheck.builder().client(client).query(query),
+                                   JdbcClientHealthCheck.builder().client(client).config(config))) {
+            assertThat(builder.toString(), containsString("query=****"));
+            assertThat(builder.toString(), not(containsString("HEALTH_SQL_LITERAL_CANARY")));
+            JdbcClientHealthCheck check = builder.build();
+            assertThat(check.prototype().toString(), containsString("query=****"));
+            assertThat(check.prototype().toString(), not(containsString("HEALTH_SQL_LITERAL_CANARY")));
+            assertThat(check.prototype().query(), is(query));
+        }
+        verifyZeroInteractions(source);
+    }
+
+    /**
+     * Returns only DOWN for expected JDBC failures and propagates fatal errors.
+     */
+    @Test
+    void responsesContainOnlyStatusAndFatalErrorsPropagate() throws Exception {
+        DataSource source = mock(DataSource.class);
+        JdbcClientHealthCheck check = JdbcClientHealthCheck.builder()
+                .client(JdbcClient.builder().dataSource(source).build()).build();
+        when(source.getConnection()).thenThrow(new SQLException("Secret password and SQL"));
+        HealthCheckResponse response = check.call();
+        assertThat(response.status(), is(HealthCheckResponse.Status.DOWN));
+        assertThat(response.details(), anEmptyMap());
+        Error fatal = new OutOfMemoryError("fatal");
+        doThrow(fatal).when(source).getConnection();
+        assertThat(assertThrows(OutOfMemoryError.class, check::call), sameInstance(fatal));
+    }
+
+    /**
+     * Resolves disabled client policies without publishing checks or acquiring connections.
+     */
+    @Test
+    void disabledOrAbsentPoliciesPublishNoChecks() {
+        for (Map<String, String> values : List.of(Map.<String, String>of(),
+                                                 Map.of("health.enabled", "false"),
+                                                 Map.of("health-check.enabled", "true"))) {
+            DataSource source = mock(DataSource.class);
+            JdbcClient client = JdbcClient.builder().config(Config.just(ConfigSources.create(values)))
+                    .dataSource(source).build();
+            AtomicInteger activations = new AtomicInteger();
+            var manager = clientRegistry(() -> {
+                activations.incrementAndGet();
+                return List.of(Service.QualifiedInstance.create(client));
+            }, List.of());
+            try {
+                assertThat("Discovery must remain disabled for configuration " + values + ".",
+                           manager.registry().all(HealthCheck.class), empty());
+                assertThat(activations.get(), is(1));
+                verifyZeroInteractions(source);
+            } finally {
+                manager.shutdown();
+            }
+        }
+        var manager = clientRegistry(List::of, List.of());
+        try {
+            // An enabled configuration alone is no longer a health definition targeting a missing client.
+            GlobalServiceRegistry.registry(manager.registry());
+            Services.set(JdbcClientConfig.class, JdbcClientConfig.builder().dataSource(mock(DataSource.class))
+                    .health(health -> health.enabled(true)).buildPrototype());
+            assertThat(manager.registry().all(HealthCheck.class), empty());
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    /**
+     * Uses the selected client's complete policy instead of an earlier configuration or a shadowed client.
+     */
+    @Test
+    void replacementClientOwnsEveryHealthSetting() {
+        DataSource source = mock(DataSource.class);
+        JdbcClient original = JdbcClient.builder().name("original").dataSource(source)
+                .health(health -> health.enabled(true).query("SELECT 2")).build();
+        for (boolean enabled : List.of(false, true)) {
+            JdbcClient replacement = JdbcClient.builder().name("replacement").dataSource(source)
+                    .health(health -> health.enabled(enabled).query("SELECT 3")
+                            .queryTimeout(Duration.ofSeconds(4)).type(HealthCheckType.LIVENESS)).build();
+            var manager = clientRegistry(() -> List.of(registered(replacement, "orders")),
+                    List.of(registered(original, "orders"),
+                            Service.QualifiedInstance.create(original, Qualifier.createNamed("orders"))));
+            try {
+                GlobalServiceRegistry.registry(manager.registry());
+                Services.set(JdbcClientConfig.class, original.prototype());
+                List<HealthCheck> checks = manager.registry().all(HealthCheck.class);
+                assertThat("The replacement health enabled setting is " + enabled + ".", checks, hasSize(enabled ? 1 : 0));
+                if (enabled) {
+                    var check = (JdbcClientHealthCheck) checks.getFirst();
+                    assertThat(check.prototype().client(), sameInstance(replacement));
+                    assertThat(check.name(), is("orders"));
+                    assertThat(check.prototype().query(), is("SELECT 3"));
+                    assertThat(check.prototype().queryTimeout(), is(Duration.ofSeconds(4)));
+                    assertThat(check.type(), is(HealthCheckType.LIVENESS));
+                }
+                verifyZeroInteractions(source);
+            } finally {
+                manager.shutdown();
+            }
+        }
+        JdbcClient disabled = JdbcClient.builder().dataSource(source).build();
+        var manager = clientRegistry(() -> List.of(registered(original, "orders")),
+                List.of(registered(disabled, "orders")));
+        try {
+            assertThat(manager.registry().all(HealthCheck.class), hasSize(1));
+        } finally {
+            manager.shutdown();
+        }
+        verifyZeroInteractions(source);
+    }
+
+    /**
+     * Skips an unsupported winner without inspecting it or falling back to a supported client.
+     */
+    @Test
+    void customClientExclusionDoesNotCallItsMethods() {
+        JdbcClient custom = mock(JdbcClient.class);
+        DataSource source = mock(DataSource.class);
+        JdbcClient shadowed = JdbcClient.builder().dataSource(source).health(health -> health.enabled(true)).build();
+        var manager = clientRegistry(() -> List.of(registered(custom, "orders")),
+                List.of(registered(shadowed, "orders"),
+                        Service.QualifiedInstance.create(shadowed, Qualifier.createNamed("orders"))));
+        try {
+            assertThat(manager.registry().all(HealthCheck.class), empty());
+            assertThrows(IllegalArgumentException.class, () -> JdbcClientHealthCheck.builder().client(custom).build());
+            verifyZeroInteractions(custom, source);
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    /**
+     * Applies the same effective policy to an explicitly bound standalone client without changing its source.
+     */
+    @Test
+    void explicitServiceRegistrationUsesTheReplacementPolicy() {
+        DataSource original = mock(DataSource.class);
+        DataSource selected = mock(DataSource.class);
+        for (boolean enabled : List.of(false, true)) {
+            Config root = Config.just(ConfigSources.create(Map.of("data.clients.jdbc.0.name", "orders",
+                    "data.clients.jdbc.0.health.enabled", Boolean.toString(!enabled))));
+            var manager = registry(root, original);
+            try {
+                JdbcClient replacement = JdbcClient.builder().name("replacement").dataSource(selected)
+                        .health(health -> health.enabled(enabled).query("SELECT 3")).build();
+                Services.setQualified(JdbcClient.class, replacement, Qualifier.createNamed("orders"), PROVIDER);
+                List<HealthCheck> checks = manager.registry().all(HealthCheck.class);
+                assertThat("The replacement health enabled setting is " + enabled + ".", checks, hasSize(enabled ? 1 : 0));
+                if (enabled) {
+                    var check = (JdbcClientHealthCheck) checks.getFirst();
+                    assertThat(check.name(), is("orders"));
+                    assertThat(check.prototype().query(), is("SELECT 3"));
+                    assertThat(check.prototype().client(), sameInstance(replacement));
+                }
+                assertThat(manager.registry().get(JdbcClient.class, Qualifier.createNamed("orders"), PROVIDER),
+                           sameInstance(replacement));
+            } finally {
+                manager.shutdown();
+            }
+        }
+        verifyZeroInteractions(original, selected);
+    }
+
+    /**
+     * Keeps the observer available if registry enumeration fails and preserves fatal errors.
+     */
+    @Test
+    void registryFailuresAreSanitizedAndFatalErrorsPropagate() {
+        ServiceRegistry registry = mock(ServiceRegistry.class);
+        var factory = new JdbcHealthCheckFactory(registry);
+        Logger logger = Logger.getLogger(JdbcHealthCheckFactory.class.getName());
+        Handler handler = mock(Handler.class);
+        logger.addHandler(handler);
+        try {
+            when(registry.lookupServices(HEALTH_CLIENTS)).thenThrow(new ServiceRegistryException("SECRET_REGISTRY"));
+            assertThat(factory.services(), empty());
+            ArgumentCaptor<LogRecord> record = ArgumentCaptor.forClass(LogRecord.class);
+            verify(handler).publish(record.capture());
+            assertThat(record.getValue().getMessage(), is("JDBC health discovery could not inspect the service registry."));
+            assertThat(record.getValue().getThrown(), is((Throwable) null));
+        } finally {
+            logger.removeHandler(handler);
+        }
+        Error fatal = new OutOfMemoryError("Fatal activation failure.");
+        doThrow(fatal).when(registry).lookupServices(HEALTH_CLIENTS);
+        assertThat(assertThrows(OutOfMemoryError.class, factory::services), sameInstance(fatal));
+    }
+
+    /**
+     * An unavailable winning registration does not enable the health policy of a shadowed client.
+     */
+    @Test
+    void clientResolutionFailurePreservesOtherChecksAndDoesNotSelectShadowedClient() {
+        DataSource source = mock(DataSource.class);
+        JdbcClient enabled = JdbcClient.builder().dataSource(source).health(health -> health.enabled(true)).build();
+        @SuppressWarnings("unchecked")
+        Service.QualifiedInstance<JdbcClient> unavailable = mock(Service.QualifiedInstance.class);
+        when(unavailable.qualifiers()).thenReturn(Set.of(Qualifier.createNamed("orders"), PROVIDER));
+        when(unavailable.get()).thenThrow(new ServiceRegistryException("SECRET_INSTANCE"));
+        var manager = clientRegistry(() -> List.of(unavailable),
+                                     List.of(registered(enabled, "orders"), registered(enabled, "billing")));
+        try {
+            var factory = new JdbcHealthCheckFactory(manager.registry());
+            assertThat(factory.services().stream().map(check -> check.get().name()).toList(), contains("billing"));
+            verify(unavailable).get();
+            Error fatal = new OutOfMemoryError("Fatal client resolution failure.");
+            doThrow(fatal).when(unavailable).get();
+            assertThat(assertThrows(OutOfMemoryError.class, factory::services), sameInstance(fatal));
+            verifyZeroInteractions(source);
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    /**
+     * A failed provider does not publish a check when the remaining client disables health.
+     */
+    @Test
+    void unavailableProviderDoesNotEnableChecksForOtherClients() {
+        DataSource source = mock(DataSource.class);
+        JdbcClient disabled = JdbcClient.builder().dataSource(source).build();
+        AtomicInteger activations = new AtomicInteger();
+        var manager = clientRegistry(() -> {
+            activations.incrementAndGet();
+            throw new IllegalStateException("SECRET_PROVIDER_CONFIGURATION");
+        }, List.of(registered(disabled, "orders")));
+        Logger logger = Logger.getLogger(JdbcHealthCheckFactory.class.getName());
+        Handler handler = mock(Handler.class);
+        logger.addHandler(handler);
+        try {
+            assertThat(manager.registry().all(HealthCheck.class), empty());
+            assertThat(activations.get(), is(1));
+            ArgumentCaptor<LogRecord> record = ArgumentCaptor.forClass(LogRecord.class);
+            verify(handler).publish(record.capture());
+            assertThat(record.getValue().getMessage(), is("JDBC health discovery could not inspect the provider {0}."));
+            assertThat(record.getValue().getParameters(), is(new Object[] {PreferredClients.class.getCanonicalName()}));
+            assertThat(record.getValue().getThrown(), is((Throwable) null));
+            verifyZeroInteractions(source);
+        } finally {
+            logger.removeHandler(handler);
+            manager.shutdown();
+        }
+    }
+
+    @Test
+    void successfulProviderWithoutMatchAllowsLaterClient() {
+        DataSource source = mock(DataSource.class);
+        JdbcClient unrelated = JdbcClient.builder().dataSource(source).build();
+        JdbcClient enabled = JdbcClient.builder().dataSource(source).health(health -> health.enabled(true)).build();
+        List<List<Service.QualifiedInstance<JdbcClient>>> preferredResults =
+                List.of(List.of(), List.of(registered(unrelated, "billing")));
+        for (var preferred : preferredResults) {
+            String scenario = preferred.isEmpty() ? "Preferred provider has no registrations"
+                    : "Preferred provider has registrations for another name";
+            var manager = clientRegistry(() -> preferred, List.of(registered(enabled, "orders")));
+            try {
+                assertThat(scenario, manager.registry().get(JdbcClient.class, Qualifier.createNamed("orders"), PROVIDER),
+                           sameInstance(enabled));
+                assertThat(scenario, manager.registry().all(HealthCheck.class).stream().map(HealthCheck::name).toList(),
+                           contains("orders"));
+            } finally {
+                manager.shutdown();
+            }
+        }
+        verifyZeroInteractions(source);
+    }
+
+    @Test
+    void factoryFailureLeavesLaterUnqualifiedClientUnresolved() {
+        DataSource source = mock(DataSource.class);
+        JdbcClient enabled = JdbcClient.builder().name("fallback").dataSource(source)
+                .health(health -> health.enabled(true)).build();
+        var providerFailure = new IllegalStateException("The JDBC provider failed to start.");
+        var manager = clientRegistry(() -> {
+            throw providerFailure;
+        }, List.of(Service.QualifiedInstance.create(enabled)));
+        try {
+            assertThat(assertThrows(IllegalStateException.class, () -> manager.registry().get(HEALTH_CLIENTS)),
+                       sameInstance(providerFailure));
+            assertThat(manager.registry().all(HealthCheck.class), empty());
+            verifyZeroInteractions(source);
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
+    void lookupSpecificFailureKeepsChecksForOtherNames() {
+        DataSource source = mock(DataSource.class);
+        JdbcClient orders = JdbcClient.builder().dataSource(source).health(health -> health.enabled(true)).build();
+        JdbcClient billing = JdbcClient.builder().dataSource(source).health(health -> health.enabled(true)).build();
+        var manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                .discoverServices(false).discoverServicesFromServiceLoader(false)
+                .addServiceDescriptor(JdbcHealthCheckFactory__ServiceDescriptor.INSTANCE)
+                .addServiceDescriptor(JdbcClientHealthCheckTest_LookupClients__ServiceDescriptor.INSTANCE)
+                .build());
+        GlobalServiceRegistry.registry(manager.registry());
+        try {
+            Services.addNamed(JdbcClient.class, 100, orders, "orders");
+            Services.addNamed(JdbcClient.class, 100, billing, "billing");
+            // The orders lookup fails at the preferred provider. Billing still resolves through the later registration.
+            assertThrows(ServiceRegistryException.class,
+                         () -> manager.registry().get(JdbcClient.class, Qualifier.createNamed("orders")));
+            assertThat(manager.registry().get(JdbcClient.class, Qualifier.createNamed("billing")), sameInstance(billing));
+            assertThat(manager.registry().all(HealthCheck.class).stream().map(HealthCheck::name).toList(),
+                       contains("billing"));
+            verifyZeroInteractions(source);
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
+    void discoversIndependentDirectRegistrationsOfTheSameServiceType() {
+        DataSource source = mock(DataSource.class);
+        JdbcClient orders = JdbcClient.builder().dataSource(source).health(health -> health.enabled(true)).build();
+        JdbcClient billing = JdbcClient.builder().dataSource(source).health(health -> health.enabled(true)).build();
+        var manager = clientRegistry(List::of, List.of());
+        GlobalServiceRegistry.registry(manager.registry());
+        try {
+            Services.addNamed(JdbcClient.class, 300, orders, "orders");
+            Services.addNamed(JdbcClient.class, 250, billing, "billing");
+            List<HealthCheck> checks = manager.registry().all(HealthCheck.class);
+            assertThat(checks.stream().map(HealthCheck::name).toList(), contains("orders", "billing"));
+            verifyZeroInteractions(source);
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    /**
+     * Verifies that each registry resolves its own source even when source names match.
+     */
+    @Test
+    void registryFactoriesResolveOnlyTheirOwnEffectiveSources() throws Exception {
+        Config root = Config.just(ConfigSources.create(Map.of("data.clients.jdbc.0.name", "orders",
+                "data.clients.jdbc.0.health.enabled", "true", "data.clients.jdbc.0.health.name", "orders-db")));
+        DataSource healthy = mock(DataSource.class);
+        Connection connection = mock(Connection.class);
+        PreparedStatement statement = mock(PreparedStatement.class);
+        ResultSet rows = mock(ResultSet.class);
+        when(healthy.getConnection()).thenReturn(connection);
+        when(connection.getAutoCommit()).thenReturn(true);
+        when(connection.prepareStatement(anyString())).thenReturn(statement);
+        when(statement.execute()).thenReturn(true);
+        when(statement.getResultSet()).thenReturn(rows);
+        when(statement.getUpdateCount()).thenReturn(-1);
+        DataSource broken = mock(DataSource.class);
+        when(broken.getConnection()).thenThrow(new SQLException("Secret"));
+        var first = registry(root, healthy);
+        var second = registry(root, broken);
+        try {
+            HealthCheck a = first.registry().all(HealthCheck.class).getFirst();
+            HealthCheck b = second.registry().all(HealthCheck.class).getFirst();
+            verifyZeroInteractions(healthy, broken);
+            assertThat(a.call().status(), is(HealthCheckResponse.Status.UP));
+            assertThat(b.call().status(), is(HealthCheckResponse.Status.DOWN));
+            GlobalServiceRegistry.registry(second.registry());
+            assertThat(a.call().status(), is(HealthCheckResponse.Status.UP));
+        } finally {
+            try {
+                first.shutdown();
+            } finally {
+                second.shutdown();
+            }
+        }
+    }
+
+    /**
+     * Keeps qualified and unqualified registrations distinct and lets the registry select their preferred clients.
+     */
+    @Test
+    void registryPreferenceAndRegistrationNamesDetermineChecks() {
+        DataSource source = mock(DataSource.class);
+        JdbcClient preferred = JdbcClient.builder().name("replacement").dataSource(source)
+                .health(health -> health.enabled(true).query("SELECT 3")).build();
+        JdbcClient shadowed = JdbcClient.builder().name("shadowed").dataSource(source)
+                .health(health -> health.enabled(true).query("UPDATE invalid")).build();
+        JdbcClient unqualified = JdbcClient.builder().name("orders").dataSource(source)
+                .health(health -> health.enabled(true)).build();
+        Qualifier tenant = Qualifier.create(Data.ProviderType.TYPE, "tenant");
+        var manager = clientRegistry(() -> List.of(registered(preferred, "orders"), registered(preferred, "other"),
+                Service.QualifiedInstance.create(preferred, tenant)),
+                List.of(Service.QualifiedInstance.create(unqualified), registered(shadowed, "orders")));
+        try {
+            List<HealthCheck> checks = manager.registry().all(HealthCheck.class);
+            assertThat(checks, hasSize(4));
+            assertThat(checks.stream().map(HealthCheck::name).toList(),
+                       is(List.of("orders", "orders", "other", "replacement")));
+            assertThat(((JdbcClientHealthCheck) checks.getFirst()).prototype().client(), sameInstance(unqualified));
+            for (HealthCheck check : checks.subList(1, checks.size())) {
+                assertThat(((JdbcClientHealthCheck) check).prototype().client(), sameInstance(preferred));
+                assertThat(((JdbcClientHealthCheck) check).prototype().query(), is("SELECT 3"));
+            }
+            assertThat(manager.registry().get(JdbcClient.class, Qualifier.createNamed("orders"), PROVIDER),
+                       sameInstance(preferred));
+            assertThat(new JdbcHealthCheckFactory(manager.registry()).services().stream()
+                    .map(check -> check.qualifiers()).toList(), everyItem(empty()));
+            verifyZeroInteractions(source);
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    /**
+     * Publishes an effective registration once even when overlapping lookups select it more than once.
+     */
+    @Test
+    void overlappingQualifiersPublishEachSelectedRegistrationOnce() {
+        DataSource source = mock(DataSource.class);
+        JdbcClient providerClient = JdbcClient.builder().name("provider-client").dataSource(source)
+                .health(health -> health.enabled(true).query("SELECT 2")).build();
+        JdbcClient namedClient = JdbcClient.builder().name("named-client").dataSource(source)
+                .health(health -> health.enabled(true).query("SELECT 3").type(HealthCheckType.LIVENESS)).build();
+        var qualified = registered(providerClient, "orders");
+        var named = Service.QualifiedInstance.create(namedClient, Qualifier.createNamed("orders"));
+        for (boolean providerPreferred : List.of(false, true)) {
+            for (boolean equalWeights : List.of(false, true)) {
+                var first = providerPreferred ? qualified : named;
+                var second = providerPreferred ? named : qualified;
+                var manager = equalWeights ? clientRegistry(() -> List.of(first, second), List.of())
+                        : clientRegistry(() -> List.of(first), List.of(second));
+                try {
+                    assertThat(manager.registry().get(JdbcClient.class, Qualifier.createNamed("orders")),
+                               sameInstance(providerPreferred ? providerClient : namedClient));
+                    assertThat(manager.registry().get(JdbcClient.class, Qualifier.createNamed("orders"), PROVIDER),
+                               sameInstance(providerClient));
+                    List<HealthCheck> checks = manager.registry().all(HealthCheck.class);
+                    assertThat("The provider preference flag is " + providerPreferred
+                                       + " and the equal weights flag is " + equalWeights + ".",
+                               checks, hasSize(providerPreferred ? 1 : 2));
+                    assertThat(checks.stream().map(check -> ((JdbcClientHealthCheck) check).prototype().client()).toList(),
+                               is(providerPreferred ? List.of(providerClient) : List.of(namedClient, providerClient)));
+                    assertThat(checks.stream().map(HealthCheck::name).toList(),
+                               is(providerPreferred ? List.of("orders") : List.of("orders", "orders")));
+                    assertThat(checks.stream().map(HealthCheck::type).toList(),
+                               is(providerPreferred ? List.of(HealthCheckType.READINESS)
+                                          : List.of(HealthCheckType.LIVENESS, HealthCheckType.READINESS)));
+                    verifyZeroInteractions(source);
+                } finally {
+                    manager.shutdown();
+                }
+            }
+        }
+    }
+
+    /**
+     * Preserves independent registration names and policies and rejects invalid enabled SQL without fallback.
+     */
+    @Test
+    void registrationNamesDoNotMergePoliciesAndInvalidSqlDoesNotFallBack() {
+        DataSource source = mock(DataSource.class);
+        JdbcClient ready = JdbcClient.builder().dataSource(source)
+                .health(health -> health.enabled(true).query("SELECT 2")).build();
+        JdbcClient live = JdbcClient.builder().dataSource(source)
+                .health(health -> health.enabled(true).type(HealthCheckType.LIVENESS)).build();
+        var manager = clientRegistry(() -> List.of(registered(ready, "one"), registered(ready, "two"),
+                registered(live, "three")), List.of());
+        try {
+            List<HealthCheck> checks = manager.registry().all(HealthCheck.class);
+            assertThat(checks, hasSize(3));
+            assertThat(checks.stream().map(HealthCheck::name).toList(), is(List.of("one", "two", "three")));
+            assertThat(checks.stream().map(HealthCheck::type).toList(),
+                       is(List.of(HealthCheckType.READINESS, HealthCheckType.READINESS, HealthCheckType.LIVENESS)));
+        } finally {
+            manager.shutdown();
+        }
+        for (JdbcClientHealthConfig invalid : List.of(
+                JdbcClientHealthConfig.builder().enabled(true).query("UPDATE invalid").build(),
+                JdbcClientHealthConfig.builder().enabled(true).query("/*!50700 EXPLAIN */ SELECT 1").build(),
+                JdbcClientHealthConfig.builder().enabled(true).queryTimeout(Duration.ZERO).build())) {
+            JdbcClient client = JdbcClient.builder().dataSource(source).health(invalid).build();
+            manager = clientRegistry(() -> List.of(registered(client, "orders")), List.of());
+            try {
+                var factory = new JdbcHealthCheckFactory(manager.registry());
+                assertThrows(IllegalArgumentException.class, factory::services);
+            } finally {
+                manager.shutdown();
+            }
+        }
+        verifyZeroInteractions(source);
+    }
+
+    private static Service.QualifiedInstance<JdbcClient> registered(JdbcClient client, String name) {
+        return Service.QualifiedInstance.create(client, Qualifier.createNamed(name), PROVIDER);
+    }
+
+    private static ServiceRegistryManager clientRegistry(Supplier<List<Service.QualifiedInstance<JdbcClient>>> preferred,
+                                                         List<Service.QualifiedInstance<JdbcClient>> fallback) {
+        return ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                .discoverServices(false).discoverServicesFromServiceLoader(false)
+                .addServiceDescriptor(JdbcHealthCheckFactory__ServiceDescriptor.INSTANCE)
+                .addServiceDescriptor(JdbcClientConfigFactory__ServiceDescriptor.INSTANCE)
+                .putServiceInstance(JdbcClientHealthCheckTest_PreferredClients__ServiceDescriptor.INSTANCE,
+                        new PreferredClients(preferred))
+                .putServiceInstance(JdbcClientHealthCheckTest_FallbackClients__ServiceDescriptor.INSTANCE,
+                        new FallbackClients(fallback)).build());
+    }
+
+    private static ServiceRegistryManager registry(Config root, DataSource source) {
+        ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                .discoverServices(false)
+                .discoverServicesFromServiceLoader(false)
+                .addServiceDescriptor(JdbcHealthCheckFactory__ServiceDescriptor.INSTANCE)
+                .addServiceDescriptor(JdbcClientConfigFactory__ServiceDescriptor.INSTANCE)
+                .addServiceDescriptor(JdbcClientFactory__ServiceDescriptor.INSTANCE)
+                .addServiceDescriptor(JdbcTransactionConnectionManager__ServiceDescriptor.INSTANCE)
+                .build());
+        GlobalServiceRegistry.registry(manager.registry());
+        Services.set(Config.class, root);
+        JdbcClientConfig configuration = JdbcClientConfig.builder()
+                .config(root.get("data.clients.jdbc").asNodeList().orElseThrow().getFirst())
+                .dataSource(source).buildPrototype();
+        Services.set(JdbcClientConfig.class, JdbcClientConfig.builder().name("orders").dataSource(source)
+                .health(configuration.health()).buildPrototype());
+        return manager;
+    }
+
+    /**
+     * Supplies preferred clients through the real registry so tests exercise its qualifier and weight rules.
+     */
+    @Service.Singleton
+    @Weight(200)
+    static class PreferredClients implements Service.ServicesFactory<JdbcClient> {
+        private final Supplier<List<Service.QualifiedInstance<JdbcClient>>> clients;
+
+        @Service.Inject
+        PreferredClients(Supplier<List<Service.QualifiedInstance<JdbcClient>>> clients) {
+            this.clients = clients;
+        }
+
+        @Override
+        public List<Service.QualifiedInstance<JdbcClient>> services() {
+            return clients.get();
+        }
+    }
+
+    /**
+     * Supplies lower priority candidates that must not produce checks when a matching preferred client exists.
+     */
+    @Service.Singleton
+    @Weight(100)
+    static class FallbackClients implements Service.ServicesFactory<JdbcClient> {
+        private final List<Service.QualifiedInstance<JdbcClient>> clients;
+
+        @Service.Inject
+        FallbackClients(List<Service.QualifiedInstance<JdbcClient>> clients) {
+            this.clients = clients;
+        }
+
+        @Override
+        public List<Service.QualifiedInstance<JdbcClient>> services() {
+            return clients;
+        }
+    }
+
+    @Service.Singleton
+    @Service.Named(Service.Named.WILDCARD_NAME)
+    @Weight(200)
+    static class LookupClients implements Service.InjectionPointFactory<JdbcClient> {
+        /**
+         * Fails enumeration and orders lookup while allowing billing lookup to proceed.
+         *
+         * @param lookup The service lookup criteria.
+         * @return An empty result for lookups that succeed.
+         * @throws NullPointerException The lookup criteria are null.
+         */
+        @Override
+        public Optional<Service.QualifiedInstance<JdbcClient>> first(Lookup lookup) {
+            Objects.requireNonNull(lookup, "The lookup criteria must not be null.");
+            if (lookup.qualifiers().isEmpty() || lookup.qualifiers().contains(Qualifier.createNamed("orders"))) {
+                throw new IllegalStateException("The JDBC provider could not resolve this lookup.");
+            }
+            return Optional.empty();
+        }
+    }
+
+}

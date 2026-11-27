@@ -29,6 +29,7 @@ module io.helidon.data.jdbc.lexical {
     requires static io.helidon.common;
 
     exports io.helidon.data.jdbc.lexical to
+            io.helidon.data.sql.datasource,
             io.helidon.data.jdbc,
             io.helidon.data.jdbc.codegen;
 }

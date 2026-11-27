@@ -21,12 +21,16 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import javax.sql.DataSource;
 
 import io.helidon.data.DataException;
+import io.helidon.data.sql.datasource.DataSourceHealthCheck;
+import io.helidon.health.HealthCheckResponse;
 
 /**
  * Owns the complete lifecycle of a prepared JDBC operation.
@@ -64,6 +68,30 @@ final class JdbcRunner {
         this.leaseProvider = leaseProvider;
         this.queryHandler = new JdbcQueryHandler();
         this.updateHandler = new JdbcUpdateHandler(queryHandler);
+    }
+
+    /**
+     * Binds an independent health check to the resolved datasource.
+     *
+     * @param sql The trusted SELECT is validated during check construction.
+     * @param timeout The query timeout is validated before acquisition.
+     * @return The probe checks the caller context before acquisition and returns a status-only response.
+     */
+    Supplier<HealthCheckResponse> createProbe(String sql, Duration timeout) {
+        DataSourceHealthCheck check = DataSourceHealthCheck.builder()
+                .dataSource(dataSource)
+                .query(sql)
+                .queryTimeout(timeout)
+                .build();
+        return () -> {
+            try {
+                // The same check can run under different caller transactions.
+                leaseProvider.checkProbeContext();
+            } catch (RuntimeException _) {
+                return HealthCheckResponse.builder().status(HealthCheckResponse.Status.DOWN).build();
+            }
+            return check.call();
+        };
     }
 
     /**
@@ -440,6 +468,24 @@ final class JdbcRunner {
     }
 
     /**
+     * Operation-specific work performed inside the resource boundary.
+     *
+     * @param <T> terminal result type
+     */
+    @FunctionalInterface
+    private interface HandlerAction<T> {
+
+        /**
+         * Executes against a prepared and bound statement.
+         *
+         * @param scope runner-owned execution scope
+         * @return terminal result
+         * @throws SQLException when JDBC work fails
+         */
+        T execute(ExecutionScope scope) throws SQLException;
+    }
+
+    /**
      * Runner-owned view of one prepared operation.
      */
     static final class ExecutionScope {
@@ -618,23 +664,4 @@ final class JdbcRunner {
             }
         }
     }
-
-    /**
-     * Operation-specific work performed inside the resource boundary.
-     *
-     * @param <T> terminal result type
-     */
-    @FunctionalInterface
-    private interface HandlerAction<T> {
-
-        /**
-         * Executes against a prepared and bound statement.
-         *
-         * @param scope runner-owned execution scope
-         * @return terminal result
-         * @throws SQLException when JDBC work fails
-         */
-        T execute(ExecutionScope scope) throws SQLException;
-    }
-
 }

@@ -60,6 +60,7 @@
                 </property>
             </activation>
             <modules>
+                <module>datasource</module>
                 <module>imperative</module>
                 <module>declarative</module>
                 <module>mixed-provider</module>

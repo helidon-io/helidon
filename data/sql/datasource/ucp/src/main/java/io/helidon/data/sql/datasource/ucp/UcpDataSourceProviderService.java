@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,12 @@ package io.helidon.data.sql.datasource.ucp;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import javax.sql.DataSource;
 
+import io.helidon.common.LazyValue;
 import io.helidon.data.sql.datasource.DataSourceConfig;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.Service;
@@ -55,7 +57,19 @@ class UcpDataSourceProviderService implements Service.ServicesFactory<DataSource
     }
 
     private Service.QualifiedInstance<DataSource> createDataSource(String name, UcpDataSourceConfig ucpConfig) {
-        return Service.QualifiedInstance.create(UcpDataSourceFactory.create(ucpConfig),
-                                                Qualifier.createNamed(name));
+        Set<Qualifier> qualifiers = Set.of(Qualifier.createNamed(name));
+        return new Service.QualifiedInstance<>() {
+            private final LazyValue<DataSource> source = LazyValue.create(() -> UcpDataSourceFactory.create(ucpConfig));
+
+            @Override
+            public DataSource get() {
+                return source.get();
+            }
+
+            @Override
+            public Set<Qualifier> qualifiers() {
+                return qualifiers;
+            }
+        };
     }
 }
