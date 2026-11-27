@@ -23,6 +23,7 @@ import java.nio.channels.spi.SelectorProvider;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
@@ -30,8 +31,11 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.LongSupplier;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
@@ -397,10 +401,144 @@ class WriteTimeoutSocketTest {
         verify(fixture.abort, timeout(5000)).run();
     }
 
+    @Test
+    void earlierWriteRegistersAfterLaterWriteWithScheduledTimer() throws Exception {
+        verifyReversedRegistration(false);
+    }
+
+    @Test
+    void earlierWriteRegistersAfterLaterWriteWithSleepingFallbackTimer() throws Exception {
+        verifyReversedRegistration(true);
+    }
+
     private static int drain(ByteBuffer buffer) {
         int remaining = buffer.remaining();
         buffer.position(buffer.limit());
         return remaining;
+    }
+
+    private static void verifyReversedRegistration(boolean fallback) throws Exception {
+        var clock = new AtomicLong();
+        var firstSampled = new CountDownLatch(1);
+        var resumeFirst = new CountDownLatch(1);
+        var firstWriting = new CountDownLatch(1);
+        var finishWriting = new CountDownLatch(1);
+        var fallbackSampled = new CountDownLatch(1);
+        var aborted = new CountDownLatch(1);
+        var aborts = new AtomicInteger();
+        var firstSample = new AtomicBoolean(true);
+        var callbacks = new CopyOnWriteArrayList<PendingTimeout>();
+        var scheduler = mock(ScheduledExecutorService.class);
+        var delegate = mock(HelidonSocket.class);
+        Thread testThread = Thread.currentThread();
+        var firstThread = new AtomicReference<Thread>();
+        var fallbackThread = new AtomicReference<Thread>();
+        LongSupplier nanoTime = () -> {
+            long sampled = clock.get();
+            if (Thread.currentThread() == firstThread.get() && firstSample.getAndSet(false)) {
+                firstSampled.countDown();
+                await(resumeFirst, "First writer resumed");
+            } else if (Thread.currentThread() != firstThread.get() && Thread.currentThread() != testThread) {
+                fallbackThread.set(Thread.currentThread());
+                fallbackSampled.countDown();
+            }
+            return sampled;
+        };
+        when(scheduler.schedule(any(Runnable.class), anyLong(), eq(TimeUnit.NANOSECONDS))).thenAnswer(invocation -> {
+            if (fallback && !callbacks.isEmpty()) {
+                throw new RejectedExecutionException("Scheduler stopped");
+            }
+            var cancelled = new AtomicBoolean();
+            var future = mock(ScheduledFuture.class);
+            doAnswer(_ -> cancelled.compareAndSet(false, true)).when(future).cancel(false);
+            callbacks.add(new PendingTimeout(invocation.getArgument(0),
+                                             clock.get() + invocation.<Long>getArgument(1), cancelled));
+            return future;
+        });
+        var socket = new WriteTimeoutSocket(delegate, Duration.ofSeconds(60), scheduler, () -> {
+            aborts.incrementAndGet();
+            aborted.countDown();
+        }, nanoTime);
+        if (fallback) {
+            // Leave a callback genuinely due when the later invocation registers at t=5s.
+            clock.set(Duration.ofSeconds(-55).toNanos());
+            socket.write(BufferData.create("prime timer"));
+            clock.set(0);
+        }
+        doAnswer(_ -> {
+            if (Thread.currentThread() == firstThread.get()) {
+                firstWriting.countDown();
+                assertThat("Earlier write released", finishWriting.await(20, TimeUnit.SECONDS), is(true));
+                return null;
+            }
+            Runnable originalCallback = callbacks.getFirst().action();
+            if (fallback) {
+                originalCallback.run();
+                await(fallbackSampled, "Fallback sampled the later deadline under the timer lock");
+                clock.set(Duration.ofSeconds(60).toNanos());
+                resumeFirst.countDown();
+            } else {
+                resumeFirst.countDown();
+                await(firstWriting, "Earlier invocation registered second");
+                assertThat("Earlier deadline has a live scheduled callback before any old callback runs",
+                           callbacks.stream().anyMatch(callback -> !callback.cancelled().get()
+                                   && callback.deadline() <= Duration.ofSeconds(60).toNanos()), is(true));
+                // A callback already claimed by the executor can still run after its future was canceled.
+                int scheduledCallbacks = callbacks.size();
+                originalCallback.run();
+                assertThat("Superseded callback leaves the replacement schedule intact",
+                           callbacks.size(), is(scheduledCallbacks));
+                assertThat("Superseded callback cannot abort before the deadline", aborts.get(), is(0));
+                clock.set(Duration.ofSeconds(60).toNanos());
+                for (PendingTimeout callback : callbacks) {
+                    if (!callback.cancelled().get() && callback.deadline() <= clock.get()) {
+                        callback.action().run();
+                    }
+                }
+            }
+            await(aborted, "Original earlier deadline aborted the blocked connection");
+            return null;
+        }).when(delegate).write(any());
+        var first = new FutureTask<Void>(() -> {
+            socket.write(BufferData.create("first"));
+            return null;
+        });
+        Thread firstWriter = Thread.ofVirtual().unstarted(first);
+        firstThread.set(firstWriter);
+        try {
+            firstWriter.start();
+            await(firstSampled, "Earlier invocation sampled its start time");
+            clock.set(Duration.ofSeconds(5).toNanos());
+            assertThrows(SocketWriterException.class, () -> socket.write(BufferData.create("second")));
+            finishWriting.countDown();
+            assertThat(assertThrows(ExecutionException.class, () -> first.get(5, TimeUnit.SECONDS)).getCause(),
+                       instanceOf(SocketWriterException.class));
+            callbacks.getFirst().action().run();
+            assertThat("Connection aborted exactly once", aborts.get(), is(1));
+        } finally {
+            resumeFirst.countDown();
+            finishWriting.countDown();
+            socket.close();
+            firstWriter.join(Duration.ofSeconds(5));
+            Thread timer = fallbackThread.get();
+            if (timer != null) {
+                timer.join(Duration.ofSeconds(5));
+                assertThat("Fallback timer terminated", timer.isAlive(), is(false));
+            }
+            assertThat("Earlier writer terminated", firstWriter.isAlive(), is(false));
+        }
+    }
+
+    private static void await(CountDownLatch latch, String message) {
+        try {
+            assertThat(message, latch.await(5, TimeUnit.SECONDS), is(true));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new AssertionError(message, e);
+        }
+    }
+
+    private record PendingTimeout(Runnable action, long deadline, AtomicBoolean cancelled) {
     }
 
     private static final class Fixture {

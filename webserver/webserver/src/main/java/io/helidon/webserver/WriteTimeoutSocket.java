@@ -25,6 +25,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.LongSupplier;
@@ -49,10 +50,11 @@ final class WriteTimeoutSocket implements HelidonSocket {
     private final LongSupplier nanoTime;
     private final ReentrantLock lock = new ReentrantLock();
     private final Write primaryWrite = new Write();
-    private final Runnable timeoutTask = this::checkTimeout;
+    private TimeoutCheck timeoutTask = new TimeoutCheck();
     private List<Write> overlappingWrites;
     private ScheduledFuture<?> timeoutFuture;
-    private Thread fallbackTimer;
+    private long scheduledDeadline;
+    private Condition fallbackWakeup;
     private boolean primaryWriteActive;
     private boolean timedOut;
     private boolean closing;
@@ -95,17 +97,9 @@ final class WriteTimeoutSocket implements HelidonSocket {
         } finally {
             lock.lock();
             try {
-                if (closeCompleted || (!primaryWriteActive
-                        && (overlappingWrites == null || overlappingWrites.isEmpty()))) {
+                if (closeCompleted || !hasActiveWrites()) {
                     closed = true;
-                    if (timeoutFuture != null) {
-                        timeoutFuture.cancel(false);
-                        timeoutFuture = null;
-                    }
-                    if (fallbackTimer != null) {
-                        fallbackTimer.interrupt();
-                        fallbackTimer = null;
-                    }
+                    stopTimer();
                 }
             } finally {
                 lock.unlock();
@@ -204,9 +198,7 @@ final class WriteTimeoutSocket implements HelidonSocket {
             if (closed || (closing && !control)) {
                 throw new SocketWriterException(new ClosedChannelException());
             }
-            if (timeoutFuture == null && fallbackTimer == null) {
-                scheduleTimeout(timeoutNanos - (nanoTime.getAsLong() - started));
-            }
+            armTimer(started + timeoutNanos);
             Write write;
             if (!primaryWriteActive) {
                 write = primaryWrite;
@@ -239,10 +231,7 @@ final class WriteTimeoutSocket implements HelidonSocket {
             if (expired && !timedOut) {
                 timedOut = true;
                 abort = true;
-                if (timeoutFuture != null) {
-                    timeoutFuture.cancel(false);
-                    timeoutFuture = null;
-                }
+                stopTimer();
             }
         } finally {
             lock.unlock();
@@ -253,32 +242,49 @@ final class WriteTimeoutSocket implements HelidonSocket {
         return expired;
     }
 
-    private void checkTimeout() {
+    private void armTimer(long deadline) {
+        if (fallbackWakeup != null) {
+            fallbackWakeup.signal();
+        } else if (timeoutFuture == null) {
+            scheduleTimeout(deadline);
+        } else if (deadline - scheduledDeadline < 0) {
+            // A write can sample its start first but acquire the lock second.
+            timeoutFuture.cancel(false);
+            timeoutFuture = null;
+            timeoutTask = new TimeoutCheck();
+            rearmTimeout(deadline);
+        }
+    }
+
+    private void stopTimer() {
+        if (timeoutFuture != null) {
+            timeoutFuture.cancel(false);
+            timeoutFuture = null;
+        } else if (fallbackWakeup != null) {
+            fallbackWakeup.signal();
+        }
+    }
+
+    private void checkTimeout(TimeoutCheck check) {
         lock.lock();
         try {
+            if (check != timeoutTask) {
+                return;
+            }
             timeoutFuture = null;
             if (closed || timedOut) {
                 return;
             }
-            if (!primaryWriteActive && (overlappingWrites == null || overlappingWrites.isEmpty())) {
+            if (!hasActiveWrites()) {
                 return;
             }
-            long remaining = remainingWriteTime();
+            long now = nanoTime.getAsLong();
+            long remaining = remainingWriteTime(now);
             if (remaining > 0) {
-                try {
-                    scheduleTimeout(remaining);
-                    return;
-                } catch (RejectedExecutionException _) {
-                    // Preserve the active write's deadline while the transport scheduler shuts down.
-                    fallbackTimer = Thread.ofVirtual()
-                            .name("helidon-write-timeout-fallback")
-                            .inheritInheritableThreadLocals(false)
-                            .start(this::runFallbackTimer);
-                    return;
-                }
-            } else {
-                timedOut = true;
+                rearmTimeout(now + remaining);
+                return;
             }
+            timedOut = true;
         } finally {
             lock.unlock();
         }
@@ -289,13 +295,31 @@ final class WriteTimeoutSocket implements HelidonSocket {
                 .start(timeoutAction);
     }
 
-    private void scheduleTimeout(long remaining) {
-        timeoutFuture = scheduler.schedule(timeoutTask, Math.max(0, remaining), TimeUnit.NANOSECONDS);
+    private void rearmTimeout(long deadline) {
+        try {
+            scheduleTimeout(deadline);
+        } catch (RejectedExecutionException _) {
+            // Preserve active deadlines while the transport scheduler shuts down.
+            fallbackWakeup = lock.newCondition();
+            Thread.ofVirtual()
+                    .name("helidon-write-timeout-fallback")
+                    .inheritInheritableThreadLocals(false)
+                    .start(this::runFallbackTimer);
+        }
     }
 
-    private long remainingWriteTime() {
+    private void scheduleTimeout(long deadline) {
+        scheduledDeadline = deadline;
+        long delay = Math.max(0, deadline - nanoTime.getAsLong());
+        timeoutFuture = scheduler.schedule(timeoutTask, delay, TimeUnit.NANOSECONDS);
+    }
+
+    private boolean hasActiveWrites() {
+        return primaryWriteActive || (overlappingWrites != null && !overlappingWrites.isEmpty());
+    }
+
+    private long remainingWriteTime(long now) {
         long remaining = Long.MAX_VALUE;
-        long now = nanoTime.getAsLong();
         if (primaryWriteActive) {
             remaining = timeoutNanos - (now - primaryWrite.started);
         }
@@ -308,38 +332,33 @@ final class WriteTimeoutSocket implements HelidonSocket {
     }
 
     private void runFallbackTimer() {
+        boolean abort = false;
+        lock.lock();
         try {
-            while (true) {
-                long remaining;
-                lock.lock();
-                try {
-                    if (closed || timedOut || (!primaryWriteActive
-                            && (overlappingWrites == null || overlappingWrites.isEmpty()))) {
-                        fallbackTimer = null;
-                        return;
-                    }
-                    remaining = remainingWriteTime();
-                    if (remaining <= 0) {
-                        timedOut = true;
-                        break;
-                    }
-                } finally {
-                    lock.unlock();
+            while (!closed && !timedOut && hasActiveWrites()) {
+                long remaining = remainingWriteTime(nanoTime.getAsLong());
+                if (remaining <= 0) {
+                    timedOut = true;
+                    abort = true;
+                    break;
                 }
-                TimeUnit.NANOSECONDS.sleep(remaining);
+                fallbackWakeup.awaitNanos(remaining);
             }
-            timeoutAction.run();
         } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
         } finally {
-            lock.lock();
-            try {
-                if (fallbackTimer == Thread.currentThread()) {
-                    fallbackTimer = null;
-                }
-            } finally {
-                lock.unlock();
-            }
+            fallbackWakeup = null;
+            lock.unlock();
+        }
+        if (abort) {
+            timeoutAction.run();
+        }
+    }
+
+    private final class TimeoutCheck implements Runnable {
+        @Override
+        public void run() {
+            checkTimeout(this);
         }
     }
 
